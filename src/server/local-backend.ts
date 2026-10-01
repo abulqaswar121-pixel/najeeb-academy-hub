@@ -214,13 +214,24 @@ function loadState(): LocalState {
 
 const globalKey = "__najeebAcademyLocalState" as const;
 const g = globalThis as typeof globalThis & { [globalKey]?: LocalState };
-if (!g[globalKey]) g[globalKey] = loadState();
-const state = g[globalKey];
+// Loaded lazily on first access: loadState() generates random values, which
+// edge runtimes forbid at module (global) scope.
+function getState(): LocalState {
+  if (!g[globalKey]) g[globalKey] = loadState();
+  return g[globalKey];
+}
+const state = new Proxy({} as LocalState, {
+  get: (_t, prop) => getState()[prop as keyof LocalState],
+  set: (_t, prop, value) => {
+    (getState() as unknown as Record<string | symbol, unknown>)[prop] = value;
+    return true;
+  },
+});
 
 function persist() {
   try {
     if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
-    writeFileSync(DATA_FILE, JSON.stringify(state, null, 2));
+    writeFileSync(DATA_FILE, JSON.stringify(getState(), null, 2));
   } catch (err) {
     console.error("Failed to persist local academy state:", err);
   }
