@@ -6,4 +6,4 @@ minimumReleaseAge = 86400
 # before adding any.
 minimumReleaseAgeExcludes = ["@lovable.dev/vite-tanstack-config", "@lovable.dev/mcp-js", "@lovable.dev/email-js", "@lovable.dev/webhooks-js"]
 
-cafile = "/etc/ssl/certs/ca-certificates.crt"
+cafile = "/etc/ssl/certs/ca-bundle.crt"
