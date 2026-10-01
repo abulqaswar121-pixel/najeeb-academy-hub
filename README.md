@@ -27,11 +27,25 @@ All data access flows through server functions (`src/lib/server-fns.ts` → `src
 
 ## Content pipeline
 
-Courses/lessons/testimonials are **data-driven**. The canonical seed lives in `src/data/`
-(courses.ts, categories.ts, testimonials.ts, content.ts). Regenerate the SQL seed after edits:
+Courses/lessons/testimonials are **data-driven**, sourced from the NDH Academy 60-course
+bundle in `content/bundle/`:
+
+- `content/bundle/coursesData.verified.json` — the bundle catalog with every YouTube video
+  verified live (2026-10-01); 21 dead/invalid IDs were replaced with verified tutorials
+  (flagged `videoReplaced`, originals kept in `originalVideoId`).
+- `content/bundle/academy-catalog.json` (mirrored at `src/data/academy-catalog.json`) —
+  the processed catalog the app consumes: 60 courses, 6 tracks, slugs, pricing tiers
+  (₦15,000–₦50,000), tools, capstones and 6 guided lessons per course with notes,
+  activities, reflections and watch windows.
+- `content/bundle/cover_images/` — the 60 original course covers.
+
+`src/data/courses.ts` transforms the catalog into `CourseSeed`s; `content.ts` builds the
+course descriptions and HTML lesson pages (with timestamped YouTube embeds where the
+bundle's chapter times match the actual video). After editing the catalog or data files:
 
 ```sh
-bunx tsx scripts/generate-seed-sql.ts
+bunx tsx scripts/generate-course-covers.ts   # covers → public/images/courses/<slug>.jpg
+bunx tsx scripts/generate-seed-sql.ts        # regenerate the Supabase seed migration
 ```
 
 In production, adding a course is a plain `INSERT` into `courses` + `lessons` — zero code changes.
