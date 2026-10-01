@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { SiteHeader } from "../components/layout/SiteHeader";
 import { SiteFooter } from "../components/layout/SiteFooter";
+import { AssistantWidget } from "../components/academy/AssistantWidget";
 import { Toaster } from "../components/ui/sonner";
 
 function NotFoundComponent() {
@@ -142,6 +143,7 @@ function RootComponent() {
           <Outlet />
         </main>
         <SiteFooter />
+        <AssistantWidget />
       </div>
       <Toaster position="bottom-right" />
     </QueryClientProvider>

@@ -12,7 +12,6 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import { courses as courseSeeds } from "../data/courses";
-import { categoryBySlug } from "../data/categories";
 import { testimonials as testimonialSeeds } from "../data/testimonials";
 import { buildDescription, buildLessonContent, formatDuration, lessonSlug } from "../data/content";
 import type {
@@ -65,7 +64,7 @@ const allCourses: CourseRecord[] = courseSeeds.map((seed) => ({
   category: seed.category,
   priceNgn: seed.priceNgn,
   duration: formatDuration(seed.durationHours),
-  image: categoryBySlug(seed.category)?.image ?? "/images/categories/prompt-engineering.jpg",
+  image: `/images/courses/${seed.slug}.jpg`,
   isPublished: true,
   level: seed.level,
   isFeatured: Boolean(seed.featured),

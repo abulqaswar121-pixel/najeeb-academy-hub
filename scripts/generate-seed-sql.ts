@@ -9,7 +9,6 @@
 import { writeFileSync } from "node:fs";
 import path from "node:path";
 
-import { categoryBySlug } from "../src/data/categories";
 import { courses } from "../src/data/courses";
 import { testimonials } from "../src/data/testimonials";
 import {
@@ -31,8 +30,7 @@ const lines: string[] = [
 ];
 
 for (const course of courses) {
-  const image =
-    categoryBySlug(course.category)?.image ?? "/images/categories/prompt-engineering.jpg";
+  const image = `/images/courses/${course.slug}.jpg`;
   lines.push(
     `insert into public.courses (title, slug, summary, description, category, price_ngn, duration, image, is_published, level, is_featured, tools, project) values (` +
       [
