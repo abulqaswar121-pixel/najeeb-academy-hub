@@ -17,9 +17,15 @@ import type {
 } from "./types";
 
 const SESSION_COOKIE = "ndh_academy_session";
+/**
+ * SameSite=None + Secure so the session survives inside embedded previews
+ * (iframes make all requests "cross-site", and Lax cookies get dropped
+ * there). Browsers treat localhost as trustworthy, so local dev still works.
+ */
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  sameSite: "lax" as const,
+  sameSite: "none" as const,
+  secure: true,
   path: "/",
   maxAge: 60 * 60 * 24 * 30,
 };
