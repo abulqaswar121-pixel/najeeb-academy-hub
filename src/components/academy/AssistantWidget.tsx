@@ -87,31 +87,38 @@ export function AssistantWidget() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Close AI assistant" : "Open AI assistant — NDH Scholar"}
-        className="group fixed right-5 bottom-5 z-[60] flex h-14 w-14 items-center justify-center rounded-2xl transition-transform hover:scale-110 active:scale-95"
+        className="group fixed right-4 bottom-4 z-[90] flex items-center gap-2 sm:right-6 sm:bottom-6"
       >
-        <span
-          className="bg-gradient-brand animate-pulse-glow absolute inset-0 rounded-2xl blur-md"
-          aria-hidden="true"
-        />
-        <span className="bg-gradient-cta border-primary/40 shadow-glow-primary relative flex h-full w-full items-center justify-center rounded-2xl border">
-          {open ? (
-            <X className="text-primary-foreground h-6 w-6" aria-hidden="true" />
-          ) : (
-            <Bot className="text-primary-foreground h-6 w-6" aria-hidden="true" />
-          )}
-        </span>
         {!open && (
+          <span className="bg-card border-primary/40 text-foreground hidden items-center rounded-full border px-3 py-1.5 text-xs font-bold shadow-lg sm:flex">
+            Ask AI
+          </span>
+        )}
+        <span className="relative flex h-14 w-14 items-center justify-center rounded-2xl transition-transform group-hover:scale-110 group-active:scale-95">
           <span
-            className="bg-success border-background absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2"
+            className="bg-gradient-brand animate-pulse-glow absolute inset-0 rounded-2xl blur-md"
             aria-hidden="true"
           />
-        )}
+          <span className="bg-gradient-cta border-primary/40 shadow-glow-primary relative flex h-full w-full items-center justify-center rounded-2xl border">
+            {open ? (
+              <X className="text-primary-foreground h-6 w-6" aria-hidden="true" />
+            ) : (
+              <Bot className="text-primary-foreground h-6 w-6" aria-hidden="true" />
+            )}
+          </span>
+          {!open && (
+            <span
+              className="bg-success border-background absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2"
+              aria-hidden="true"
+            />
+          )}
+        </span>
       </button>
 
       {/* Chat panel */}
       {open && (
         <div
-          className="bg-card border-border fixed right-4 bottom-24 left-4 z-[60] flex max-h-[min(75vh,620px)] flex-col overflow-hidden rounded-3xl border shadow-2xl sm:left-auto sm:w-[400px]"
+          className="bg-card border-border fixed right-4 bottom-24 left-4 z-[85] flex max-h-[min(75vh,620px)] flex-col overflow-hidden rounded-3xl border shadow-2xl sm:left-auto sm:w-[400px]"
           role="dialog"
           aria-label="NDH Scholar AI assistant"
         >
