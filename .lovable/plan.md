@@ -1,32 +1,58 @@
-# Najeeb Academy — Pre-Publish Checklist
+# Najeeb Academy — Full Audit & Fix Plan
 
-Current state: security scan is clean, the site is not yet published, and visibility is set to public. The blank-screen fix from the last session is built and green in the preview but has not been published yet.
+Everything found while reviewing the whole app, grouped by severity, with the fix for each.
 
-## 1. Verify the blank-screen fix end to end
-- Open the preview and click through: home → course catalog → a course page → a lesson page (`/learn/...`) → login/signup.
-- Confirm no blank screen and no console errors. This is the bug that took the site down last time, so it gets checked first.
+## Critical — must fix before publishing
 
-## 2. Add the missing sitemap
-- `public/robots.txt` already points to `https://academy.ndh.com.ng/sitemap.xml`, but no sitemap exists — search engines would hit a dead link.
-- Add a `sitemap.xml` route that lists the home page, courses, pricing, about, FAQ, contact, and all 60 course pages.
+### 1. Student data will not survive on the published site
+The app has two storage backends: a real database (used only when Lovable Cloud is connected) and a fallback "local" one that keeps all users, enrollments, progress, and certificates in a temporary in-memory file. Lovable Cloud is **not connected** to this project, so the published site would run on the temporary backend — every signup, enrollment, and certificate would disappear when the server restarts.
+**Fix:** Enable Lovable Cloud, then run the existing database migrations and seed (they already exist) so the published app uses real, permanent storage.
 
-## 3. Page titles and descriptions
-- Home, courses, and pricing already have proper titles and descriptions. Verify the remaining pages (about, FAQ, contact, login, signup, course detail pages) each have their own, so shared links and search results look right.
+### 2. Admin email and password are written in the code
+`admin@ndh.com.ng` / a literal password are hardcoded in `src/server/local-backend.ts`. Anyone who sees the code (or the synced repo) has full admin access.
+**Fix:** Remove the hardcoded credentials. With Lovable Cloud enabled, the admin is a real account you create, and admin rights are granted through the database — nothing secret in the code.
 
-## 4. Content and branding pass
-- Confirm the favicon and logo are the academy branding, not template defaults.
-- Spot-check a few course pages for placeholder text, broken cover images, and correct prices in Naira.
+### 3. Admin role is stored on the profile row
+The database backend reads `role` from the user's profile record. Storing roles on the profile table is a known privilege-escalation risk.
+**Fix:** Move roles to a dedicated `user_roles` table with a server-side `has_role` check (the standard secure pattern), and update the admin check to use it.
 
-## 5. Test the real user flow
-- Sign up with a test account, enroll in a course, open a lesson, and confirm progress saves.
-- Test the certificate/verification page (`/verify/...`) with a real code.
-- Check the admin page loads for the admin account only.
+### 4. Courses have prices, but there is no payment
+Every course shows a price (e.g. ₦50,000) and the pricing page promises "Secure NGN payments" — but enrolling is instant and free. As-is, anyone can take every paid course without paying.
+**Fix (your choice):**
+- **Option A:** Add real payments (Paystack is the natural fit for NGN) so enrollment unlocks after payment.
+- **Option B:** Launch free for now — remove prices and payment promises from the pricing page, course cards, and signup copy, and add payments later.
 
-## 6. Publish
-- Publish the site (this also ships the blank-screen fix).
-- After publishing, connect the custom domain **academy.ndh.com.ng** in Project Settings → Domains, and confirm the live URL loads.
+## Bugs to fix
 
-## Technical details
-- Sitemap: new server route `src/routes/sitemap[.]xml.tsx` returning XML built from the course catalog in `src/data/courses.ts`.
-- Head metadata: per-route `head()` via the existing `seo()` helper in `src/lib/academy.ts`.
-- No design changes, no new features — this is polish and verification only.
+### 5. Lesson page hydration error
+The course player (`/learn/...`) renders one thing on the server and another in the browser, producing a React hydration mismatch error (visible in the error logs). It can cause flickering or a broken first paint.
+**Fix:** Switch the page's data loading to the suspense-based pattern so server and browser render identically. Same pattern check on the dashboard page.
+
+### 6. Missing sitemap
+`robots.txt` points search engines to `sitemap.xml`, which doesn't exist yet.
+**Fix:** Add the sitemap once the custom domain is connected (it needs the real public address). Tracked, not forgotten.
+
+## Polish & suggestions
+
+### 7. Verify remaining page titles
+Home, courses, and pricing have proper browser titles and share descriptions; confirm about, FAQ, contact, login, signup, and each course page do too.
+
+### 8. End-to-end test after the fixes
+Sign up a test student → enroll → watch a lesson → submit the capstone → pass the assessment → view and verify the certificate → check the admin panel. This is the full journey a real student takes.
+
+### 9. Publish, then connect the domain
+Publish the fixed app, then connect **academy.ndh.com.ng** in Project Settings → Domains. The sitemap (item 6) follows once the domain is live.
+
+## What is already good (no action needed)
+- Security scan: clean, no findings.
+- The blank-screen crash from before: fixed and verified in the preview.
+- Course content: all 60 courses, lessons, assessments, and cover images are in place.
+- Admin panel, reviews/testimonials moderation, contact messages, certificate verification pages: built and wired.
+
+## Suggested order
+1. Enable Lovable Cloud + migrate/seed (fixes 1, and enables 2 and 3)
+2. Remove hardcoded admin credentials; secure role storage (2, 3)
+3. Decide payments: real Paystack checkout, or launch free (4)
+4. Fix the lesson-page hydration bug (5)
+5. Titles check + full student-journey test (7, 8)
+6. Publish, connect academy.ndh.com.ng, add sitemap (6, 9)
