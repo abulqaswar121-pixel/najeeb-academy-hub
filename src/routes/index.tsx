@@ -1,24 +1,372 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { Link, createFileRoute } from "@tanstack/react-router";
+import {
+  ArrowRight,
+  Award,
+  BadgeCheck,
+  BookOpen,
+  Briefcase,
+  ExternalLink,
+  FileCheck,
+  GraduationCap,
+  Hammer,
+  Quote,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
+import { CategoryIcon } from "../components/academy/CategoryIcon";
+import { CourseCard } from "../components/academy/CourseCard";
+import { SectionHeading } from "../components/academy/SectionHeading";
+import { Button } from "../components/ui/button";
+import { categories } from "../data/categories";
+import { AGENCY_URL, seo } from "../lib/academy";
+import { fetchCourses, fetchTestimonials } from "../lib/server-fns";
+
+const coursesQuery = { queryKey: ["courses"], queryFn: () => fetchCourses() };
+const testimonialsQuery = { queryKey: ["testimonials"], queryFn: () => fetchTestimonials() };
+
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () =>
+    seo({
+      title: "Learn a practical AI skill, then prove it",
+      description:
+        "60+ short, project-based AI courses in prompt engineering, content, automation, no-code apps and more — each ending with an assessment, a project and a signed, verifiable certificate.",
+      path: "/",
+    }),
+  loader: async ({ context }) => {
+    await Promise.all([
+      context.queryClient.ensureQueryData(coursesQuery),
+      context.queryClient.ensureQueryData(testimonialsQuery),
+    ]);
+  },
+  component: HomePage,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+const steps = [
+  {
+    icon: BookOpen,
+    title: "Learn",
+    text: "Short, focused lessons built around real tools — no academic padding, every lesson ends in a working exercise.",
+  },
+  {
+    icon: FileCheck,
+    title: "Assess",
+    text: "Pass a final assessment that tests practical judgement, not trivia. 70% is the bar — retake it when you're ready.",
+  },
+  {
+    icon: Hammer,
+    title: "Build",
+    text: "Ship a capstone project you can actually show employers and clients. Your portfolio grows with every course.",
+  },
+  {
+    icon: Award,
+    title: "Certify",
+    text: "Earn a signed Najeeb Academy certificate with a unique code anyone can verify online in seconds.",
+  },
+];
+
+function HomePage() {
+  const { data: courses = [] } = useQuery(coursesQuery);
+  const { data: testimonials = [] } = useQuery(testimonialsQuery);
+  const featured = courses.filter((c) => c.isFeatured).slice(0, 6);
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div>
+      {/* ───────── Hero ───────── */}
+      <section className="from-surface via-background to-background relative overflow-hidden bg-gradient-to-b pt-16 pb-20">
+        <div className="bg-grid-pattern absolute inset-0 opacity-60" aria-hidden="true" />
+        <div
+          className="hero-glow top-0 left-1/2 h-[350px] w-[700px] -translate-x-1/2"
+          aria-hidden="true"
+        />
+        <div className="relative z-10 mx-auto max-w-7xl space-y-12 px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-4xl space-y-6 text-center">
+            <div className="bg-brand-subtle border-primary/30 text-brand-soft animate-rise-in inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold shadow-lg backdrop-blur-md">
+              <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+              The AI skills academy of Najeeb Digital Hub
+            </div>
+            <h1 className="text-foreground text-4xl leading-[1.08] font-black tracking-tight sm:text-6xl lg:text-7xl">
+              Learn a practical AI skill,{" "}
+              <span className="text-gradient-brand">then prove it.</span>
+            </h1>
+            <p className="text-muted-foreground mx-auto max-w-3xl text-base leading-relaxed sm:text-xl">
+              Short, self-paced courses across {categories.length} AI tracks. Every course ends with
+              a final assessment, a real portfolio project and a signed certificate anyone can
+              verify.
+            </p>
+            <div className="flex flex-col items-center justify-center gap-4 pt-2 sm:flex-row">
+              <Button
+                asChild
+                size="lg"
+                className="bg-gradient-cta shadow-glow-primary w-full rounded-2xl px-8 font-extrabold transition-transform hover:scale-105 sm:w-auto"
+              >
+                <Link to="/courses">
+                  Browse all {courses.length || 60} courses
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="w-full rounded-2xl px-8 font-bold sm:w-auto"
+              >
+                <Link to="/about">How the academy works</Link>
+              </Button>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-2 gap-4 pt-4 md:grid-cols-4">
+            {[
+              {
+                value: `${courses.length || 60}+`,
+                label: "AI courses",
+                sub: `Across ${categories.length} skill tracks`,
+              },
+              { value: "100%", label: "Project-based", sub: "Every course ends in a build" },
+              { value: "₦ NGN", label: "Local pricing", sub: "One-time fee, lifetime access" },
+              { value: "24/7", label: "Self-paced", sub: "Learn on your own schedule" },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className="bg-card/90 border-border rounded-2xl border p-5 shadow-xl"
+              >
+                <div className="text-brand-soft font-mono text-2xl font-black sm:text-3xl">
+                  {stat.value}
+                </div>
+                <div className="text-foreground mt-1 text-xs font-bold">{stat.label}</div>
+                <div className="text-muted-foreground mt-0.5 text-[11px]">{stat.sub}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ───────── Topic marquee ───────── */}
+      <div className="bg-surface border-border/60 overflow-hidden border-y py-3 text-xs">
+        <div className="animate-marquee text-muted-foreground flex items-center gap-10 font-mono text-[11px] whitespace-nowrap">
+          {[...categories, ...categories].map((cat, i) => (
+            <span key={`${cat.slug}-${i}`} className="flex items-center gap-2">
+              <CategoryIcon name={cat.icon} className="text-brand-soft h-3.5 w-3.5" />
+              <span className="text-foreground/80 font-bold tracking-wider uppercase">
+                {cat.name}
+              </span>
+              <span className="text-muted-foreground/50">•</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* ───────── Featured courses ───────── */}
+      <section className="mx-auto max-w-7xl space-y-10 px-4 py-20 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow="Featured courses"
+          title={
+            <>
+              Start with a <span className="text-gradient-brand">proven favourite</span>
+            </>
+          }
+          description="The courses our students finish fastest and recommend the most — each one short, practical and certificate-backed."
+        />
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {featured.map((course, i) => (
+            <CourseCard key={course.id} course={course} priority={i < 3} />
+          ))}
+        </div>
+        <div className="text-center">
+          <Button asChild variant="outline" size="lg" className="rounded-2xl px-8 font-bold">
+            <Link to="/courses">
+              View the full catalog <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </Button>
+        </div>
+      </section>
+
+      {/* ───────── Category showcase ───────── */}
+      <section className="bg-surface/60 border-border/60 border-y py-20">
+        <div className="mx-auto max-w-7xl space-y-10 px-4 sm:px-6 lg:px-8">
+          <SectionHeading
+            eyebrow={`${categories.length} skill tracks`}
+            title="Pick your track"
+            description="From prompt engineering to AI agents — practical skills employers and clients pay for right now."
+          />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {categories.map((cat) => {
+              const count = courses.filter((c) => c.category === cat.slug).length;
+              return (
+                <Link
+                  key={cat.slug}
+                  to="/courses"
+                  search={{ category: cat.slug }}
+                  className="group bg-card border-border hover:border-primary/50 flex items-start gap-4 rounded-2xl border p-5 shadow-lg transition-all duration-300 hover:-translate-y-0.5"
+                >
+                  <div className="bg-brand-subtle border-primary/30 text-brand-soft flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-transform group-hover:scale-110">
+                    <CategoryIcon name={cat.icon} className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-foreground group-hover:text-brand-soft truncate text-sm font-bold transition-colors">
+                        {cat.name}
+                      </h3>
+                    </div>
+                    <p className="text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed">
+                      {cat.blurb}
+                    </p>
+                    <span className="text-brand-soft mt-2 inline-block font-mono text-[10px] font-bold tracking-wider uppercase">
+                      {count} course{count === 1 ? "" : "s"} →
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ───────── How it works ───────── */}
+      <section className="mx-auto max-w-7xl space-y-10 px-4 py-20 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow="The method"
+          title={
+            <>
+              Learn → Assess → Build → <span className="text-gradient-brand">Certify</span>
+            </>
+          }
+          description="Watching videos doesn't change your career. Shipping proof does. Every Najeeb Academy course follows the same four-step arc."
+        />
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {steps.map((step, i) => (
+            <div
+              key={step.title}
+              className="bg-card border-border relative rounded-2xl border p-6 shadow-xl"
+            >
+              <div className="text-muted-foreground/40 absolute top-4 right-5 font-mono text-3xl font-black">
+                0{i + 1}
+              </div>
+              <div className="bg-brand-subtle border-primary/30 text-brand-soft flex h-11 w-11 items-center justify-center rounded-xl border">
+                <step.icon className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <h3 className="text-foreground mt-4 text-base font-bold">{step.title}</h3>
+              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{step.text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ───────── Testimonials ───────── */}
+      <section className="bg-surface/60 border-border/60 border-y py-20">
+        <div className="mx-auto max-w-7xl space-y-10 px-4 sm:px-6 lg:px-8">
+          <SectionHeading
+            eyebrow="Student stories"
+            title="Real people, real proof"
+            description="Graduates who took a course, shipped the project and put the certificate to work."
+          />
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {testimonials.slice(0, 4).map((t) => (
+              <figure
+                key={t.id}
+                className="bg-card border-border flex flex-col rounded-2xl border p-6 shadow-xl"
+              >
+                <Quote className="text-brand-soft h-5 w-5" aria-hidden="true" />
+                <blockquote className="text-muted-foreground mt-3 flex-1 text-sm leading-relaxed">
+                  "{t.quote}"
+                </blockquote>
+                <figcaption className="border-border/60 mt-4 border-t pt-4">
+                  <div className="text-foreground text-sm font-bold">{t.name}</div>
+                  <div className="text-muted-foreground text-xs">{t.role}</div>
+                  {t.courseTitle && (
+                    <div className="text-brand-soft mt-1 font-mono text-[10px] tracking-wide uppercase">
+                      {t.courseTitle}
+                    </div>
+                  )}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ───────── Built by NDH ───────── */}
+      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <div className="bg-brand-subtle/40 border-border relative overflow-hidden rounded-3xl border p-8 shadow-2xl sm:p-12">
+          <div className="hero-glow -top-20 -right-20 h-[300px] w-[400px]" aria-hidden="true" />
+          <div className="relative z-10 grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
+            <div className="space-y-5">
+              <div className="bg-background/60 border-border text-muted-foreground inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold">
+                <ShieldCheck className="text-success h-3.5 w-3.5" aria-hidden="true" />
+                Built by Najeeb Digital Hub
+              </div>
+              <h2 className="text-foreground text-3xl font-black tracking-tight sm:text-4xl">
+                The academy arm of a{" "}
+                <span className="text-gradient-brand">working digital agency</span>
+              </h2>
+              <p className="text-muted-foreground text-base leading-relaxed">
+                Najeeb Academy isn't taught from theory. Our curriculum comes straight from NDH
+                Agency — the team that designs, builds and ships digital products, brands and growth
+                systems for real clients. You learn the exact workflows we bill for.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <div className="text-muted-foreground flex items-center gap-2 text-xs">
+                  <BadgeCheck className="text-success h-4 w-4" aria-hidden="true" /> Agency-tested
+                  workflows
+                </div>
+                <div className="text-muted-foreground flex items-center gap-2 text-xs">
+                  <GraduationCap className="text-brand-soft h-4 w-4" aria-hidden="true" /> Taught by
+                  practitioners
+                </div>
+              </div>
+            </div>
+            <a
+              href={AGENCY_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="group bg-card border-border hover:border-primary/50 hover:shadow-glow-primary block rounded-2xl border p-8 shadow-xl transition-all duration-300 hover:-translate-y-1"
+            >
+              <div className="bg-primary/15 border-primary/40 text-primary flex h-14 w-14 items-center justify-center rounded-2xl border shadow-inner">
+                <Briefcase className="h-7 w-7" aria-hidden="true" />
+              </div>
+              <h3 className="text-foreground group-hover:text-brand-soft mt-5 text-xl font-bold transition-colors">
+                NDH Agency
+              </h3>
+              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                Need a team to build it for you instead? NDH Agency delivers premium software, brand
+                systems and growth experiences with dedicated project leadership.
+              </p>
+              <span className="text-brand-soft mt-5 inline-flex items-center gap-2 text-sm font-bold">
+                Visit agency.ndh.com.ng
+                <ExternalLink
+                  className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                  aria-hidden="true"
+                />
+              </span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ───────── Final CTA ───────── */}
+      <section className="border-border/60 border-t py-20">
+        <div className="mx-auto max-w-3xl space-y-6 px-4 text-center sm:px-6">
+          <h2 className="text-foreground text-3xl font-black tracking-tight sm:text-5xl">
+            Your next skill is <span className="text-gradient-brand">one course away</span>
+          </h2>
+          <p className="text-muted-foreground text-base leading-relaxed sm:text-lg">
+            Browse the full catalog free. Enroll when you're ready. Certificate when you've earned
+            it.
+          </p>
+          <Button
+            asChild
+            size="lg"
+            className="bg-gradient-cta shadow-glow-primary rounded-2xl px-10 font-extrabold transition-transform hover:scale-105"
+          >
+            <Link to="/courses">
+              Explore the catalog <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </Button>
+        </div>
+      </section>
     </div>
   );
 }
