@@ -8,7 +8,13 @@ import { deleteCookie, getCookie, setCookie } from "@tanstack/react-start/server
 import { assessments, PASS_MARK } from "../data/assessments";
 import { localBackend } from "./local-backend";
 import { getSupabaseConfig, setRequestAccessToken, supabaseBackend } from "./supabase-backend";
-import type { DataBackend, UserRecord } from "./types";
+import type {
+  CourseEditInput,
+  DataBackend,
+  ProjectStatus,
+  TestimonialStatus,
+  UserRecord,
+} from "./types";
 
 const SESSION_COOKIE = "ndh_academy_session";
 const COOKIE_OPTIONS = {
@@ -41,6 +47,12 @@ async function requireUser(): Promise<UserRecord> {
   return user;
 }
 
+async function requireAdmin(): Promise<UserRecord> {
+  const user = await requireUser();
+  if (user.role !== "admin") throw new Error("Admin access required.");
+  return user;
+}
+
 // ─────────────────────────── Public catalog ───────────────────────────
 
 export async function listCourses() {
@@ -50,11 +62,14 @@ export async function listCourses() {
 export async function getCourseDetail(slug: string) {
   const result = await backend().getCourseBySlug(slug);
   if (!result) return null;
-  const all = await backend().listCourses();
+  const [all, ratings] = await Promise.all([
+    backend().listCourses(),
+    backend().getCourseRatings(result.course.id),
+  ]);
   const related = all
     .filter((c) => c.category === result.course.category && c.id !== result.course.id)
     .slice(0, 3);
-  return { ...result, related };
+  return { ...result, related, ratings };
 }
 
 export async function listTestimonials() {
@@ -108,11 +123,13 @@ export async function enroll(courseId: string) {
 export async function getDashboard() {
   const user = await currentUser();
   if (!user) return null;
-  const [enrollments, certificates] = await Promise.all([
+  const [enrollments, certificates, projects, reviews] = await Promise.all([
     backend().listEnrollments(user.id),
     backend().listCertificates(user.id),
+    backend().listMyProjects(user.id),
+    backend().listMyReviews(user.id),
   ]);
-  return { user, enrollments, certificates };
+  return { user, enrollments, certificates, projects, reviews };
 }
 
 export async function getLearn(slug: string) {
@@ -128,9 +145,38 @@ export async function getLearn(slug: string) {
   return { status: "ok" as const, user, ...state, assessment: questions };
 }
 
+export async function saveVideoProgress(input: {
+  lessonId: string;
+  watchedSeconds: number;
+  playerDuration: number;
+  ended: boolean;
+}) {
+  const user = await requireUser();
+  return backend().saveVideoProgress(
+    user.id,
+    input.lessonId,
+    input.watchedSeconds,
+    input.playerDuration,
+    input.ended,
+  );
+}
+
 export async function completeLesson(lessonId: string) {
   const user = await requireUser();
   return backend().completeLesson(user.id, lessonId);
+}
+
+export async function submitProject(input: { courseSlug: string; link: string; notes: string }) {
+  const user = await requireUser();
+  const state = await backend().getLearnState(user.id, input.courseSlug);
+  if (!state) throw new Error("You are not enrolled in this course.");
+  if (state.completedLessonIds.length < state.lessons.length) {
+    throw new Error("Complete all lessons before submitting your capstone project.");
+  }
+  return backend().submitProject(user.id, state.course.id, {
+    link: input.link,
+    notes: input.notes,
+  });
 }
 
 export async function submitAssessment(input: { courseSlug: string; answers: number[] }) {
@@ -139,6 +185,9 @@ export async function submitAssessment(input: { courseSlug: string; answers: num
   if (!state) throw new Error("You are not enrolled in this course.");
   if (state.completedLessonIds.length < state.lessons.length) {
     throw new Error("Complete all lessons before taking the final assessment.");
+  }
+  if (!state.projectSubmission) {
+    throw new Error("Submit your capstone project before taking the final assessment.");
   }
   const bank = assessments[state.course.category] ?? [];
   if (bank.length === 0) throw new Error("No assessment is available for this course yet.");
@@ -153,4 +202,116 @@ export async function submitAssessment(input: { courseSlug: string; answers: num
   }
   const certificate = await backend().issueCertificate(user.id, state.course.id);
   return { passed: true as const, correct, total: bank.length, certificate };
+}
+
+export async function submitReview(input: {
+  courseSlug: string;
+  rating: number;
+  comment: string;
+  asTestimonial: boolean;
+  testimonialRole: string;
+}) {
+  const user = await requireUser();
+  const state = await backend().getLearnState(user.id, input.courseSlug);
+  if (!state) throw new Error("You are not enrolled in this course.");
+  const review = await backend().submitReview(user.id, state.course.id, {
+    rating: input.rating,
+    comment: input.comment,
+  });
+  let testimonialSubmitted = false;
+  if (input.asTestimonial && input.comment.trim().length > 0) {
+    await backend().submitTestimonial(user.id, {
+      name: user.name,
+      role: input.testimonialRole.trim() || "Najeeb Academy student",
+      quote: input.comment.trim(),
+      courseId: state.course.id,
+    });
+    testimonialSubmitted = true;
+  }
+  return { review, testimonialSubmitted };
+}
+
+// ────────────────────────────── Admin ──────────────────────────────
+
+export async function adminGetOverview() {
+  await requireAdmin();
+  return backend().adminOverview();
+}
+
+export async function adminGetStudents() {
+  await requireAdmin();
+  return backend().adminListStudents();
+}
+
+export async function adminDeleteStudent(userId: string) {
+  const admin = await requireAdmin();
+  if (admin.id === userId) throw new Error("You cannot delete your own account.");
+  await backend().adminDeleteStudent(userId);
+  return { ok: true };
+}
+
+export async function adminGetCourses() {
+  await requireAdmin();
+  return backend().adminListCourses();
+}
+
+export async function adminUpdateCourse(courseId: string, patch: CourseEditInput) {
+  await requireAdmin();
+  await backend().adminUpdateCourse(courseId, patch);
+  return { ok: true };
+}
+
+export async function adminSetCourseHidden(courseId: string, hidden: boolean) {
+  await requireAdmin();
+  await backend().adminSetCourseHidden(courseId, hidden);
+  return { ok: true };
+}
+
+export async function adminSetCourseDeleted(courseId: string, deleted: boolean) {
+  await requireAdmin();
+  await backend().adminSetCourseDeleted(courseId, deleted);
+  return { ok: true };
+}
+
+export async function adminGetProjects() {
+  await requireAdmin();
+  return backend().adminListProjects();
+}
+
+export async function adminReviewProject(input: {
+  submissionId: string;
+  status: Exclude<ProjectStatus, "pending">;
+  feedback: string;
+}) {
+  await requireAdmin();
+  await backend().adminReviewProject(input.submissionId, input.status, input.feedback);
+  return { ok: true };
+}
+
+export async function adminGetTestimonials() {
+  await requireAdmin();
+  return backend().adminListTestimonials();
+}
+
+export async function adminSetTestimonialStatus(testimonialId: string, status: TestimonialStatus) {
+  await requireAdmin();
+  await backend().adminSetTestimonialStatus(testimonialId, status);
+  return { ok: true };
+}
+
+export async function adminDeleteTestimonial(testimonialId: string) {
+  await requireAdmin();
+  await backend().adminDeleteTestimonial(testimonialId);
+  return { ok: true };
+}
+
+export async function adminGetMessages() {
+  await requireAdmin();
+  return backend().adminListMessages();
+}
+
+export async function adminDeleteMessage(messageId: string) {
+  await requireAdmin();
+  await backend().adminDeleteMessage(messageId);
+  return { ok: true };
 }

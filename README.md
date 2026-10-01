@@ -54,8 +54,40 @@ In production, adding a course is a plain `INSERT` into `courses` + `lessons` �
 
 `/` home · `/courses` catalog (search + category filters) · `/courses/$slug` detail ·
 `/pricing` · `/about` · `/faq` · `/contact` · `/login` · `/signup` · `/dashboard` (student) ·
-`/learn/$slug` (course player + final assessment) · `/verify` + `/verify/$code` (public
-certificate verification). Every route ships unique title/description/OG metadata.
+`/learn/$slug` (course player + capstone project + final assessment) · `/admin` (admin portal) ·
+`/verify` + `/verify/$code` (public certificate verification). Every route ships unique
+title/description/OG metadata.
+
+## Student portal
+
+The learning flow in `/learn/$slug` is fully gated:
+
+1. **Watch-locked video player** (`GatedVideoPlayer`) — youtube-nocookie embed with every
+   native control removed and an interaction shield over the iframe, so there is no
+   "Watch on YouTube", share button or right-click URL copy. On a first watch the student
+   can rewind but never seek past the furthest point actually watched (a watchdog snaps
+   playback back). A faint email watermark discourages screen-sharing.
+2. **Lesson notes unlock** only after the lesson's video window is fully watched
+   (server-enforced: locked lessons ship with empty `content`).
+3. **Sequential lessons** — lesson N+1 unlocks when lesson N is completed; completed
+   lessons stay open for revision with free seeking.
+4. **Capstone project** — unlocks after all lessons; the student submits a link + notes.
+5. **Final assessment** — unlocks after the project is submitted; passing (≥70%) issues
+   the signed certificate instantly.
+6. **Review & testimonial** — after the certificate the student rates the course (shown on
+   the course page) and can optionally submit their story as a homepage testimonial, which
+   stays `pending` until an admin publishes it.
+
+## Admin portal
+
+`/admin` (accounts with `role = 'admin'`): overview stats, student accounts (with delete),
+course management (edit title/summary/price, feature, hide/unhide, soft-delete/restore),
+capstone review (approve / request changes with feedback), testimonial moderation
+(publish/hide/delete — pending student stories included), and the contact inbox.
+
+Local backend seeds a default admin: `admin@ndh.com.ng` / `NdhAdmin#2026`.
+On Lovable Cloud promote an account with:
+`update public.profiles set role = 'admin' where email = 'you@example.com';`
 
 ## Develop
 

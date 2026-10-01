@@ -1,5 +1,13 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ExternalLink, GraduationCap, LayoutDashboard, LogOut, Menu, X } from "lucide-react";
+import {
+  ExternalLink,
+  GraduationCap,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  ShieldCheck,
+  X,
+} from "lucide-react";
 import { useState } from "react";
 
 import { useMe, useSignOut, AGENCY_URL } from "../../lib/academy";
@@ -53,6 +61,12 @@ export function SiteHeader() {
         <div className="hidden items-center gap-2 lg:flex">
           {me ? (
             <>
+              {me.role === "admin" && (
+                <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/admin" })}>
+                  <ShieldCheck className="h-4 w-4" />
+                  Admin
+                </Button>
+              )}
               <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/dashboard" })}>
                 <LayoutDashboard className="h-4 w-4" />
                 Dashboard
@@ -128,6 +142,17 @@ export function SiteHeader() {
             <div className="border-border/60 mt-2 flex flex-col gap-2 border-t pt-3">
               {me ? (
                 <>
+                  {me.role === "admin" && (
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        setMobileOpen(false);
+                        navigate({ to: "/admin" });
+                      }}
+                    >
+                      <ShieldCheck className="h-4 w-4" /> Admin portal
+                    </Button>
+                  )}
                   <Button
                     variant="secondary"
                     onClick={() => {

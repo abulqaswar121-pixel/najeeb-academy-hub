@@ -64,7 +64,7 @@ function DashboardPage() {
     );
   }
 
-  const { user, enrollments, certificates } = data;
+  const { user, enrollments, certificates, projects } = data;
   const inProgress = enrollments.filter((e) => !e.certificate);
   const completedCount = enrollments.filter((e) => e.progress === 100).length;
 
@@ -186,6 +186,73 @@ function DashboardPage() {
           </div>
         )}
       </section>
+
+      {/* Capstone projects */}
+      {projects.length > 0 && (
+        <section className="space-y-5">
+          <h2 className="text-foreground text-xl font-black tracking-tight">My projects</h2>
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            {projects.map((project) => {
+              const badge =
+                project.status === "approved"
+                  ? { label: "Approved", cls: "border-success/40 text-success" }
+                  : project.status === "changes_requested"
+                    ? { label: "Changes requested", cls: "border-destructive/40 text-destructive" }
+                    : { label: "Awaiting review", cls: "border-primary/40 text-brand-soft" };
+              return (
+                <div
+                  key={project.id}
+                  className="bg-card border-border rounded-2xl border p-5 shadow-xl"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="text-foreground text-sm font-bold">{project.courseTitle}</h3>
+                      <p className="text-muted-foreground mt-1 text-xs">
+                        Submitted {formatDate(project.submittedAt)}
+                      </p>
+                    </div>
+                    <span
+                      className={`shrink-0 rounded-full border px-3 py-1 font-mono text-[10px] font-bold tracking-wider uppercase ${badge.cls}`}
+                    >
+                      {badge.label}
+                    </span>
+                  </div>
+                  <a
+                    href={project.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-brand-soft mt-3 block truncate text-xs font-bold hover:underline"
+                  >
+                    {project.link}
+                  </a>
+                  {project.feedback && (
+                    <div className="bg-brand-subtle border-primary/30 mt-3 rounded-xl border p-3.5">
+                      <p className="text-brand-soft font-mono text-[10px] tracking-wider uppercase">
+                        Mentor feedback
+                      </p>
+                      <p className="text-foreground mt-1 text-xs leading-relaxed">
+                        {project.feedback}
+                      </p>
+                    </div>
+                  )}
+                  {project.status === "changes_requested" && (
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="outline"
+                      className="mt-3 rounded-lg text-xs font-bold"
+                    >
+                      <Link to="/learn/$slug" params={{ slug: project.courseSlug }}>
+                        Update submission
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Certificates */}
       <section className="space-y-5">

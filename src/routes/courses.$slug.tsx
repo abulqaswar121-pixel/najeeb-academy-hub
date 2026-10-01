@@ -11,6 +11,7 @@ import {
   Hammer,
   Lock,
   PlayCircle,
+  Star,
   Wrench,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -119,6 +120,13 @@ function CourseDetailPage() {
               <span className="flex items-center gap-2">
                 <Award className="text-gold h-4 w-4" aria-hidden="true" /> Signed certificate
               </span>
+              {detail.ratings.count > 0 && detail.ratings.average !== null && (
+                <span className="flex items-center gap-2">
+                  <Star className="fill-gold text-gold h-4 w-4" aria-hidden="true" />
+                  {detail.ratings.average}/5 ({detail.ratings.count} review
+                  {detail.ratings.count === 1 ? "" : "s"})
+                </span>
+              )}
             </div>
             <div className="flex flex-wrap gap-2 pt-1">
               {course.tools.map((tool) => (

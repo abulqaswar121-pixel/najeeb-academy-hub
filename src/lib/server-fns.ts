@@ -100,6 +100,143 @@ export const completeLessonFn = createServerFn({ method: "POST" })
     return (await api()).completeLesson(data.lessonId);
   });
 
+export const saveVideoProgressFn = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      lessonId: z.string().min(1),
+      watchedSeconds: z.number().min(0).max(86400),
+      playerDuration: z.number().min(0).max(86400),
+      ended: z.boolean(),
+    }),
+  )
+  .handler(async ({ data }) => {
+    return (await api()).saveVideoProgress(data);
+  });
+
+export const submitProjectFn = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      courseSlug: z.string().min(1),
+      link: z.string().url("Enter a valid link (Google Drive, GitHub, portfolio …)").max(500),
+      notes: z.string().max(3000),
+    }),
+  )
+  .handler(async ({ data }) => {
+    return (await api()).submitProject(data);
+  });
+
+export const submitReviewFn = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      courseSlug: z.string().min(1),
+      rating: z.number().int().min(1).max(5),
+      comment: z.string().max(1200),
+      asTestimonial: z.boolean(),
+      testimonialRole: z.string().max(120),
+    }),
+  )
+  .handler(async ({ data }) => {
+    return (await api()).submitReview(data);
+  });
+
+// ────────────────────────────── Admin ──────────────────────────────
+
+export const adminOverviewFn = createServerFn({ method: "GET" }).handler(async () => {
+  return (await api()).adminGetOverview();
+});
+
+export const adminStudentsFn = createServerFn({ method: "GET" }).handler(async () => {
+  return (await api()).adminGetStudents();
+});
+
+export const adminDeleteStudentFn = createServerFn({ method: "POST" })
+  .inputValidator(z.object({ userId: z.string().min(1) }))
+  .handler(async ({ data }) => {
+    return (await api()).adminDeleteStudent(data.userId);
+  });
+
+export const adminCoursesFn = createServerFn({ method: "GET" }).handler(async () => {
+  return (await api()).adminGetCourses();
+});
+
+export const adminUpdateCourseFn = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      courseId: z.string().min(1),
+      title: z.string().min(3).max(160).optional(),
+      summary: z.string().min(10).max(600).optional(),
+      priceNgn: z.number().int().min(0).max(10_000_000).optional(),
+      isFeatured: z.boolean().optional(),
+    }),
+  )
+  .handler(async ({ data }) => {
+    return (await api()).adminUpdateCourse(data.courseId, {
+      ...(data.title !== undefined ? { title: data.title } : {}),
+      ...(data.summary !== undefined ? { summary: data.summary } : {}),
+      ...(data.priceNgn !== undefined ? { priceNgn: data.priceNgn } : {}),
+      ...(data.isFeatured !== undefined ? { isFeatured: data.isFeatured } : {}),
+    });
+  });
+
+export const adminSetCourseHiddenFn = createServerFn({ method: "POST" })
+  .inputValidator(z.object({ courseId: z.string().min(1), hidden: z.boolean() }))
+  .handler(async ({ data }) => {
+    return (await api()).adminSetCourseHidden(data.courseId, data.hidden);
+  });
+
+export const adminSetCourseDeletedFn = createServerFn({ method: "POST" })
+  .inputValidator(z.object({ courseId: z.string().min(1), deleted: z.boolean() }))
+  .handler(async ({ data }) => {
+    return (await api()).adminSetCourseDeleted(data.courseId, data.deleted);
+  });
+
+export const adminProjectsFn = createServerFn({ method: "GET" }).handler(async () => {
+  return (await api()).adminGetProjects();
+});
+
+export const adminReviewProjectFn = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      submissionId: z.string().min(1),
+      status: z.enum(["approved", "changes_requested"]),
+      feedback: z.string().max(3000),
+    }),
+  )
+  .handler(async ({ data }) => {
+    return (await api()).adminReviewProject(data);
+  });
+
+export const adminTestimonialsFn = createServerFn({ method: "GET" }).handler(async () => {
+  return (await api()).adminGetTestimonials();
+});
+
+export const adminSetTestimonialStatusFn = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      testimonialId: z.string().min(1),
+      status: z.enum(["pending", "published", "hidden"]),
+    }),
+  )
+  .handler(async ({ data }) => {
+    return (await api()).adminSetTestimonialStatus(data.testimonialId, data.status);
+  });
+
+export const adminDeleteTestimonialFn = createServerFn({ method: "POST" })
+  .inputValidator(z.object({ testimonialId: z.string().min(1) }))
+  .handler(async ({ data }) => {
+    return (await api()).adminDeleteTestimonial(data.testimonialId);
+  });
+
+export const adminMessagesFn = createServerFn({ method: "GET" }).handler(async () => {
+  return (await api()).adminGetMessages();
+});
+
+export const adminDeleteMessageFn = createServerFn({ method: "POST" })
+  .inputValidator(z.object({ messageId: z.string().min(1) }))
+  .handler(async ({ data }) => {
+    return (await api()).adminDeleteMessage(data.messageId);
+  });
+
 export const submitAssessmentFn = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
