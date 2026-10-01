@@ -12,6 +12,10 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { SiteHeader } from "../components/layout/SiteHeader";
+import { SiteFooter } from "../components/layout/SiteFooter";
+import { AssistantWidget } from "../components/academy/AssistantWidget";
+import { Toaster } from "../components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -78,21 +82,33 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Najeeb Academy | Learn a practical AI skill, then prove it" },
+      {
+        name: "description",
+        content:
+          "Short, project-based AI courses — prompt engineering, AI content, automation, no-code apps and more. Finish with a real assessment, a portfolio project and a signed, verifiable certificate.",
+      },
+      { name: "author", content: "Najeeb Digital Hub" },
+      {
+        property: "og:title",
+        content: "Najeeb Academy | Learn a practical AI skill, then prove it",
+      },
+      {
+        property: "og:description",
+        content:
+          "60+ practical AI courses with final assessments, portfolio projects and signed, verifiable certificates. Part of Najeeb Digital Hub.",
+      },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "Najeeb Academy" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+      { rel: "alternate icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),
   shellComponent: RootShell,
@@ -120,8 +136,16 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <div className="bg-background text-foreground flex min-h-screen flex-col">
+        <SiteHeader />
+        <main className="flex-1">
+          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <Outlet />
+        </main>
+        <SiteFooter />
+        <AssistantWidget />
+      </div>
+      <Toaster position="bottom-right" />
     </QueryClientProvider>
   );
 }
