@@ -85,8 +85,7 @@ course management (edit title/summary/price, feature, hide/unhide, soft-delete/r
 capstone review (approve / request changes with feedback), testimonial moderation
 (publish/hide/delete — pending student stories included), and the contact inbox.
 
-Local backend seeds a default admin: `admin@ndh.com.ng` / `NdhAdmin#2026`.
-On Lovable Cloud promote an account with:
+For local development, set `ADMIN_EMAIL` and an `ADMIN_PASSWORD` of at least 12 characters before the first run; no predictable administrator credential is included in source. On Lovable Cloud promote an account with:
 `update public.profiles set role = 'admin' where email = 'you@example.com';`
 
 ## Develop

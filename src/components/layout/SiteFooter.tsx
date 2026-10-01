@@ -198,8 +198,19 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="border-border/60 text-muted-foreground flex flex-col items-center justify-between gap-3 border-t pt-6 sm:flex-row">
+        <div className="border-border/60 text-muted-foreground flex flex-col items-center justify-between gap-4 border-t pt-6 sm:flex-row">
           <p>© {new Date().getFullYear()} Najeeb Digital Hub. All rights reserved.</p>
+          <nav aria-label="Legal" className="flex flex-wrap justify-center gap-x-5 gap-y-2">
+            <Link to="/privacy" className="hover:text-foreground transition-colors">
+              Privacy
+            </Link>
+            <Link to="/terms" className="hover:text-foreground transition-colors">
+              Terms
+            </Link>
+            <Link to="/refunds" className="hover:text-foreground transition-colors">
+              Refunds
+            </Link>
+          </nav>
           <p className="font-mono text-[10px] tracking-wider uppercase">
             academy.ndh.com.ng · agency.ndh.com.ng
           </p>

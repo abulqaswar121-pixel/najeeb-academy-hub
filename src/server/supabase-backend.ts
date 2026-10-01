@@ -61,6 +61,17 @@ function anonClient(): SupabaseClient {
   });
 }
 
+function trustedClient(): SupabaseClient {
+  const cfg = getSupabaseConfig();
+  const serviceKey = process.env["SUPABASE_SERVICE_ROLE_KEY"];
+  if (!cfg || !serviceKey) {
+    throw new Error("Trusted Supabase server access is not configured.");
+  }
+  return createClient(cfg.url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
 function userClient(accessToken: string): SupabaseClient {
   const cfg = getSupabaseConfig();
   if (!cfg) throw new Error("Supabase is not configured.");
@@ -292,11 +303,11 @@ export const supabaseBackend: DataBackend = {
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!row) return null;
+    // Public course pages use the narrow catalog view. Full notes and video
+    // metadata remain protected in `lessons` until the learner is enrolled.
     const { data: lessonRows } = await client
-      .from("lessons")
-      .select(
-        "id, course_id, title, slug, video_url, video_id, video_start, video_end, video_duration, position",
-      )
+      .from("lesson_catalog")
+      .select("id, course_id, title, slug, position")
       .eq("course_id", row.id)
       .order("position");
     const lessons: LessonMeta[] = (lessonRows ?? []).map((l: any) => {
@@ -735,21 +746,26 @@ export const supabaseBackend: DataBackend = {
   },
 
   async issueCertificate(userId, courseId) {
-    const client = clientForUser();
-    const { data: existing } = await client
+    const user = clientForUser();
+    const { data: existing } = await user
       .from("certificates")
       .select("*")
       .eq("user_id", userId)
       .eq("course_id", courseId)
       .maybeSingle();
     if (existing) return mapCertificate(existing);
-    const { data, error } = await client
-      .from("certificates")
-      .insert({ user_id: userId, course_id: courseId, code: generateCertificateCode() })
-      .select()
-      .single();
+
+    // Credential creation uses the server-only service role. Learner JWTs no
+    // longer have INSERT permission on certificates.
+    const { data, error } = await trustedClient().rpc("issue_certificate_trusted", {
+      target_user: userId,
+      target_course: courseId,
+      certificate_code: generateCertificateCode(),
+    });
     if (error) throw new Error(error.message);
-    return mapCertificate(data);
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) throw new Error("Certificate could not be issued.");
+    return mapCertificate(row);
   },
 
   async getCertificate(userId, courseId) {

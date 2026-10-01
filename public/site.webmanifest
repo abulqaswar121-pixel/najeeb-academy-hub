@@ -1,0 +1,12 @@
+{
+  "name": "Najeeb Academy",
+  "short_name": "Najeeb Academy",
+  "description": "Practical, project-based AI skills courses from Najeeb Digital Hub.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080b14",
+  "theme_color": "#2563eb",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

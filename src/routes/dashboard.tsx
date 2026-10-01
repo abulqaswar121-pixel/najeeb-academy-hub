@@ -28,6 +28,7 @@ export const Route = createFileRoute("/dashboard")({
       description:
         "Your Najeeb Academy dashboard — enrolled courses, lesson progress and earned certificates.",
       path: "/dashboard",
+      noIndex: true,
     }),
   loader: async ({ context }) => {
     await context.queryClient.ensureQueryData(dashboardQuery);

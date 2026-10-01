@@ -40,22 +40,35 @@ export function useSignOut() {
   });
 }
 
-/** SEO head helper — every route gets unique title/description/og tags. */
-export function seo(opts: { title: string; description: string; path?: string }) {
+/** SEO head helper — every public route gets canonical and social metadata. */
+export function seo(opts: {
+  title: string;
+  description: string;
+  path?: string;
+  noIndex?: boolean;
+  image?: string;
+}) {
   const title = `${opts.title} | Najeeb Academy`;
   const url = `${ACADEMY_URL}${opts.path ?? ""}`;
+  const image = opts.image?.startsWith("http")
+    ? opts.image
+    : `${ACADEMY_URL}${opts.image ?? "/images/og-academy.jpg"}`;
   return {
     meta: [
       { title },
       { name: "description", content: opts.description },
+      ...(opts.noIndex ? [{ name: "robots", content: "noindex, nofollow" }] : []),
       { property: "og:title", content: title },
       { property: "og:description", content: opts.description },
       { property: "og:type", content: "website" },
       { property: "og:url", content: url },
+      { property: "og:image", content: image },
       { property: "og:site_name", content: "Najeeb Academy" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: title },
       { name: "twitter:description", content: opts.description },
+      { name: "twitter:image", content: image },
     ],
+    links: [{ rel: "canonical", href: url }],
   };
 }

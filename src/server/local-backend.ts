@@ -8,8 +8,8 @@
  * .data/academy-local.json (gitignored). In production, the Supabase backend
  * in supabase-backend.ts is used instead.
  *
- * A default admin account is seeded on first run:
- *   email: admin@ndh.com.ng · password: NdhAdmin#2026
+ * For a local admin, set ADMIN_EMAIL and ADMIN_PASSWORD before first run.
+ * No predictable administrator credential is embedded in source code.
  */
 import { randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -57,8 +57,8 @@ import {
   sameWindow,
 } from "./types";
 
-const ADMIN_EMAIL = "admin@ndh.com.ng";
-const ADMIN_PASSWORD = "NdhAdmin#2026";
+const ADMIN_EMAIL = process.env["ADMIN_EMAIL"]?.trim().toLowerCase() ?? "";
+const ADMIN_PASSWORD = process.env["ADMIN_PASSWORD"] ?? "";
 
 interface LocalUser extends UserRecord {
   passwordHash: string;
@@ -194,10 +194,14 @@ function loadState(): LocalState {
   }
   // Migrate pre-portal records.
   for (const user of state.users) {
-    if (!user.role) user.role = user.email === ADMIN_EMAIL ? "admin" : ("student" as UserRole);
+    if (!user.role) user.role = "student" as UserRole;
   }
-  // Seed the default admin account once.
-  if (!state.users.some((u) => u.role === "admin")) {
+  // Seed a local-only admin only when explicit credentials are supplied.
+  if (
+    ADMIN_EMAIL &&
+    ADMIN_PASSWORD.length >= 12 &&
+    !state.users.some((u) => u.role === "admin")
+  ) {
     const salt = randomBytes(16).toString("hex");
     state.users.push({
       id: randomUUID(),

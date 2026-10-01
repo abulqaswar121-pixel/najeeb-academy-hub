@@ -30,6 +30,7 @@ export const Route = createFileRoute("/signup")({
       description:
         "Sign up for Najeeb Academy to enroll in practical AI courses, track your progress and earn signed, verifiable certificates.",
       path: "/signup",
+      noIndex: true,
     }),
   component: SignupPage,
 });
@@ -141,6 +142,17 @@ function SignupPage() {
                 </FormItem>
               )}
             />
+            <p className="text-muted-foreground text-xs leading-relaxed">
+              By creating an account, you agree to our{" "}
+              <Link to="/terms" className="text-brand-soft underline-offset-2 hover:underline">
+                Terms
+              </Link>{" "}
+              and acknowledge our{" "}
+              <Link to="/privacy" className="text-brand-soft underline-offset-2 hover:underline">
+                Privacy Policy
+              </Link>
+              .
+            </p>
             <Button
               type="submit"
               size="lg"

@@ -59,6 +59,7 @@ export const Route = createFileRoute("/admin")({
       description:
         "Najeeb Academy admin portal — manage courses, students, project submissions, testimonials and messages.",
       path: "/admin",
+      noIndex: true,
     }),
   loader: async ({ context }) => {
     await context.queryClient.ensureQueryData(meQueryOptions);

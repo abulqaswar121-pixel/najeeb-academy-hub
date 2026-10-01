@@ -155,7 +155,7 @@ function LearnPage() {
 
   const { course, lessons, enrollment, certificate, assessment, projectSubmission } = data;
   const allLessonsDone = lessons.every((l) => completedIds.has(l.id));
-  const assessmentUnlocked = allLessonsDone && projectSubmission !== null;
+  const assessmentUnlocked = allLessonsDone && projectSubmission?.status === "approved";
   const currentLesson = view?.kind === "lesson" ? lessons[view.index] : null;
 
   return (
@@ -653,7 +653,7 @@ function ProjectPanel({
   const submit = useMutation({
     mutationFn: () => submitProjectFn({ data: { courseSlug: slug, link, notes } }),
     onSuccess: async () => {
-      toast.success("Project submitted — the final assessment is now unlocked!");
+      toast.success("Project submitted — the final assessment unlocks after mentor approval.");
       await queryClient.invalidateQueries({ queryKey: ["learn", slug] });
       await queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       setEditing(false);
@@ -681,8 +681,8 @@ function ProjectPanel({
       </p>
       <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
         Upload your work anywhere public or shareable — Google Drive, GitHub, Figma, a live URL —
-        and paste the link below. Submitting unlocks the final assessment; a mentor reviews every
-        submission and leaves feedback in your dashboard.
+        and paste the link below. A mentor reviews every submission and leaves feedback in your
+        dashboard; approval unlocks the final assessment.
       </p>
 
       {submission && !editing ? (

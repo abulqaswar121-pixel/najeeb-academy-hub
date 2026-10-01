@@ -109,6 +109,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
       { rel: "alternate icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "manifest", href: "/site.webmanifest" },
     ],
   }),
   shellComponent: RootShell,
@@ -137,8 +138,14 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <div className="bg-background text-foreground flex min-h-screen flex-col">
+        <a
+          href="#main-content"
+          className="bg-primary text-primary-foreground focus:top-3 fixed -top-20 left-3 z-[100] rounded-lg px-4 py-2 text-sm font-bold shadow-xl transition-[top]"
+        >
+          Skip to main content
+        </a>
         <SiteHeader />
-        <main className="flex-1">
+        <main id="main-content" tabIndex={-1} className="flex-1 outline-none">
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
         </main>

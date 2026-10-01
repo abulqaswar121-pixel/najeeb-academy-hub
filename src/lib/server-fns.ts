@@ -16,7 +16,7 @@ export const fetchCourses = createServerFn({ method: "GET" }).handler(async () =
 });
 
 export const fetchCourseDetail = createServerFn({ method: "GET" })
-  .inputValidator(z.object({ slug: z.string().min(1) }))
+  .validator(z.object({ slug: z.string().min(1) }))
   .handler(async ({ data }) => {
     return (await api()).getCourseDetail(data.slug);
   });
@@ -26,7 +26,7 @@ export const fetchTestimonials = createServerFn({ method: "GET" }).handler(async
 });
 
 export const submitContactForm = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     z.object({
       name: z.string().min(2, "Please enter your name").max(120),
       email: z.string().email("Please enter a valid email"),
@@ -38,7 +38,7 @@ export const submitContactForm = createServerFn({ method: "POST" })
   });
 
 export const verifyCertificateFn = createServerFn({ method: "GET" })
-  .inputValidator(z.object({ code: z.string().min(4).max(40) }))
+  .validator(z.object({ code: z.string().min(4).max(40) }))
   .handler(async ({ data }) => {
     return (await api()).verifyCertificate(data.code);
   });
@@ -46,7 +46,7 @@ export const verifyCertificateFn = createServerFn({ method: "GET" })
 // ─────────────────────────────── Auth ───────────────────────────────
 
 export const signUpFn = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     z.object({
       name: z.string().min(2, "Please enter your full name").max(120),
       email: z.string().email("Please enter a valid email"),
@@ -58,7 +58,7 @@ export const signUpFn = createServerFn({ method: "POST" })
   });
 
 export const signInFn = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     z.object({
       email: z.string().email("Please enter a valid email"),
       password: z.string().min(1, "Please enter your password"),
@@ -79,7 +79,7 @@ export const fetchMe = createServerFn({ method: "GET" }).handler(async () => {
 // ───────────────────────────── Student ─────────────────────────────
 
 export const enrollFn = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ courseId: z.string().min(1) }))
+  .validator(z.object({ courseId: z.string().min(1) }))
   .handler(async ({ data }) => {
     return (await api()).enroll(data.courseId);
   });
@@ -89,19 +89,19 @@ export const fetchDashboard = createServerFn({ method: "GET" }).handler(async ()
 });
 
 export const fetchLearn = createServerFn({ method: "GET" })
-  .inputValidator(z.object({ slug: z.string().min(1) }))
+  .validator(z.object({ slug: z.string().min(1) }))
   .handler(async ({ data }) => {
     return (await api()).getLearn(data.slug);
   });
 
 export const completeLessonFn = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ lessonId: z.string().min(1) }))
+  .validator(z.object({ lessonId: z.string().min(1) }))
   .handler(async ({ data }) => {
     return (await api()).completeLesson(data.lessonId);
   });
 
 export const saveVideoProgressFn = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     z.object({
       lessonId: z.string().min(1),
       watchedSeconds: z.number().min(0).max(86400),
@@ -114,7 +114,7 @@ export const saveVideoProgressFn = createServerFn({ method: "POST" })
   });
 
 export const submitProjectFn = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     z.object({
       courseSlug: z.string().min(1),
       link: z.string().url("Enter a valid link (Google Drive, GitHub, portfolio …)").max(500),
@@ -126,7 +126,7 @@ export const submitProjectFn = createServerFn({ method: "POST" })
   });
 
 export const submitReviewFn = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     z.object({
       courseSlug: z.string().min(1),
       rating: z.number().int().min(1).max(5),
@@ -150,7 +150,7 @@ export const adminStudentsFn = createServerFn({ method: "GET" }).handler(async (
 });
 
 export const adminDeleteStudentFn = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ userId: z.string().min(1) }))
+  .validator(z.object({ userId: z.string().min(1) }))
   .handler(async ({ data }) => {
     return (await api()).adminDeleteStudent(data.userId);
   });
@@ -160,7 +160,7 @@ export const adminCoursesFn = createServerFn({ method: "GET" }).handler(async ()
 });
 
 export const adminUpdateCourseFn = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     z.object({
       courseId: z.string().min(1),
       title: z.string().min(3).max(160).optional(),
@@ -179,13 +179,13 @@ export const adminUpdateCourseFn = createServerFn({ method: "POST" })
   });
 
 export const adminSetCourseHiddenFn = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ courseId: z.string().min(1), hidden: z.boolean() }))
+  .validator(z.object({ courseId: z.string().min(1), hidden: z.boolean() }))
   .handler(async ({ data }) => {
     return (await api()).adminSetCourseHidden(data.courseId, data.hidden);
   });
 
 export const adminSetCourseDeletedFn = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ courseId: z.string().min(1), deleted: z.boolean() }))
+  .validator(z.object({ courseId: z.string().min(1), deleted: z.boolean() }))
   .handler(async ({ data }) => {
     return (await api()).adminSetCourseDeleted(data.courseId, data.deleted);
   });
@@ -195,7 +195,7 @@ export const adminProjectsFn = createServerFn({ method: "GET" }).handler(async (
 });
 
 export const adminReviewProjectFn = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     z.object({
       submissionId: z.string().min(1),
       status: z.enum(["approved", "changes_requested"]),
@@ -211,7 +211,7 @@ export const adminTestimonialsFn = createServerFn({ method: "GET" }).handler(asy
 });
 
 export const adminSetTestimonialStatusFn = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     z.object({
       testimonialId: z.string().min(1),
       status: z.enum(["pending", "published", "hidden"]),
@@ -222,7 +222,7 @@ export const adminSetTestimonialStatusFn = createServerFn({ method: "POST" })
   });
 
 export const adminDeleteTestimonialFn = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ testimonialId: z.string().min(1) }))
+  .validator(z.object({ testimonialId: z.string().min(1) }))
   .handler(async ({ data }) => {
     return (await api()).adminDeleteTestimonial(data.testimonialId);
   });
@@ -232,13 +232,13 @@ export const adminMessagesFn = createServerFn({ method: "GET" }).handler(async (
 });
 
 export const adminDeleteMessageFn = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ messageId: z.string().min(1) }))
+  .validator(z.object({ messageId: z.string().min(1) }))
   .handler(async ({ data }) => {
     return (await api()).adminDeleteMessage(data.messageId);
   });
 
 export const submitAssessmentFn = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     z.object({
       courseSlug: z.string().min(1),
       answers: z.array(z.number().int().min(-1).max(5)),

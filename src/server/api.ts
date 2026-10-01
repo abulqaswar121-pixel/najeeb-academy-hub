@@ -195,6 +195,9 @@ export async function submitAssessment(input: { courseSlug: string; answers: num
   if (!state.projectSubmission) {
     throw new Error("Submit your capstone project before taking the final assessment.");
   }
+  if (state.projectSubmission.status !== "approved") {
+    throw new Error("Your capstone must be approved by a mentor before the final assessment unlocks.");
+  }
   const bank = assessments[state.course.category] ?? [];
   if (bank.length === 0) throw new Error("No assessment is available for this course yet.");
   if (input.answers.length !== bank.length) throw new Error("Please answer every question.");

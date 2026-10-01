@@ -30,6 +30,7 @@ export const Route = createFileRoute("/login")({
       description:
         "Log in to your Najeeb Academy account to continue your courses, track progress and access your certificates.",
       path: "/login",
+      noIndex: true,
     }),
   component: LoginPage,
 });
