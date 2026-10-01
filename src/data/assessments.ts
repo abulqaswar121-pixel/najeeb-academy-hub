@@ -1,3 +1,6 @@
+/** Minimum score to pass the final assessment and earn the certificate. */
+export const PASS_MARK = 0.7;
+
 export interface AssessmentQuestion {
   question: string;
   options: string[];
@@ -10,626 +13,323 @@ export interface AssessmentQuestion {
  * track's courses teach, not trivia.
  */
 export const assessments: Record<string, AssessmentQuestion[]> = {
-  "prompt-engineering": [
+  "video-media": [
     {
       question:
-        "A prompt keeps producing vague, generic output. What's the highest-leverage first fix?",
+        "A client needs a 30-second product video but your AI generation keeps producing inconsistent shots. The professional fix is to…",
       options: [
-        "Increase the temperature setting",
-        "Add specific context, constraints and a concrete example of the desired output",
-        "Switch to a different model immediately",
-        "Make the prompt shorter so the model focuses",
+        "Generate 100 random clips and hope some match",
+        "Lock a reference image/style frame first, then generate shots against it and grade them to match in the edit",
+        "Tell the client AI video can't do consistency",
+        "Use a different AI tool for every shot",
       ],
       answerIndex: 1,
     },
     {
-      question: "When is few-shot prompting (showing examples) most useful?",
+      question: "When repurposing a long video into short clips, what matters most for retention?",
       options: [
-        "When you need the model to follow a specific format or style it keeps getting wrong",
-        "Only when using image models",
-        "When you want faster responses",
-        "Never — examples confuse modern models",
+        "Keeping the original intro on every clip",
+        "Adding as many effects as possible",
+        "Opening each clip on a strong hook moment and cutting dead air aggressively",
+        "Making every clip exactly 60 seconds",
+      ],
+      answerIndex: 2,
+    },
+    {
+      question: "You cloned a voice with AI for a client project. Before publishing, you must…",
+      options: [
+        "Nothing — published audio is always fine",
+        "Have written consent from the voice owner and disclose AI use where the platform requires it",
+        "Only lower the pitch so nobody recognizes it",
+        "Delete the source samples",
+      ],
+      answerIndex: 1,
+    },
+    {
+      question: "AI-generated music for a commercial client should be checked first for…",
+      options: [
+        "The license terms of the generation platform and commercial-use rights",
+        "Whether it sounds like a famous song (that's a bonus)",
+        "File size only",
+        "Number of instruments",
       ],
       answerIndex: 0,
     },
     {
-      question: "You need strictly valid JSON from a model for an automation. Best practice is to…",
+      question: "The correct export discipline for client video work is…",
       options: [
-        "Ask politely and hope for the best",
-        "Specify the exact schema, request JSON-only output, and validate/retry on failure",
-        "Copy-paste the output manually each time",
-        "Use the highest temperature for creativity",
-      ],
-      answerIndex: 1,
-    },
-    {
-      question: "What does a system prompt control that a user prompt doesn't?",
-      options: [
-        "The model's training data",
-        "The persistent persona, policies and boundaries applied across the whole conversation",
-        "The server the model runs on",
-        "Nothing — they're interchangeable",
-      ],
-      answerIndex: 1,
-    },
-    {
-      question: "A chain-of-thought approach helps most when…",
-      options: [
-        "The task needs multi-step reasoning, like analysis or planning",
-        "You want shorter answers",
-        "The task is a single-word classification",
-        "You need the model to respond faster",
-      ],
-      answerIndex: 0,
-    },
-  ],
-  "ai-content-copywriting": [
-    {
-      question: "The most reliable way to make AI copy sound like your brand is to…",
-      options: [
-        "Tell it 'write in a friendly tone'",
-        "Provide a voice guide with attributes, lexicon and real do/don't examples",
-        "Always use the same model",
-        "Write everything at temperature 0",
-      ],
-      answerIndex: 1,
-    },
-    {
-      question: "In the PAS framework, what follows 'Problem' and 'Agitate'?",
-      options: ["Summary", "Solution", "Social proof", "Scarcity"],
-      answerIndex: 1,
-    },
-    {
-      question: "The 'de-robotting' editing pass primarily targets…",
-      options: [
-        "Spelling errors",
-        "Generic phrasing, uniform rhythm and lack of specific detail",
-        "Keyword density",
-        "Image placement",
-      ],
-      answerIndex: 1,
-    },
-    {
-      question: "What should you feed AI before asking it to write sales copy?",
-      options: [
-        "Nothing — it knows your market",
-        "Real customer research: reviews, objections, voice-of-customer language",
-        "Your competitor's logo",
-        "Only the product name",
-      ],
-      answerIndex: 1,
-    },
-    {
-      question: "Best practice for AI-generated headlines is to…",
-      options: [
-        "Use the first one generated",
-        "Generate many variants, then select and refine against your hook criteria",
-        "Always include the word 'revolutionary'",
-        "Keep them over 20 words for detail",
+        "One master file, whatever settings the editor defaults to",
+        "Match the delivery spec: platform aspect ratios, bitrate, captions file and a named, versioned export set",
+        "Always maximum resolution regardless of platform",
+        "Let the client transcode it themselves",
       ],
       answerIndex: 1,
     },
   ],
-  "ai-blogging-seo": [
+  "design-brand": [
     {
-      question: "Search intent matters because…",
+      question:
+        "A Midjourney logo concept looks great but the client needs it for print and signage. Your next step is…",
       options: [
-        "Google ranks pages that best satisfy what the searcher actually wants",
-        "It determines your hosting costs",
-        "Longer articles always win",
-        "It only applies to paid ads",
-      ],
-      answerIndex: 0,
-    },
-    {
-      question: "A topic cluster strategy means…",
-      options: [
-        "Writing about random trending topics",
-        "Building interlinked content around one core topic to earn topical authority",
-        "Publishing the same article on many sites",
-        "Only targeting one keyword forever",
+        "Send the PNG as-is — it's high resolution",
+        "Vectorize and rebuild it cleanly (e.g. in Illustrator), then test at multiple sizes and in one colour",
+        "Generate 50 more versions",
+        "Screenshot it at higher zoom",
       ],
       answerIndex: 1,
     },
     {
-      question: "Before publishing an AI-drafted article you should always…",
+      question: "A complete brand identity deliverable includes…",
       options: [
-        "Add more keywords to every paragraph",
-        "Fact-check claims, add first-hand insight and edit for your audience",
-        "Delete all headings",
-        "Make it at least 5,000 words",
+        "Just the logo file",
+        "Logo system, colour palette, typography, usage rules and application mockups",
+        "A single Instagram post template",
+        "Whatever the AI generated in the first pass",
       ],
       answerIndex: 1,
     },
     {
-      question: "A page's rankings decayed over 12 months. Your first diagnostic step is to…",
+      question:
+        "When AI-generated product imagery shows a warped label or extra fingers, you should…",
       options: [
-        "Delete the page",
-        "Check Search Console: queries, competitors and whether intent has shifted",
-        "Republish it unchanged with today's date",
-        "Buy backlinks",
+        "Ship it — clients rarely zoom in",
+        "Regenerate or retouch until the artefact is gone; commercial work ships artefact-free",
+        "Add a filter to hide it",
+        "Lower the resolution so it's less visible",
       ],
       answerIndex: 1,
     },
     {
-      question: "Programmatic SEO is appropriate when…",
+      question: "In UI/UX work, AI tools like Figma AI are best used to…",
       options: [
-        "You want hundreds of thin doorway pages",
-        "Structured data lets you generate genuinely useful, unique pages at scale",
-        "You can't be bothered writing articles",
-        "Your site has no data at all",
-      ],
-      answerIndex: 1,
-    },
-  ],
-  "ai-video": [
-    {
-      question: "For consistent shots across an AI-generated video sequence you should…",
-      options: [
-        "Use a fresh random prompt per shot",
-        "Reuse style keywords, seeds/references and consistent camera language across prompts",
-        "Generate everything at the lowest resolution",
-        "Avoid describing the camera at all",
+        "Replace user research entirely",
+        "Draft layouts and variants fast, which you then refine against real user needs and design-system rules",
+        "Pick the brand colours for you",
+        "Export production code with no review",
       ],
       answerIndex: 1,
     },
     {
-      question: "The single biggest driver of YouTube watch time is…",
+      question:
+        "Before presenting AI-assisted design work to a client, the professional checklist includes…",
       options: [
-        "Video resolution",
-        "A script and edit engineered for retention from the first seconds",
-        "Upload frequency alone",
-        "Using trending hashtags",
-      ],
-      answerIndex: 1,
-    },
-    {
-      question: "Text-based editing in Descript lets you…",
-      options: [
-        "Cut video by deleting words in the transcript",
-        "Change the actor's face",
-        "Increase the frame rate",
-        "Rank higher on YouTube automatically",
-      ],
-      answerIndex: 0,
-    },
-    {
-      question: "AI avatar presenters work best for…",
-      options: [
-        "Emotional brand films",
-        "Scalable explainers, training and multilingual versions of talking-head content",
-        "Live event coverage",
-        "Replacing all human presenters everywhere",
-      ],
-      answerIndex: 1,
-    },
-    {
-      question: "Short-form video thrives on…",
-      options: [
-        "A strong hook in the first two seconds and tight pacing throughout",
-        "Long intros that build context",
-        "Horizontal 16:9 framing",
-        "Minimal captions",
+        "Checking licensing/usage rights of generated assets and doing a human quality pass",
+        "Removing all mention of the brief",
+        "Compressing everything to one JPEG",
+        "Nothing — speed is the only deliverable",
       ],
       answerIndex: 0,
     },
   ],
-  "ai-design": [
+  "writing-content": [
     {
-      question: "To keep a character consistent across Midjourney images you'd use…",
+      question: "An AI draft reads fluent but generic. The highest-leverage edit is to…",
       options: [
-        "A different art style each time",
-        "Character/style references and a repeatable prompt recipe",
-        "Only black-and-white generations",
-        "Random seeds on purpose",
+        "Run it through another AI model",
+        "Inject specifics only you know: audience pain points, concrete examples, numbers and your brand voice",
+        "Make it longer",
+        "Add more adjectives",
       ],
       answerIndex: 1,
     },
     {
-      question: "Ideogram is particularly strong at…",
+      question: "For SEO content written with AI, ranking durably requires…",
       options: [
-        "3D rendering",
-        "Legible text and lettering inside images",
-        "Video generation",
-        "Audio mixing",
+        "Publishing as many AI articles per day as possible",
+        "Search-intent match, original insight/experience, and clean on-page structure — then human fact-checking",
+        "Stuffing the exact keyword 50 times",
+        "Copying the #1 result with synonyms",
       ],
       answerIndex: 1,
     },
     {
-      question: "Before delivering an AI-generated logo to a client you should…",
+      question: "Sales copy's single most important element is…",
       options: [
-        "Send the raw generation untouched",
-        "Vectorise and refine it, and verify the licence permits commercial use",
-        "Add a watermark",
-        "Lower the resolution",
+        "Clever wordplay",
+        "A clear, specific promise to the right audience, backed by proof",
+        "Length — longer always converts better",
+        "Emojis",
       ],
       answerIndex: 1,
     },
     {
-      question: "A template system in Canva exists so that…",
+      question:
+        "When using AI for client ghostwriting (e.g. LinkedIn), you protect the client's voice by…",
       options: [
-        "Every post is designed from scratch",
-        "On-brand graphics can be produced quickly and consistently by anyone on the team",
-        "Only designers can make posts",
-        "Posts look different every day",
+        "Letting the model freestyle from a topic",
+        "Training your prompts on their past posts, phrases and stories, then editing drafts against that voice guide",
+        "Using the same template for every client",
+        "Posting drafts without review",
       ],
       answerIndex: 1,
     },
     {
-      question: "For print deliverables, AI-generated art must be…",
+      question: "AI-written factual claims (stats, quotes, dates) must be…",
       options: [
-        "Exported at high resolution/DPI in the right colour profile",
-        "Kept at 72dpi screen resolution",
-        "Saved as a GIF",
-        "Compressed as much as possible",
-      ],
-      answerIndex: 0,
-    },
-  ],
-  "ai-automation-agents": [
-    {
-      question: "The difference between an automation and an agent is…",
-      options: [
-        "Agents are always more expensive",
-        "Automations follow fixed steps; agents plan and choose tools to reach a goal",
-        "Automations require coding",
-        "There is no difference",
-      ],
-      answerIndex: 1,
-    },
-    {
-      question: "A webhook is…",
-      options: [
-        "A type of password",
-        "A URL that receives data to trigger or continue a workflow",
-        "A spreadsheet formula",
-        "An AI model",
-      ],
-      answerIndex: 1,
-    },
-    {
-      question: "Human-in-the-loop design means…",
-      options: [
-        "Humans approve or review critical agent actions before they execute",
-        "A person retypes everything the AI writes",
-        "Removing all automation",
-        "Hiring more staff",
-      ],
-      answerIndex: 0,
-    },
-    {
-      question: "Function calling lets a model…",
-      options: [
-        "Make phone calls",
-        "Return structured requests that trigger your tools and code",
-        "Train itself on new data",
-        "Bypass API rate limits",
-      ],
-      answerIndex: 1,
-    },
-    {
-      question: "Before deploying an automation that sends messages to customers, you should…",
-      options: [
-        "Test with real customers immediately",
-        "Run it on test data, add error handling and set up monitoring/alerts",
-        "Disable all logs for privacy",
-        "Remove the off switch",
+        "Trusted — modern models don't hallucinate",
+        "Verified against a primary source before publishing",
+        "Deleted entirely",
+        "Marked in italics",
       ],
       answerIndex: 1,
     },
   ],
-  "no-code-ai-apps": [
+  "marketing-growth": [
     {
-      question: "The right scope for a no-code MVP is…",
+      question:
+        "Your AI-generated ad creatives got cheap clicks but no sales. The first thing to examine is…",
       options: [
-        "Every feature you can imagine",
-        "The one core loop that proves the product's value",
-        "A clone of a mature SaaS",
-        "No features until the design is perfect",
+        "The font on the ad",
+        "Message-to-offer match and the landing page — clicks without conversion usually mean a promise mismatch",
+        "Posting time",
+        "Adding more hashtags",
       ],
       answerIndex: 1,
     },
     {
-      question: "In Bubble, privacy rules exist to…",
+      question: "A sound creative-testing system looks like…",
       options: [
-        "Control which users can see which data",
-        "Make the app load faster",
-        "Change the colour scheme",
-        "Translate the app",
+        "Changing five variables at once so you learn faster",
+        "Structured variants (hook, visual, offer), enough spend per variant to read results, kill losers, scale winners",
+        "Running one ad until it dies",
+        "Copying competitors exactly",
+      ],
+      answerIndex: 1,
+    },
+    {
+      question: "For local SEO, the highest-impact foundation is…",
+      options: [
+        "A complete, active Google Business Profile with reviews, categories, photos and consistent NAP data",
+        "Buying backlinks in bulk",
+        "A hashtag strategy",
+        "Daily blog posts about anything",
       ],
       answerIndex: 0,
     },
     {
-      question: "To call OpenAI from a no-code tool you typically need…",
+      question: "AI personalization in cold outreach works when…",
       options: [
-        "A printed contract",
-        "An API key sent securely in the request headers",
-        "OpenAI's source code",
-        "A custom GPU server",
+        "Every email starts with 'I love your website'",
+        "The AI references real, specific context about the prospect and leads with their problem, not your pitch",
+        "You blast the same message to 10,000 people",
+        "Subject lines are in all caps",
       ],
       answerIndex: 1,
     },
     {
-      question: "Usage limits in an AI SaaS protect you from…",
+      question: "A funnel is underperforming. The professional diagnostic order is…",
       options: [
-        "Having too many customers",
-        "Runaway API costs from heavy or abusive usage",
-        "Search engines",
-        "App store review",
-      ],
-      answerIndex: 1,
-    },
-    {
-      question: "A custom-knowledge chatbot answers from…",
-      options: [
-        "Only its base model training",
-        "The documents and content you train/ground it on",
-        "Random web pages at answer time",
-        "Your competitors' websites",
+        "Rebuild everything from scratch immediately",
+        "Measure each stage's conversion, find the biggest drop-off, fix that stage first, then re-measure",
+        "Double the ad budget",
+        "Change the brand colours",
       ],
       answerIndex: 1,
     },
   ],
-  "ai-marketing-ads": [
+  "business-operations": [
     {
-      question: "Creative testing on Meta works best when you…",
+      question: "Before automating a business process with AI, you should first…",
       options: [
-        "Change everything at once",
-        "Test distinct angles/hooks systematically and scale the winners",
-        "Run one ad forever",
-        "Copy a competitor's ad exactly",
+        "Automate it immediately — speed wins",
+        "Map the current process, standardize it, then automate the stable, repetitive parts",
+        "Fire the person doing it",
+        "Buy every AI tool available",
       ],
       answerIndex: 1,
     },
     {
-      question: "Performance Max performs best when you feed it…",
+      question: "AI meeting notes and transcriptions in a company must be handled with…",
       options: [
-        "One image and no text",
-        "Strong, varied creative assets and accurate conversion signals",
-        "Only brand keywords",
-        "Nothing — it's fully automatic",
+        "No special care",
+        "Consent where required, access controls, and review before sharing — they often contain sensitive data",
+        "Public links so everyone can find them",
+        "Automatic posting to social media",
       ],
       answerIndex: 1,
     },
     {
-      question: "The metric that ultimately decides if ads are 'working' is…",
+      question: "When AI drafts a legal document (contract, NDA), the non-negotiable step is…",
       options: [
-        "Impressions",
-        "Return relative to spend (ROAS/CPA against your unit economics)",
-        "Number of ad variations",
-        "Clicks alone",
+        "Send it unsigned and unread",
+        "Human review — ideally qualified — of parties, terms, jurisdiction and liabilities before any use",
+        "Changing the font to look official",
+        "Adding more pages",
       ],
       answerIndex: 1,
     },
     {
-      question: "UGC-style ads outperform polished ads mostly because…",
+      question: "A financial model built with AI + Excel is trustworthy when…",
       options: [
-        "They cost more to make",
-        "They read as native, trusted content rather than advertising",
-        "Platforms boost them artificially",
-        "They're always longer",
+        "The spreadsheet looks professional",
+        "Assumptions are explicit and sourced, formulas are auditable, and outputs are sanity-checked against reality",
+        "It predicts exactly what the boss wants",
+        "It has many tabs",
       ],
       answerIndex: 1,
     },
     {
-      question: "Before scaling a winning ad set you should…",
+      question: "The right way to deploy an AI support chatbot for a business is…",
       options: [
-        "Delete all other campaigns",
-        "Confirm the result is statistically meaningful and your funnel can absorb the volume",
-        "Double the budget hourly",
-        "Change the creative completely",
-      ],
-      answerIndex: 1,
-    },
-  ],
-  "ai-business-operations": [
-    {
-      question: "The first step to automating your workweek is…",
-      options: [
-        "Buying every AI tool",
-        "Auditing where your time actually goes and finding repetitive patterns",
-        "Deleting your calendar",
-        "Hiring an assistant",
-      ],
-      answerIndex: 1,
-    },
-    {
-      question: "AI meeting assistants are most valuable when they…",
-      options: [
-        "Replace attending meetings entirely",
-        "Produce summaries and action items that feed your task system",
-        "Record without consent",
-        "Transcribe but never summarise",
-      ],
-      answerIndex: 1,
-    },
-    {
-      question: "When using AI for CV screening, you must…",
-      options: [
-        "Let it auto-reject without review",
-        "Use structured rubrics, monitor for bias and keep humans in the decision",
-        "Only screen by university name",
-        "Hide the criteria from candidates",
-      ],
-      answerIndex: 1,
-    },
-    {
-      question: "A good SOP includes…",
-      options: [
-        "Steps, owner, tools and how to handle exceptions",
-        "Only a video with no text",
-        "Just the job title",
-        "Legal disclaimers only",
-      ],
-      answerIndex: 0,
-    },
-    {
-      question: "AI-drafted financial commentary should always be…",
-      options: [
-        "Sent straight to the board",
-        "Verified against the underlying numbers before sharing",
-        "Rounded to the nearest million",
-        "Written at high temperature",
+        "Let it answer everything with no guardrails",
+        "Ground it on your real docs/FAQs, give it escalation paths to humans, and review conversations regularly",
+        "Train it to never admit uncertainty",
+        "Hide the option to reach a human",
       ],
       answerIndex: 1,
     },
   ],
-  "ai-customer-support": [
+  "ai-engineering": [
     {
-      question: "A support bot's success should be measured primarily by…",
+      question:
+        "A single mega-prompt agent keeps failing a complex multi-step task. The engineering fix is to…",
       options: [
-        "How many tickets it touches",
-        "Resolution rate and customer satisfaction, not just deflection",
-        "How long its answers are",
-        "How rarely it escalates",
+        "Make the prompt longer",
+        "Decompose the task across specialized agents/steps with clear roles, handoffs and validated outputs",
+        "Raise the temperature",
+        "Switch models randomly until it works",
       ],
       answerIndex: 1,
     },
     {
-      question: "Escalation design matters because…",
+      question: "In n8n/automation workflows that call AI, production reliability requires…",
       options: [
-        "Customers with complex or sensitive issues need a clean path to a human",
-        "It increases ticket volume",
-        "Bots get tired",
-        "It's required by Google",
+        "Hoping the API never fails",
+        "Error handling, retries, output validation and alerting on failure paths",
+        "Running everything manually as backup",
+        "Only testing in production",
+      ],
+      answerIndex: 1,
+    },
+    {
+      question: "API keys in a deployed app belong…",
+      options: [
+        "In the frontend code so it's simpler",
+        "In server-side environment variables/secrets — never shipped to the client",
+        "In a public GitHub README for the team",
+        "Hard-coded but base64-encoded",
+      ],
+      answerIndex: 1,
+    },
+    {
+      question: "Before charging users for an AI SaaS, the launch checklist must include…",
+      options: [
+        "Auth, payment webhooks verified, usage limits/cost controls on AI calls, and error monitoring",
+        "A logo animation",
+        "At least 50 features",
+        "Removing all logging for speed",
       ],
       answerIndex: 0,
     },
     {
-      question: "Before launching a bot, your knowledge base should be…",
+      question: "AI coding assistants like Cursor are used professionally by…",
       options: [
-        "Whatever's lying around",
-        "Audited and rewritten to answer real top ticket topics clearly",
-        "Deleted to keep answers short",
-        "Written only in legal language",
+        "Accepting every suggestion to maximize speed",
+        "Reviewing, testing and understanding generated code before it ships — you own what you merge",
+        "Letting them push directly to production",
+        "Disabling tests so suggestions pass",
       ],
       answerIndex: 1,
-    },
-    {
-      question: "In a voice agent stack, STT, LLM and TTS refer to…",
-      options: [
-        "Billing tiers",
-        "Speech-to-text, the reasoning model, and text-to-speech",
-        "Three competing vendors",
-        "Telephone network protocols",
-      ],
-      answerIndex: 1,
-    },
-    {
-      question: "Voice-of-customer analysis with AI is most useful for…",
-      options: [
-        "Decorating slide decks",
-        "Quantifying the themes and root causes driving tickets, then fixing them",
-        "Replacing all surveys forever",
-        "Generating marketing slogans",
-      ],
-      answerIndex: 1,
-    },
-  ],
-  "ai-data-analysis": [
-    {
-      question: "Before analysing any dataset, you should…",
-      options: [
-        "Build charts immediately",
-        "Clean it: handle duplicates, missing values and inconsistent formats",
-        "Delete outliers without checking",
-        "Convert everything to text",
-      ],
-      answerIndex: 1,
-    },
-    {
-      question: "A JOIN in SQL is used to…",
-      options: [
-        "Combine rows from related tables via matching keys",
-        "Delete tables",
-        "Encrypt a column",
-        "Speed up the database",
-      ],
-      answerIndex: 0,
-    },
-    {
-      question: "When ChatGPT's data analysis produces a surprising result you should…",
-      options: [
-        "Publish it immediately",
-        "Verify the logic and spot-check against the raw data before trusting it",
-        "Assume the data is wrong",
-        "Increase the temperature",
-      ],
-      answerIndex: 1,
-    },
-    {
-      question: "A good executive dashboard starts from…",
-      options: [
-        "Every chart you can build",
-        "The specific business questions it must answer",
-        "The prettiest colour palette",
-        "Whatever data loads fastest",
-      ],
-      answerIndex: 1,
-    },
-    {
-      question: "An honest forecast always includes…",
-      options: [
-        "A single exact number",
-        "Assumptions and a range/scenarios reflecting uncertainty",
-        "Only the best case",
-        "No historical baseline",
-      ],
-      answerIndex: 1,
-    },
-  ],
-  "ai-audio-voice": [
-    {
-      question: "Writing a script 'for the ear' means…",
-      options: [
-        "Short sentences, natural rhythm and words that are easy to say aloud",
-        "Long academic paragraphs",
-        "Maximum jargon",
-        "All capital letters",
-      ],
-      answerIndex: 0,
-    },
-    {
-      question: "Before cloning anyone's voice you must…",
-      options: [
-        "Have their informed consent and documented permission",
-        "Just credit them later",
-        "Use only 5 seconds of audio",
-        "Nothing — voices aren't protected",
-      ],
-      answerIndex: 0,
-    },
-    {
-      question: "A music bed under a voiceover should be…",
-      options: [
-        "Louder than the voice",
-        "Ducked and EQ'd so the voice stays clearly intelligible",
-        "Removed in all cases",
-        "In a different tempo every bar",
-      ],
-      answerIndex: 1,
-    },
-    {
-      question: "AI dubbing quality checks should include…",
-      options: [
-        "Timing, names/terminology and review by a native speaker",
-        "Only the file size",
-        "Checking the thumbnail",
-        "Nothing if the AI sounded confident",
-      ],
-      answerIndex: 0,
-    },
-    {
-      question: "Using AI music commercially requires…",
-      options: [
-        "Checking the tool's licence terms for commercial use",
-        "Nothing — all AI music is public domain",
-        "A radio licence",
-        "Registering with a record label",
-      ],
-      answerIndex: 0,
     },
   ],
 };
-
-export const PASS_MARK = 0.7;

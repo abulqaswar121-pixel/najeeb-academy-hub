@@ -96,20 +96,20 @@ function PricingPage() {
             <div className="bg-card grid grid-cols-1 gap-0 rounded-t-3xl sm:grid-cols-3">
               {[
                 {
-                  label: "Starter courses",
+                  label: "Core essentials",
                   range: `from ${formatNaira(minPrice)}`,
-                  sub: "3–4 hour foundations",
+                  sub: "Beginner foundations",
                 },
                 {
-                  label: "Core skill courses",
-                  range: `${formatNaira(15000)}–${formatNaira(20000)}`,
-                  sub: "4–6 hour deep dives",
+                  label: "Practitioner & agency",
+                  range: `${formatNaira(25000)}–${formatNaira(35000)}`,
+                  sub: "Hands-on professional tracks",
                   highlight: true,
                 },
                 {
-                  label: "Advanced builds",
+                  label: "AI engineering flagship",
                   range: `up to ${formatNaira(maxPrice)}`,
-                  sub: "6–8 hour pro tracks",
+                  sub: "Build & ship real products",
                 },
               ].map((tier) => (
                 <div

@@ -45,7 +45,7 @@ const faqs = [
     items: [
       {
         q: "How much do courses cost?",
-        a: "Each course is a one-time fee in Nigerian Naira — currently between ₦12,500 and ₦26,000 depending on depth and length. That includes all lessons, the assessment, project review and your certificate. No subscriptions.",
+        a: "Each course is a one-time fee in Nigerian Naira — currently between ₦15,000 and ₦50,000 depending on depth and tier. That includes the full course video, all guided lessons, the assessment, project review and your certificate. No subscriptions.",
       },
       {
         q: "What is your refund policy?",

@@ -16,6 +16,7 @@ import {
   buildLessonContent,
   formatDuration,
   lessonSlug,
+  lessonVideoUrl,
 } from "../src/data/content";
 
 const q = (s: string) => `'${s.replace(/'/g, "''")}'`;
@@ -58,7 +59,7 @@ for (const course of courses) {
           q(title),
           q(lessonSlug(title)),
           q(buildLessonContent(course, title, i, course.lessons.length)),
-          "null",
+          q(lessonVideoUrl(course, i)),
           String(i + 1),
         ].join(", ") +
         `);`,

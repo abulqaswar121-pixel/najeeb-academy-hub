@@ -240,6 +240,19 @@ function LearnPage() {
               <h2 className="text-foreground mt-2 text-2xl font-black tracking-tight sm:text-3xl">
                 {currentLesson.title}
               </h2>
+              {currentLesson.videoUrl && (
+                <div className="border-border bg-background/60 mt-6 aspect-video overflow-hidden rounded-2xl border">
+                  <iframe
+                    key={currentLesson.id}
+                    src={currentLesson.videoUrl}
+                    title={`${currentLesson.title} — course video`}
+                    className="h-full w-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allowFullScreen
+                  />
+                </div>
+              )}
               <div
                 className="lesson-content mt-6 text-sm sm:text-base"
                 dangerouslySetInnerHTML={{ __html: currentLesson.content }}

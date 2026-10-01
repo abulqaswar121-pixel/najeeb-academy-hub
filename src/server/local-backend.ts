@@ -13,7 +13,13 @@ import path from "node:path";
 
 import { courses as courseSeeds } from "../data/courses";
 import { testimonials as testimonialSeeds } from "../data/testimonials";
-import { buildDescription, buildLessonContent, formatDuration, lessonSlug } from "../data/content";
+import {
+  buildDescription,
+  buildLessonContent,
+  formatDuration,
+  lessonSlug,
+  lessonVideoUrl,
+} from "../data/content";
 import type {
   CertificateRecord,
   CertificateWithDetails,
@@ -83,7 +89,7 @@ for (const seed of courseSeeds) {
       title,
       slug: lessonSlug(title),
       content: buildLessonContent(seed, title, i, seed.lessons.length),
-      videoUrl: null,
+      videoUrl: lessonVideoUrl(seed, i),
       position: i + 1,
     })),
   );
