@@ -1,6 +1,15 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createFileRoute } from "@tanstack/react-router";
-import { CheckCircle2, Mail, MapPin, MessageSquare, Send } from "lucide-react";
+import {
+  CheckCircle2,
+  Mail,
+  MapPin,
+  MessageSquare,
+  Phone,
+  Send,
+  CalendarClock,
+  ExternalLink,
+} from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -18,6 +27,15 @@ import {
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import { seo } from "../lib/academy";
+import {
+  NDH_ADDRESS,
+  NDH_EMAIL_HELLO,
+  NDH_EMAIL_SUPPORT,
+  NDH_MAPS_URL,
+  NDH_PHONE_DISPLAY,
+  NDH_PHONE_TEL,
+  NDH_WHATSAPP_URL,
+} from "../lib/contact";
 import { submitContactForm } from "../lib/server-fns";
 
 export const Route = createFileRoute("/contact")({
@@ -79,25 +97,101 @@ function ContactPage() {
             message — a real person replies within one business day.
           </p>
           <div className="space-y-4 pt-2">
-            <div className="bg-card border-border flex items-center gap-4 rounded-2xl border p-5">
+            <a
+              href={NDH_PHONE_TEL}
+              className="group bg-card border-border hover:border-primary/50 flex items-center gap-4 rounded-2xl border p-5 transition-colors"
+            >
+              <div className="bg-brand-subtle border-primary/30 text-brand-soft flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border">
+                <Phone className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div>
+                <p className="text-foreground text-sm font-bold">Give us a call</p>
+                <p className="text-muted-foreground text-xs">{NDH_PHONE_DISPLAY}</p>
+              </div>
+            </a>
+            <a
+              href={NDH_WHATSAPP_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="group bg-card border-border hover:border-primary/50 flex items-center gap-4 rounded-2xl border p-5 transition-colors"
+            >
+              <div className="bg-success/15 border-success/40 text-success flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border">
+                <MessageSquare className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div>
+                <p className="text-foreground text-sm font-bold">Send a WhatsApp</p>
+                <p className="text-muted-foreground text-xs">
+                  Chat with NDH — fastest reply channel
+                </p>
+              </div>
+              <ExternalLink
+                className="text-brand-soft ml-auto h-4 w-4 shrink-0"
+                aria-hidden="true"
+              />
+            </a>
+            <a
+              href={`mailto:${NDH_EMAIL_HELLO}`}
+              className="group bg-card border-border hover:border-primary/50 flex items-center gap-4 rounded-2xl border p-5 transition-colors"
+            >
               <div className="bg-brand-subtle border-primary/30 text-brand-soft flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border">
                 <Mail className="h-5 w-5" aria-hidden="true" />
               </div>
               <div>
                 <p className="text-foreground text-sm font-bold">Email</p>
-                <p className="text-muted-foreground text-xs">hello@academy.ndh.com.ng</p>
+                <p className="text-muted-foreground text-xs">
+                  {NDH_EMAIL_HELLO} · support: {NDH_EMAIL_SUPPORT}
+                </p>
               </div>
-            </div>
-            <div className="bg-card border-border flex items-center gap-4 rounded-2xl border p-5">
+            </a>
+            <a
+              href={NDH_MAPS_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="group bg-card border-border hover:border-primary/50 flex items-center gap-4 rounded-2xl border p-5 transition-colors"
+            >
               <div className="bg-brand-subtle border-primary/30 text-brand-soft flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border">
                 <MapPin className="h-5 w-5" aria-hidden="true" />
               </div>
               <div>
-                <p className="text-foreground text-sm font-bold">Office</p>
-                <p className="text-muted-foreground text-xs">
-                  14B Karimu Kotun St, Victoria Island, Lagos
-                </p>
+                <p className="text-foreground text-sm font-bold">Find us in Sokoto</p>
+                <p className="text-muted-foreground text-xs">{NDH_ADDRESS}</p>
               </div>
+              <ExternalLink
+                className="text-brand-soft ml-auto h-4 w-4 shrink-0"
+                aria-hidden="true"
+              />
+            </a>
+          </div>
+
+          {/* Guidance call — mirrors the agency's discovery consultation */}
+          <div className="band-dark mt-6 space-y-4 rounded-2xl p-6">
+            <div className="flex items-center gap-3">
+              <div className="bg-brand-subtle border-primary/30 text-brand-soft flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border">
+                <CalendarClock className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <h2 className="text-foreground text-base font-black">
+                Book a free 15-minute course-guidance call
+              </h2>
+            </div>
+            <p className="text-muted-foreground text-xs leading-relaxed">
+              Not sure which course fits your goal? Talk it through with the team first — by phone
+              or WhatsApp, at a time that suits you. No obligation, no sales scripts.
+            </p>
+            <div className="flex flex-wrap gap-2.5">
+              <a
+                href={NDH_WHATSAPP_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="bg-gradient-cta text-primary-foreground shadow-glow-primary inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold transition-transform hover:scale-105"
+              >
+                <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" /> Schedule on WhatsApp
+              </a>
+              <a
+                href={NDH_PHONE_TEL}
+                className="border-border text-foreground hover:bg-accent/60 inline-flex items-center gap-2 rounded-xl border px-5 py-2.5 text-xs font-bold transition-colors"
+              >
+                <Phone className="h-3.5 w-3.5" aria-hidden="true" /> {NDH_PHONE_DISPLAY}
+              </a>
             </div>
           </div>
         </div>

@@ -21,6 +21,8 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as CoursesIndexRouteImport } from './routes/courses.index'
 import { Route as CoursesSlugRouteImport } from './routes/courses.$slug'
 import { Route as LearnSlugRouteImport } from './routes/learn.$slug'
+import { Route as StoriesIndexRouteImport } from './routes/stories.index'
+import { Route as StoriesSlugRouteImport } from './routes/stories.$slug'
 import { Route as VerifyIndexRouteImport } from './routes/verify.index'
 import { Route as VerifyCodeRouteImport } from './routes/verify.$code'
 
@@ -84,6 +86,16 @@ const LearnSlugRoute = LearnSlugRouteImport.update({
   path: '/learn/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StoriesIndexRoute = StoriesIndexRouteImport.update({
+  id: '/stories/',
+  path: '/stories/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoriesSlugRoute = StoriesSlugRouteImport.update({
+  id: '/stories/$slug',
+  path: '/stories/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VerifyIndexRoute = VerifyIndexRouteImport.update({
   id: '/verify/',
   path: '/verify/',
@@ -107,8 +119,10 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/courses/$slug': typeof CoursesSlugRoute
   '/learn/$slug': typeof LearnSlugRoute
+  '/stories/$slug': typeof StoriesSlugRoute
   '/verify/$code': typeof VerifyCodeRoute
   '/courses/': typeof CoursesIndexRoute
+  '/stories/': typeof StoriesIndexRoute
   '/verify/': typeof VerifyIndexRoute
 }
 export interface FileRoutesByTo {
@@ -123,8 +137,10 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/courses/$slug': typeof CoursesSlugRoute
   '/learn/$slug': typeof LearnSlugRoute
+  '/stories/$slug': typeof StoriesSlugRoute
   '/verify/$code': typeof VerifyCodeRoute
   '/courses': typeof CoursesIndexRoute
+  '/stories': typeof StoriesIndexRoute
   '/verify': typeof VerifyIndexRoute
 }
 export interface FileRoutesById {
@@ -140,8 +156,10 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/courses/$slug': typeof CoursesSlugRoute
   '/learn/$slug': typeof LearnSlugRoute
+  '/stories/$slug': typeof StoriesSlugRoute
   '/verify/$code': typeof VerifyCodeRoute
   '/courses/': typeof CoursesIndexRoute
+  '/stories/': typeof StoriesIndexRoute
   '/verify/': typeof VerifyIndexRoute
 }
 export interface FileRouteTypes {
@@ -158,8 +176,10 @@ export interface FileRouteTypes {
     | '/signup'
     | '/courses/$slug'
     | '/learn/$slug'
+    | '/stories/$slug'
     | '/verify/$code'
     | '/courses/'
+    | '/stories/'
     | '/verify/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -174,8 +194,10 @@ export interface FileRouteTypes {
     | '/signup'
     | '/courses/$slug'
     | '/learn/$slug'
+    | '/stories/$slug'
     | '/verify/$code'
     | '/courses'
+    | '/stories'
     | '/verify'
   id:
     | '__root__'
@@ -190,8 +212,10 @@ export interface FileRouteTypes {
     | '/signup'
     | '/courses/$slug'
     | '/learn/$slug'
+    | '/stories/$slug'
     | '/verify/$code'
     | '/courses/'
+    | '/stories/'
     | '/verify/'
   fileRoutesById: FileRoutesById
 }
@@ -207,8 +231,10 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   CoursesSlugRoute: typeof CoursesSlugRoute
   LearnSlugRoute: typeof LearnSlugRoute
+  StoriesSlugRoute: typeof StoriesSlugRoute
   VerifyCodeRoute: typeof VerifyCodeRoute
   CoursesIndexRoute: typeof CoursesIndexRoute
+  StoriesIndexRoute: typeof StoriesIndexRoute
   VerifyIndexRoute: typeof VerifyIndexRoute
 }
 
@@ -298,6 +324,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LearnSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/stories/': {
+      id: '/stories/'
+      path: '/stories'
+      fullPath: '/stories/'
+      preLoaderRoute: typeof StoriesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stories/$slug': {
+      id: '/stories/$slug'
+      path: '/stories/$slug'
+      fullPath: '/stories/$slug'
+      preLoaderRoute: typeof StoriesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/verify/': {
       id: '/verify/'
       path: '/verify'
@@ -327,8 +367,10 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   CoursesSlugRoute: CoursesSlugRoute,
   LearnSlugRoute: LearnSlugRoute,
+  StoriesSlugRoute: StoriesSlugRoute,
   VerifyCodeRoute: VerifyCodeRoute,
   CoursesIndexRoute: CoursesIndexRoute,
+  StoriesIndexRoute: StoriesIndexRoute,
   VerifyIndexRoute: VerifyIndexRoute,
 }
 export const routeTree = rootRouteImport

@@ -14,7 +14,8 @@ import {
 import { SectionHeading } from "../components/academy/SectionHeading";
 import { Button } from "../components/ui/button";
 import { categories } from "../data/categories";
-import { formatNaira, seo } from "../lib/academy";
+import { seo } from "../lib/academy";
+import { formatPrice, useCurrency } from "../lib/currency";
 import { fetchCourses } from "../lib/server-fns";
 
 const coursesQuery = { queryKey: ["courses"], queryFn: () => fetchCourses() };
@@ -68,6 +69,7 @@ const included = [
 
 function PricingPage() {
   const { data: courses = [] } = useQuery(coursesQuery);
+  const { currency } = useCurrency();
   const prices = courses.map((c) => c.priceNgn);
   const minPrice = prices.length ? Math.min(...prices) : 12500;
   const maxPrice = prices.length ? Math.max(...prices) : 26000;
@@ -87,7 +89,7 @@ function PricingPage() {
               <span className="text-gradient-brand">Everything included.</span>
             </>
           }
-          description={`No subscriptions and no upsells. Each course is a one-time fee between ${formatNaira(minPrice)} and ${formatNaira(maxPrice)}, set by its depth and length — and every course includes the same complete package.`}
+          description={`No subscriptions and no upsells. Each course is a one-time fee between ${formatPrice(minPrice, currency)} and ${formatPrice(maxPrice, currency)}, set by its depth and length — and every course includes the same complete package.${currency === "USD" ? " USD is an approximate display conversion — enrolment is charged in Naira (₦)." : ""}`}
         />
 
         {/* Price band card */}
@@ -97,18 +99,18 @@ function PricingPage() {
               {[
                 {
                   label: "Core essentials",
-                  range: `from ${formatNaira(minPrice)}`,
+                  range: `from ${formatPrice(minPrice, currency)}`,
                   sub: "Beginner foundations",
                 },
                 {
                   label: "Practitioner & agency",
-                  range: `${formatNaira(25000)}–${formatNaira(35000)}`,
+                  range: `${formatPrice(25000, currency)}–${formatPrice(35000, currency)}`,
                   sub: "Hands-on professional tracks",
                   highlight: true,
                 },
                 {
                   label: "AI engineering flagship",
-                  range: `up to ${formatNaira(maxPrice)}`,
+                  range: `up to ${formatPrice(maxPrice, currency)}`,
                   sub: "Build & ship real products",
                 },
               ].map((tier) => (
@@ -171,7 +173,7 @@ function PricingPage() {
                   </div>
                   <div className="shrink-0 text-right">
                     <p className="text-brand-soft font-mono text-sm font-black">
-                      {lo === hi ? formatNaira(lo) : `${formatNaira(lo)}+`}
+                      {lo === hi ? formatPrice(lo, currency) : `${formatPrice(lo, currency)}+`}
                     </p>
                     <BadgeCheck
                       className="text-success mt-1 ml-auto h-3.5 w-3.5"
