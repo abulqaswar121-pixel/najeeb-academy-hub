@@ -20,7 +20,8 @@ import { CourseCard } from "../components/academy/CourseCard";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { categoryBySlug } from "../data/categories";
-import { formatNaira, meQueryOptions, seo, useMe } from "../lib/academy";
+import { meQueryOptions, seo, useMe } from "../lib/academy";
+import { formatPrice, useCurrency } from "../lib/currency";
 import { enrollFn, fetchCourseDetail, fetchDashboard } from "../lib/server-fns";
 
 const detailQuery = (slug: string) => ({
@@ -48,6 +49,7 @@ export const Route = createFileRoute("/courses/$slug")({
 
 function CourseDetailPage() {
   const { slug } = Route.useParams();
+  const { currency } = useCurrency();
   const { data: detail } = useQuery(detailQuery(slug));
   const { data: me } = useMe();
   const { data: dashboard } = useQuery({ ...dashboardQuery, enabled: Boolean(me) });
@@ -83,8 +85,8 @@ function CourseDetailPage() {
 
   return (
     <div>
-      {/* Hero */}
-      <section className="from-surface via-background to-background relative overflow-hidden bg-gradient-to-b">
+      {/* Hero — deep navy band per the NDH editorial pattern */}
+      <section className="band-dark relative overflow-hidden">
         <div className="bg-grid-pattern absolute inset-0 opacity-40" aria-hidden="true" />
         <div className="hero-glow top-0 right-0 h-[300px] w-[500px]" aria-hidden="true" />
         <div className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 py-14 sm:px-6 lg:grid-cols-5 lg:px-8">
@@ -151,7 +153,7 @@ function CourseDetailPage() {
                 <div className="flex items-end justify-between">
                   <div>
                     <div className="text-foreground font-mono text-3xl font-black">
-                      {formatNaira(course.priceNgn)}
+                      {formatPrice(course.priceNgn, currency)}
                     </div>
                     <div className="text-muted-foreground text-xs">
                       One-time fee · lifetime access

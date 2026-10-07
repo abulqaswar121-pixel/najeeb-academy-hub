@@ -1,26 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import {
-  ArrowRight,
-  Award,
-  BadgeCheck,
-  BookOpen,
-  Briefcase,
-  ExternalLink,
-  FileCheck,
-  GraduationCap,
-  Hammer,
-  Quote,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
+import { ArrowRight, Award, BookOpen, FileCheck, Hammer, Quote, Sparkles } from "lucide-react";
 
 import { CategoryIcon } from "../components/academy/CategoryIcon";
-import { CourseCard } from "../components/academy/CourseCard";
+import { RecommendedTopics } from "../components/academy/RecommendedTopics";
 import { SectionHeading } from "../components/academy/SectionHeading";
+import { ToolsMarquee } from "../components/academy/ToolsMarquee";
 import { Button } from "../components/ui/button";
 import { categories } from "../data/categories";
-import { AGENCY_URL, seo } from "../lib/academy";
+import { seo } from "../lib/academy";
 import { fetchCourses, fetchTestimonials } from "../lib/server-fns";
 
 const coursesQuery = { queryKey: ["courses"], queryFn: () => fetchCourses() };
@@ -69,12 +57,11 @@ const steps = [
 function HomePage() {
   const { data: courses = [] } = useQuery(coursesQuery);
   const { data: testimonials = [] } = useQuery(testimonialsQuery);
-  const featured = courses.filter((c) => c.isFeatured).slice(0, 6);
 
   return (
     <div>
-      {/* ───────── Hero ───────── */}
-      <section className="from-surface via-background to-background relative overflow-hidden bg-gradient-to-b pt-16 pb-20">
+      {/* ───────── Hero — the deep navy gateway band ───────── */}
+      <section className="band-dark relative overflow-hidden pt-16 pb-20">
         <div className="bg-grid-pattern absolute inset-0 opacity-60" aria-hidden="true" />
         <div
           className="hero-glow top-0 left-1/2 h-[350px] w-[700px] -translate-x-1/2"
@@ -159,33 +146,18 @@ function HomePage() {
         </div>
       </div>
 
-      {/* ───────── Featured courses ───────── */}
+      {/* ───────── Recommended topics — one deliberate pick per level ───────── */}
       <section className="mx-auto max-w-7xl space-y-10 px-4 py-20 sm:px-6 lg:px-8">
         <SectionHeading
-          eyebrow="Featured courses"
-          title={
-            <>
-              Start with a <span className="text-gradient-brand">proven favourite</span>
-            </>
-          }
-          description="The courses our students finish fastest and recommend the most — each one short, practical and certificate-backed."
+          eyebrow="Recommended topics"
+          title="Not sure what to learn? Start here"
+          description="Tell us the goal you're chasing and where you're starting from — we'll point you to the single right course. Every level gets its own deliberate pick, never the same course twice."
         />
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {featured.map((course, i) => (
-            <CourseCard key={course.id} course={course} priority={i < 3} />
-          ))}
-        </div>
-        <div className="text-center">
-          <Button asChild variant="outline" size="lg" className="rounded-2xl px-8 font-bold">
-            <Link to="/courses">
-              View the full catalog <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
-          </Button>
-        </div>
+        <RecommendedTopics />
       </section>
 
-      {/* ───────── Category showcase ───────── */}
-      <section className="bg-surface/60 border-border/60 border-y py-20">
+      {/* ───────── Category showcase — pure-white strip ───────── */}
+      <section className="bg-surface border-border border-y py-20">
         <div className="mx-auto max-w-7xl space-y-10 px-4 sm:px-6 lg:px-8">
           <SectionHeading
             eyebrow={`${categories.length} skill tracks`}
@@ -255,8 +227,11 @@ function HomePage() {
         </div>
       </section>
 
-      {/* ───────── Testimonials ───────── */}
-      <section className="bg-surface/60 border-border/60 border-y py-20">
+      {/* ───────── Tools marquee — what you'll actually master ───────── */}
+      <ToolsMarquee />
+
+      {/* ───────── Testimonials — pure-white strip ───────── */}
+      <section className="bg-surface border-border border-y py-20">
         <div className="mx-auto max-w-7xl space-y-10 px-4 sm:px-6 lg:px-8">
           <SectionHeading
             eyebrow="Student stories"
@@ -285,70 +260,24 @@ function HomePage() {
               </figure>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* ───────── Built by NDH ───────── */}
-      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-        <div className="bg-brand-subtle/40 border-border relative overflow-hidden rounded-3xl border p-8 shadow-2xl sm:p-12">
-          <div className="hero-glow -top-20 -right-20 h-[300px] w-[400px]" aria-hidden="true" />
-          <div className="relative z-10 grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
-            <div className="space-y-5">
-              <div className="bg-background/60 border-border text-muted-foreground inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold">
-                <ShieldCheck className="text-success h-3.5 w-3.5" aria-hidden="true" />
-                Built by Najeeb Digital Hub
-              </div>
-              <h2 className="text-foreground text-3xl font-black tracking-tight sm:text-4xl">
-                The academy arm of a{" "}
-                <span className="text-gradient-brand">working digital agency</span>
-              </h2>
-              <p className="text-muted-foreground text-base leading-relaxed">
-                Najeeb Academy isn't taught from theory. Our curriculum comes straight from NDH
-                Agency — the team that designs, builds and ships digital products, brands and growth
-                systems for real clients. You learn the exact workflows we bill for.
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <div className="text-muted-foreground flex items-center gap-2 text-xs">
-                  <BadgeCheck className="text-success h-4 w-4" aria-hidden="true" /> Agency-tested
-                  workflows
-                </div>
-                <div className="text-muted-foreground flex items-center gap-2 text-xs">
-                  <GraduationCap className="text-brand-soft h-4 w-4" aria-hidden="true" /> Taught by
-                  practitioners
-                </div>
-              </div>
-            </div>
-            <a
-              href={AGENCY_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="group bg-card border-border hover:border-primary/50 hover:shadow-glow-primary block rounded-2xl border p-8 shadow-xl transition-all duration-300 hover:-translate-y-1"
+          <div className="text-center">
+            <Link
+              to="/stories"
+              className="text-brand-soft inline-flex items-center gap-2 text-sm font-bold transition-colors hover:underline"
             >
-              <div className="bg-primary/15 border-primary/40 text-primary flex h-14 w-14 items-center justify-center rounded-2xl border shadow-inner">
-                <Briefcase className="h-7 w-7" aria-hidden="true" />
-              </div>
-              <h3 className="text-foreground group-hover:text-brand-soft mt-5 text-xl font-bold transition-colors">
-                NDH Agency
-              </h3>
-              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-                Need a team to build it for you instead? NDH Agency delivers premium software, brand
-                systems and growth experiences with dedicated project leadership.
-              </p>
-              <span className="text-brand-soft mt-5 inline-flex items-center gap-2 text-sm font-bold">
-                Visit agency.ndh.com.ng
-                <ExternalLink
-                  className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
-                  aria-hidden="true"
-                />
-              </span>
-            </a>
+              Read all graduate stories <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* ───────── Final CTA ───────── */}
-      <section className="border-border/60 border-t py-20">
-        <div className="mx-auto max-w-3xl space-y-6 px-4 text-center sm:px-6">
+      {/* ───────── Final CTA — navy anchor before the footer ───────── */}
+      <section className="band-dark relative overflow-hidden py-20">
+        <div
+          className="hero-glow -top-24 left-1/2 h-[300px] w-[640px] -translate-x-1/2"
+          aria-hidden="true"
+        />
+        <div className="relative z-10 mx-auto max-w-3xl space-y-6 px-4 text-center sm:px-6">
           <h2 className="text-foreground text-3xl font-black tracking-tight sm:text-5xl">
             Your next skill is <span className="text-gradient-brand">one course away</span>
           </h2>

@@ -12,7 +12,7 @@
     "format": "prettier --write ."
   },
   "overrides": {
-    "rolldown": "1.2.1"
+    "h3": "2.0.1"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

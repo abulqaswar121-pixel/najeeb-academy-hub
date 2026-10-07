@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { BookOpen, Clock } from "lucide-react";
 
 import { categoryBySlug } from "../../data/categories";
-import { formatNaira } from "../../lib/academy";
+import { formatPrice, useCurrency } from "../../lib/currency";
 import type { CourseRecord } from "../../server/types";
 import { Badge } from "../ui/badge";
 
@@ -13,6 +13,7 @@ export function CourseCard({
   course: CourseRecord;
   priority?: boolean;
 }) {
+  const { currency } = useCurrency();
   const category = categoryBySlug(course.category);
   return (
     <Link
@@ -35,7 +36,7 @@ export function CourseCard({
         </div>
         <div className="absolute right-3 bottom-3">
           <Badge className="bg-primary text-primary-foreground font-mono font-bold">
-            {formatNaira(course.priceNgn)}
+            {formatPrice(course.priceNgn, currency)}
           </Badge>
         </div>
       </div>

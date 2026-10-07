@@ -1,12 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Bot, ExternalLink, Send, Sparkles, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ArrowUpRight, LoaderCircle, Minus, RotateCcw, Send, Sparkles, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
+import assistantAvatar from "../../assets/ndh-ai-assistant.png";
 import { categories } from "../../data/categories";
-import { AGENCY_URL, formatNaira } from "../../lib/academy";
+import { NDH_EMAIL_HELLO, NDH_PHONE_DISPLAY, NDH_WHATSAPP_URL } from "../../lib/contact";
+import { formatPrice, useCurrency } from "../../lib/currency";
 import { fetchCourses } from "../../lib/server-fns";
 import type { CourseRecord } from "../../server/types";
+import { Button } from "../ui/button";
 
 interface ChatLink {
   label: string;
@@ -30,40 +33,95 @@ const QUICK_ACTIONS = [
   "Talk to a human",
 ];
 
+const STORAGE_KEY = "ndh-academy-scholar-chat";
+const WELCOME_ID = "welcome";
+
 const coursesQuery = { queryKey: ["courses"], queryFn: () => fetchCourses() };
 
 let msgCounter = 0;
 const nextId = () => `m-${Date.now()}-${msgCounter++}`;
 
+function readStoredMessages(): ChatMessage[] | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as ChatMessage[];
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+  } catch {
+    /* unreadable storage is not a reason to break the chat */
+  }
+  return null;
+}
+
 /**
- * NDH Scholar — the academy's floating AI study advisor. Rule-based concierge
- * (mirrors the agency site's assistant widget) that answers academy questions
- * and recommends courses from the live catalog.
+ * NDH Scholar — the academy's floating AI study advisor. Chrome is the
+ * official NDH assistant design shared with the parent gateway (avatar,
+ * orbital halo launcher, live status, dialog styling); the brain stays the
+ * academy's rule-based concierge that answers academy questions and
+ * recommends courses from the live catalog.
  */
 export function AssistantWidget() {
   const [open, setOpen] = useState(false);
+  const { currency } = useCurrency();
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: "welcome",
+  const welcome = useMemo<ChatMessage>(
+    () => ({
+      id: WELCOME_ID,
       sender: "assistant",
       text: "Hi! I'm NDH Scholar, the Najeeb Academy study advisor. Tell me what you want to learn — or what you do for work — and I'll point you to the right course. You can also ask about certificates, pricing, refunds or how the academy works.",
       quickActions: QUICK_ACTIONS,
-    },
-  ]);
+    }),
+    [],
+  );
+  const [messages, setMessages] = useState<ChatMessage[]>([welcome]);
   const { data: courses = [] } = useQuery({ ...coursesQuery, enabled: open });
   const endRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /* Restore this tab's conversation once, after hydration. */
+  useEffect(() => {
+    const stored = readStoredMessages();
+    if (stored) setMessages(stored);
+  }, []);
+
+  useEffect(() => {
+    if (messages.length === 0) return;
+    try {
+      window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-24)));
+    } catch {
+      /* ignore */
+    }
+  }, [messages]);
 
   useEffect(() => {
     if (open) endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, typing, open]);
 
+  /* Focus the composer on open; Escape closes, as the gateway chat does. */
+  useEffect(() => {
+    if (!open) return;
+    window.requestAnimationFrame(() => inputRef.current?.focus());
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    },
+    [],
+  );
+
   const respond = (query: string) => {
     const reply = buildReply(query, courses);
     setTyping(true);
-    setTimeout(
+    timerRef.current = setTimeout(
       () => {
         setTyping(false);
         setMessages((prev) => [...prev, { ...reply, id: nextId() }]);
@@ -74,206 +132,221 @@ export function AssistantWidget() {
 
   const send = (text?: string) => {
     const query = (text ?? input).trim();
-    if (!query) return;
+    if (!query || typing) return;
     setMessages((prev) => [...prev, { id: nextId(), sender: "user", text: query }]);
     setInput("");
     respond(query);
   };
 
+  const reset = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setTyping(false);
+    setMessages([welcome]);
+    try {
+      window.sessionStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const avatarState = typing ? "thinking" : "idle";
+
   return (
     <>
-      {/* Floating hover button */}
+      {/* Floating launcher — avatar + orbital halo + live status */}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-label={open ? "Close AI assistant" : "Open AI assistant — NDH Scholar"}
-        className="group fixed right-4 bottom-4 z-[90] flex items-center gap-2 sm:right-6 sm:bottom-6"
+        aria-label={open ? "Close NDH Scholar" : "Open NDH Scholar — academy AI study advisor"}
+        aria-expanded={open}
+        className={`ai-assistant-launcher is-${avatarState}`}
       >
-        {!open && (
-          <span className="bg-card border-primary/40 text-foreground hidden items-center rounded-full border px-3 py-1.5 text-xs font-bold shadow-lg sm:flex">
-            Ask AI
-          </span>
-        )}
-        <span className="relative flex h-14 w-14 items-center justify-center rounded-2xl transition-transform group-hover:scale-110 group-active:scale-95">
-          <span
-            className="bg-gradient-brand animate-pulse-glow absolute inset-0 rounded-2xl blur-md"
-            aria-hidden="true"
-          />
-          <span className="bg-gradient-cta border-primary/40 shadow-glow-primary relative flex h-full w-full items-center justify-center rounded-2xl border">
-            {open ? (
-              <X className="text-primary-foreground h-6 w-6" aria-hidden="true" />
-            ) : (
-              <Bot className="text-primary-foreground h-6 w-6" aria-hidden="true" />
-            )}
-          </span>
-          {!open && (
-            <span
-              className="bg-success border-background absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2"
-              aria-hidden="true"
+        {open ? (
+          <X aria-hidden="true" />
+        ) : (
+          <>
+            <span className="ai-assistant-orbit" aria-hidden="true" />
+            <img
+              className="ai-assistant-avatar"
+              src={assistantAvatar}
+              alt=""
+              width={816}
+              height={816}
             />
-          )}
-        </span>
+            <span className="ai-assistant-status" aria-hidden="true" />
+          </>
+        )}
       </button>
 
-      {/* Chat panel */}
+      {/* Chat dialog */}
       {open && (
-        <div
-          className="bg-card border-border fixed right-4 bottom-24 left-4 z-[85] flex max-h-[min(75vh,620px)] flex-col overflow-hidden rounded-3xl border shadow-2xl sm:left-auto sm:w-[400px]"
-          role="dialog"
-          aria-label="NDH Scholar AI assistant"
-        >
-          {/* Header */}
-          <div className="bg-brand-subtle/60 border-border flex items-center gap-3 border-b px-5 py-4">
-            <div className="relative">
-              <div className="bg-gradient-cta border-primary/40 flex h-10 w-10 items-center justify-center rounded-xl border">
-                <Bot className="text-primary-foreground h-5 w-5" aria-hidden="true" />
-              </div>
-              <span
-                className="bg-success border-card absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2"
-                aria-hidden="true"
-              />
+        <div role="dialog" aria-label="NDH Scholar AI assistant" className="ai-assistant-dialog">
+          <header className="ai-assistant-header">
+            <span className={`gw-chat-avatar is-${avatarState}`}>
+              <img src={assistantAvatar} alt="" width={816} height={816} />
+              <i aria-hidden="true" />
+            </span>
+            <div className="ai-assistant-title">
+              <p>NDH Scholar</p>
+              <span>
+                <i aria-hidden="true" /> {typing ? "Thinking…" : "Online"}
+                <em className="gw-chat-mode">Academy advisor</em>
+              </span>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-foreground flex items-center gap-1.5 text-sm font-black">
-                NDH Scholar
-                <Sparkles className="text-brand-soft h-3.5 w-3.5" aria-hidden="true" />
-              </p>
-              <p className="text-muted-foreground text-[11px]">Academy AI study advisor · online</p>
-            </div>
-          </div>
-
-          {/* Messages */}
-          <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={msg.sender === "user" ? "flex justify-end" : "flex justify-start"}
-              >
-                <div
-                  className={
-                    msg.sender === "user"
-                      ? "bg-primary text-primary-foreground max-w-[85%] rounded-2xl rounded-br-md px-4 py-2.5 text-sm leading-relaxed"
-                      : "bg-background/60 border-border text-muted-foreground max-w-[90%] rounded-2xl rounded-bl-md border px-4 py-3 text-sm leading-relaxed"
-                  }
+            <div className="gw-chat-header-actions">
+              {messages.length > 1 ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Reset conversation"
+                  title="Reset conversation"
+                  onClick={reset}
                 >
-                  <p>{msg.text}</p>
+                  <RotateCcw aria-hidden="true" />
+                </Button>
+              ) : null}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Minimise assistant"
+                title="Minimise assistant"
+                onClick={() => setOpen(false)}
+              >
+                <Minus aria-hidden="true" />
+              </Button>
+            </div>
+          </header>
 
-                  {msg.courses && msg.courses.length > 0 && (
-                    <div className="mt-3 space-y-2">
-                      {msg.courses.map((c) => (
-                        <Link
-                          key={c.id}
-                          to="/courses/$slug"
-                          params={{ slug: c.slug }}
-                          onClick={() => setOpen(false)}
-                          className="bg-card border-border hover:border-primary/50 flex items-center gap-3 rounded-xl border p-2.5 transition-colors"
-                        >
-                          <img
-                            src={c.image}
-                            alt=""
-                            className="h-10 w-16 shrink-0 rounded-lg object-cover"
-                          />
-                          <span className="min-w-0 flex-1">
-                            <span className="text-foreground block truncate text-xs font-bold">
-                              {c.title}
-                            </span>
-                            <span className="text-brand-soft font-mono text-[10px] font-bold">
-                              {formatNaira(c.priceNgn)} · {c.lessonCount} lessons
-                            </span>
+          <div
+            role="log"
+            aria-live="polite"
+            className="ai-assistant-conversation ai-assistant-messages"
+          >
+            {messages.map((msg) => (
+              <div className={`ai-assistant-message is-${msg.sender}`} key={msg.id}>
+                {msg.text ? <p>{msg.text}</p> : null}
+
+                {msg.courses && msg.courses.length > 0 ? (
+                  <div className="gw-chat-cards">
+                    {msg.courses.map((c) => (
+                      <Link
+                        key={c.id}
+                        to="/courses/$slug"
+                        params={{ slug: c.slug }}
+                        onClick={() => setOpen(false)}
+                        className="gw-chat-card"
+                      >
+                        <span className="gw-chat-card-kind">
+                          <Sparkles size={12} aria-hidden="true" /> Recommended course
+                        </span>
+                        <span className="gw-chat-card-course">
+                          <img src={c.image} alt="" />
+                          <span>
+                            <strong>{c.title}</strong>
+                            <small className="gw-chat-card-meta">
+                              {formatPrice(c.priceNgn, currency)} · {c.lessonCount} lessons
+                            </small>
                           </span>
-                          <ArrowRight
-                            className="text-brand-soft h-3.5 w-3.5 shrink-0"
-                            aria-hidden="true"
-                          />
-                        </Link>
-                      ))}
-                    </div>
-                  )}
+                        </span>
+                        <span className="gw-chat-card-cta">
+                          View course <ArrowUpRight size={13} aria-hidden="true" />
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                ) : null}
 
-                  {msg.links && msg.links.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {msg.links.map((link) =>
-                        link.href ? (
-                          <a
-                            key={link.label}
-                            href={link.href}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="bg-brand-subtle border-primary/30 text-brand-soft flex items-center gap-1 rounded-full border px-3 py-1.5 text-[11px] font-bold transition-colors hover:border-primary/60"
-                          >
-                            {link.label} <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                {msg.links && msg.links.length > 0 ? (
+                  <div className="ai-assistant-chips gw-chat-followups">
+                    {msg.links.map((link) =>
+                      link.href ? (
+                        <Button key={link.label} asChild variant="outline" size="sm">
+                          <a href={link.href} target="_blank" rel="noreferrer">
+                            {link.label} <ArrowUpRight aria-hidden="true" />
                           </a>
-                        ) : (
-                          <Link
-                            key={link.label}
-                            to={link.to!}
-                            onClick={() => setOpen(false)}
-                            className="bg-brand-subtle border-primary/30 text-brand-soft flex items-center gap-1 rounded-full border px-3 py-1.5 text-[11px] font-bold transition-colors hover:border-primary/60"
-                          >
-                            {link.label} <ArrowRight className="h-3 w-3" aria-hidden="true" />
+                        </Button>
+                      ) : (
+                        <Button key={link.label} asChild variant="outline" size="sm">
+                          <Link to={link.to!} onClick={() => setOpen(false)}>
+                            {link.label} <ArrowUpRight aria-hidden="true" />
                           </Link>
-                        ),
-                      )}
-                    </div>
-                  )}
+                        </Button>
+                      ),
+                    )}
+                  </div>
+                ) : null}
 
-                  {msg.quickActions && (
-                    <div className="mt-3 flex flex-wrap gap-2">
+                {msg.quickActions ? (
+                  <div className="gw-chat-starters">
+                    <p className="gw-chat-starters-label">Quick questions</p>
+                    <div className="ai-assistant-chips">
                       {msg.quickActions.map((qa) => (
-                        <button
+                        <Button
                           key={qa}
                           type="button"
+                          variant="outline"
+                          size="sm"
                           onClick={() => send(qa)}
-                          className="bg-card border-border text-muted-foreground hover:text-foreground hover:border-primary/40 rounded-full border px-3 py-1.5 text-[11px] font-bold transition-colors"
                         >
                           {qa}
-                        </button>
+                        </Button>
                       ))}
                     </div>
-                  )}
-                </div>
+                  </div>
+                ) : null}
               </div>
             ))}
 
-            {typing && (
-              <div className="flex justify-start" aria-live="polite">
-                <div className="bg-background/60 border-border rounded-2xl rounded-bl-md border px-4 py-3">
-                  <span className="flex gap-1">
-                    <span className="bg-brand-soft h-1.5 w-1.5 animate-bounce rounded-full [animation-delay:0ms]" />
-                    <span className="bg-brand-soft h-1.5 w-1.5 animate-bounce rounded-full [animation-delay:120ms]" />
-                    <span className="bg-brand-soft h-1.5 w-1.5 animate-bounce rounded-full [animation-delay:240ms]" />
-                  </span>
-                </div>
-              </div>
-            )}
+            {typing ? (
+              <p className="ai-assistant-thinking">
+                <LoaderCircle aria-hidden="true" /> Thinking…
+              </p>
+            ) : null}
             <div ref={endRef} />
           </div>
 
-          {/* Input */}
-          <form
-            className="border-border flex items-center gap-2 border-t px-4 py-3"
-            onSubmit={(e) => {
-              e.preventDefault();
-              send();
-            }}
-          >
-            <input
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about courses, certificates, pricing…"
-              aria-label="Message NDH Scholar"
-              className="bg-background/60 border-border text-foreground placeholder:text-muted-foreground focus:border-primary/50 h-10 flex-1 rounded-xl border px-3 text-sm outline-none"
-            />
-            <button
-              type="submit"
-              aria-label="Send message"
-              disabled={!input.trim()}
-              className="bg-primary text-primary-foreground flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform hover:scale-105 disabled:opacity-40"
+          <div className="ai-assistant-composer">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                send();
+              }}
             >
-              <Send className="h-4 w-4" aria-hidden="true" />
-            </button>
-          </form>
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                    if (!typing && input.trim()) send();
+                  }
+                }}
+                maxLength={1000}
+                placeholder="Ask about courses, certificates, pricing…"
+                aria-label="Message NDH Scholar"
+                rows={1}
+              />
+              <Button
+                type="submit"
+                size="icon"
+                aria-label="Send message"
+                disabled={typing || input.trim().length === 0}
+              >
+                {typing ? (
+                  <LoaderCircle className="animate-spin" aria-hidden="true" />
+                ) : (
+                  <Send aria-hidden="true" />
+                )}
+              </Button>
+            </form>
+            <p className="gw-chat-footnote">
+              NDH Scholar answers from the live 60-course catalog. A human replies within one
+              business day via the contact page.
+            </p>
+          </div>
         </div>
       )}
     </>
@@ -468,12 +541,15 @@ function buildReply(query: string, courses: CourseRecord[]): Omit<ChatMessage, "
     };
   }
 
-  // agency
+  // build-for-me / hire
   if (/(agency|build it for me|hire|client work)/.test(q)) {
     return {
       sender: "assistant",
-      text: "Need something built rather than taught? Our sister company NDH Agency ships software, brands and growth systems with dedicated delivery teams. Same Najeeb Digital Hub family — the academy teaches the exact workflows the agency bills for.",
-      links: [{ label: "Visit NDH Agency", href: AGENCY_URL }],
+      text: "Najeeb Academy is purely a learning platform — we teach the skills through project-based courses and assessments rather than take on client builds. Want to talk it through with a human? The team is one WhatsApp message away.",
+      links: [
+        { label: "Chat on WhatsApp", href: NDH_WHATSAPP_URL },
+        { label: "Contact the team", to: "/contact" },
+      ],
     };
   }
 
@@ -481,8 +557,11 @@ function buildReply(query: string, courses: CourseRecord[]): Omit<ChatMessage, "
   if (/(human|person|talk to|speak|contact|whatsapp|call)/.test(q)) {
     return {
       sender: "assistant",
-      text: "Of course — a real human from the academy team replies to every message within one business day. You can reach us through the contact page or at hello@academy.ndh.com.ng.",
-      links: [{ label: "Contact the team", to: "/contact" }],
+      text: `Of course — a real human from the academy team replies to every message. The fastest channel is WhatsApp (${NDH_PHONE_DISPLAY}); you can also email us at ${NDH_EMAIL_HELLO} or use the contact page.`,
+      links: [
+        { label: "Chat on WhatsApp", href: NDH_WHATSAPP_URL },
+        { label: "Contact the team", to: "/contact" },
+      ],
     };
   }
 

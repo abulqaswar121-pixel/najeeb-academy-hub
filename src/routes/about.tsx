@@ -3,9 +3,7 @@ import {
   ArrowRight,
   Award,
   BookOpen,
-  Briefcase,
   Compass,
-  ExternalLink,
   FileCheck,
   Hammer,
   ShieldCheck,
@@ -13,9 +11,10 @@ import {
   Users,
 } from "lucide-react";
 
+import { ComparisonStrip } from "../components/academy/ComparisonStrip";
 import { SectionHeading } from "../components/academy/SectionHeading";
 import { Button } from "../components/ui/button";
-import { AGENCY_URL, seo } from "../lib/academy";
+import { seo } from "../lib/academy";
 
 export const Route = createFileRoute("/about")({
   head: () =>
@@ -104,6 +103,16 @@ function AboutPage() {
           ))}
         </section>
 
+        {/* Problem vs solution */}
+        <section className="space-y-10">
+          <SectionHeading
+            eyebrow="Why the academy exists"
+            title="Watching isn't doing — and the market knows it"
+            description="The internet is full of courses. It's proof that's scarce. Here's the difference in one glance."
+          />
+          <ComparisonStrip />
+        </section>
+
         {/* How learning works */}
         <section className="space-y-10">
           <SectionHeading
@@ -132,37 +141,6 @@ function AboutPage() {
                 </div>
               </div>
             ))}
-          </div>
-        </section>
-
-        {/* Agency link */}
-        <section className="bg-brand-subtle/40 border-border relative overflow-hidden rounded-3xl border p-8 shadow-2xl sm:p-12">
-          <div className="hero-glow -top-20 -left-20 h-[280px] w-[400px]" aria-hidden="true" />
-          <div className="relative z-10 flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-center">
-            <div className="max-w-2xl space-y-4">
-              <div className="bg-background/60 border-border text-muted-foreground inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold">
-                <Briefcase className="text-brand-soft h-3.5 w-3.5" aria-hidden="true" /> Part of
-                Najeeb Digital Hub
-              </div>
-              <h2 className="text-foreground text-2xl font-black tracking-tight sm:text-3xl">
-                Taught from the floor of a working agency
-              </h2>
-              <p className="text-muted-foreground text-sm leading-relaxed sm:text-base">
-                Najeeb Academy is the education arm of Najeeb Digital Hub. Our sister company, NDH
-                Agency, ships software, brands and growth systems for real clients — and every
-                course here is distilled from those delivery playbooks. When the industry moves, our
-                curriculum moves with it.
-              </p>
-            </div>
-            <Button
-              asChild
-              size="lg"
-              className="shadow-glow-primary shrink-0 rounded-2xl px-8 font-extrabold"
-            >
-              <a href={AGENCY_URL} target="_blank" rel="noreferrer">
-                Visit NDH Agency <ExternalLink className="h-4 w-4" aria-hidden="true" />
-              </a>
-            </Button>
           </div>
         </section>
 
