@@ -16,7 +16,7 @@ const navLinks: { to: string; labelKey: ChromeKey }[] = [
   { to: "/contact", labelKey: "nav.contact" },
 ];
 
-export function SiteHeader() {
+export function SiteHeader({ portal = false }: { portal?: boolean }) {
   const { data: me } = useMe();
   const signOut = useSignOut();
   const navigate = useNavigate();
@@ -24,8 +24,8 @@ export function SiteHeader() {
 
   return (
     <>
-      {/* Announcement strip: flash sales, discounts, launch news */}
-      <PromoBar />
+      {/* Announcement strip: public pages only, never inside portals */}
+      {!portal && <PromoBar />}
       <header className="border-border bg-surface/85 sticky top-0 z-50 border-b backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <BrandLogo size="sm" />

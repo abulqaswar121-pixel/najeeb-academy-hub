@@ -22,7 +22,16 @@ import { Button } from "../components/ui/button";
 import { categoryBySlug } from "../data/categories";
 import { meQueryOptions, seo, useMe } from "../lib/academy";
 import { formatPrice, useCurrency } from "../lib/currency";
-import { enrollFn, fetchCourseDetail, fetchDashboard } from "../lib/server-fns";
+import { useEffect, useRef } from "react";
+
+import {
+  confirmCheckoutFn,
+  enrollFn,
+  fetchCourseDetail,
+  fetchDashboard,
+  paymentsStatusFn,
+  startCheckoutFn,
+} from "../lib/server-fns";
 
 const detailQuery = (slug: string) => ({
   queryKey: ["course", slug],
@@ -67,6 +76,41 @@ function CourseDetailPage() {
       toast.error(err instanceof Error ? err.message : "Enrollment failed. Please try again."),
   });
 
+  const { data: payments } = useQuery({
+    queryKey: ["payments-status"],
+    queryFn: () => paymentsStatusFn(),
+  });
+
+  const checkout = useMutation({
+    mutationFn: () => startCheckoutFn({ data: { slug, origin: window.location.origin } }),
+    onSuccess: ({ url }) => {
+      window.location.href = url;
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Could not start payment."),
+  });
+
+  const confirm = useMutation({
+    mutationFn: (reference: string) => confirmCheckoutFn({ data: { reference } }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      toast.success("Payment received — you're enrolled!");
+      navigate({ to: "/learn/$slug", params: { slug } });
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "We could not confirm your payment."),
+  });
+
+  // Paystack sends the student back here with ?reference=... after paying.
+  const confirmedRef = useRef(false);
+  useEffect(() => {
+    if (confirmedRef.current || !me) return;
+    const ref = new URLSearchParams(window.location.search).get("reference");
+    if (!ref) return;
+    confirmedRef.current = true;
+    confirm.mutate(ref);
+  }, [me, confirm]);
+
   if (!detail) return null;
   const { course, lessons, related } = detail;
   const category = categoryBySlug(course.category);
@@ -78,8 +122,13 @@ function CourseDetailPage() {
       navigate({ to: "/signup", search: { redirect: `/courses/${slug}` } });
       return;
     }
+    if (payments?.enabled && course.priceNgn > 0) {
+      checkout.mutate();
+      return;
+    }
     enroll.mutate(course.id);
   };
+  const busy = enroll.isPending || checkout.isPending || confirm.isPending;
 
   const outcomes = lessons.slice(0, 6).map((l) => l.title);
 
@@ -176,10 +225,18 @@ function CourseDetailPage() {
                     size="lg"
                     className="bg-gradient-cta shadow-glow-primary w-full rounded-xl font-extrabold transition-transform hover:scale-[1.02]"
                     onClick={handleEnroll}
-                    disabled={enroll.isPending}
+                    disabled={busy}
                   >
                     <GraduationCap className="h-5 w-5" aria-hidden="true" />
-                    {enroll.isPending ? "Enrolling…" : "Enroll now"}
+                    {confirm.isPending
+                      ? "Confirming payment…"
+                      : checkout.isPending
+                        ? "Opening secure checkout…"
+                        : enroll.isPending
+                          ? "Enrolling…"
+                          : payments?.enabled && course.priceNgn > 0
+                            ? "Pay & enroll"
+                            : "Enroll now"}
                   </Button>
                 )}
                 <ul className="text-muted-foreground space-y-2 text-xs">

@@ -5,7 +5,6 @@ import { ArrowRight, Award, BookOpen, FileCheck, Hammer, Quote, Sparkles } from 
 import { CategoryIcon } from "../components/academy/CategoryIcon";
 import { RecommendedTopics } from "../components/academy/RecommendedTopics";
 import { SectionHeading } from "../components/academy/SectionHeading";
-import { ToolsMarquee } from "../components/academy/ToolsMarquee";
 import { Button } from "../components/ui/button";
 import { categories } from "../data/categories";
 import { seo } from "../lib/academy";
@@ -35,22 +34,22 @@ const steps = [
   {
     icon: BookOpen,
     title: "Learn",
-    text: "Short, focused lessons built around real tools — no academic padding, every lesson ends in a working exercise.",
+    text: "Short lessons with real tools.",
   },
   {
     icon: FileCheck,
     title: "Assess",
-    text: "Pass a final assessment that tests practical judgement, not trivia. 70% is the bar — retake it when you're ready.",
+    text: "70% pass mark, retake anytime.",
   },
   {
     icon: Hammer,
     title: "Build",
-    text: "Ship a capstone project you can actually show employers and clients. Your portfolio grows with every course.",
+    text: "Ship a real portfolio project.",
   },
   {
     icon: Award,
     title: "Certify",
-    text: "Earn a signed Najeeb Academy certificate with a unique code anyone can verify online in seconds.",
+    text: "Signed, verifiable certificate.",
   },
 ];
 
@@ -104,50 +103,27 @@ function HomePage() {
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 gap-4 pt-4 md:grid-cols-4">
-            {[
-              {
-                value: `${courses.length || 60}+`,
-                label: "AI courses",
-                sub: `Across ${categories.length} skill tracks`,
-              },
-              { value: "100%", label: "Project-based", sub: "Every course ends in a build" },
-              { value: "₦ NGN", label: "Local pricing", sub: "One-time fee, lifetime access" },
-              { value: "24/7", label: "Self-paced", sub: "Learn on your own schedule" },
-            ].map((stat) => (
-              <div
-                key={stat.label}
-                className="bg-card/90 border-border rounded-2xl border p-5 shadow-xl"
-              >
-                <div className="text-brand-soft font-mono text-2xl font-black sm:text-3xl">
-                  {stat.value}
+          {/* Learn → Assess → Build → Certify, compact */}
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {steps.map((step, i) => (
+              <div key={step.title} className="bg-card/90 border-border flex items-start gap-3 rounded-2xl border p-4 shadow-xl">
+                <div className="bg-brand-subtle border-primary/30 text-brand-soft flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border">
+                  <step.icon className="h-4 w-4" aria-hidden="true" />
                 </div>
-                <div className="text-foreground mt-1 text-xs font-bold">{stat.label}</div>
-                <div className="text-muted-foreground mt-0.5 text-[11px]">{stat.sub}</div>
+                <div className="min-w-0">
+                  <div className="text-foreground text-sm font-bold">
+                    0{i + 1} · {step.title}
+                  </div>
+                  <p className="text-muted-foreground mt-0.5 text-xs leading-snug">{step.text}</p>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ───────── Topic marquee ───────── */}
-      <div className="bg-surface border-border/60 overflow-hidden border-y py-3 text-xs">
-        <div className="animate-marquee text-muted-foreground flex items-center gap-10 font-mono text-[11px] whitespace-nowrap">
-          {[...categories, ...categories].map((cat, i) => (
-            <span key={`${cat.slug}-${i}`} className="flex items-center gap-2">
-              <CategoryIcon name={cat.icon} className="text-brand-soft h-3.5 w-3.5" />
-              <span className="text-foreground/80 font-bold tracking-wider uppercase">
-                {cat.name}
-              </span>
-              <span className="text-muted-foreground/50">•</span>
-            </span>
-          ))}
-        </div>
-      </div>
-
       {/* ───────── Recommended topics — one deliberate pick per level ───────── */}
-      <section className="mx-auto max-w-7xl space-y-10 px-4 py-20 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-7xl space-y-10 px-4 py-14 sm:px-6 lg:px-8">
         <SectionHeading
           eyebrow="Recommended topics"
           title="Not sure what to learn? Start here"
@@ -157,7 +133,7 @@ function HomePage() {
       </section>
 
       {/* ───────── Category showcase — pure-white strip ───────── */}
-      <section className="bg-surface border-border border-y py-20">
+      <section className="bg-surface border-border border-y py-14">
         <div className="mx-auto max-w-7xl space-y-10 px-4 sm:px-6 lg:px-8">
           <SectionHeading
             eyebrow={`${categories.length} skill tracks`}
@@ -165,7 +141,7 @@ function HomePage() {
             description="From prompt engineering to AI agents — practical skills employers and clients pay for right now."
           />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {categories.map((cat) => {
+            {categories.slice(0, 6).map((cat) => {
               const count = courses.filter((c) => c.category === cat.slug).length;
               return (
                 <Link
@@ -194,52 +170,24 @@ function HomePage() {
               );
             })}
           </div>
+          <div className="text-center">
+            <Link to="/courses" className="text-brand-soft inline-flex items-center gap-2 text-sm font-bold hover:underline">
+              See all {categories.length} tracks <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </div>
         </div>
       </section>
-
-      {/* ───────── How it works ───────── */}
-      <section className="mx-auto max-w-7xl space-y-10 px-4 py-20 sm:px-6 lg:px-8">
-        <SectionHeading
-          eyebrow="The method"
-          title={
-            <>
-              Learn → Assess → Build → <span className="text-gradient-brand">Certify</span>
-            </>
-          }
-          description="Watching videos doesn't change your career. Shipping proof does. Every Najeeb Academy course follows the same four-step arc."
-        />
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {steps.map((step, i) => (
-            <div
-              key={step.title}
-              className="bg-card border-border relative rounded-2xl border p-6 shadow-xl"
-            >
-              <div className="text-muted-foreground/40 absolute top-4 right-5 font-mono text-3xl font-black">
-                0{i + 1}
-              </div>
-              <div className="bg-brand-subtle border-primary/30 text-brand-soft flex h-11 w-11 items-center justify-center rounded-xl border">
-                <step.icon className="h-5 w-5" aria-hidden="true" />
-              </div>
-              <h3 className="text-foreground mt-4 text-base font-bold">{step.title}</h3>
-              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{step.text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ───────── Tools marquee — what you'll actually master ───────── */}
-      <ToolsMarquee />
 
       {/* ───────── Testimonials — pure-white strip ───────── */}
-      <section className="bg-surface border-border border-y py-20">
+      <section className="bg-surface border-border border-y py-14">
         <div className="mx-auto max-w-7xl space-y-10 px-4 sm:px-6 lg:px-8">
           <SectionHeading
             eyebrow="Student stories"
             title="Real people, real proof"
             description="Graduates who took a course, shipped the project and put the certificate to work."
           />
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {testimonials.slice(0, 4).map((t) => (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            {testimonials.slice(0, 3).map((t) => (
               <figure
                 key={t.id}
                 className="bg-card border-border flex flex-col rounded-2xl border p-6 shadow-xl"
@@ -272,7 +220,7 @@ function HomePage() {
       </section>
 
       {/* ───────── Final CTA — navy anchor before the footer ───────── */}
-      <section className="band-dark relative overflow-hidden py-20">
+      <section className="band-dark relative overflow-hidden py-14">
         <div
           className="hero-glow -top-24 left-1/2 h-[300px] w-[640px] -translate-x-1/2"
           aria-hidden="true"
