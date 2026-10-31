@@ -14,13 +14,280 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      certificates: {
+        Row: {
+          code: string
+          course_id: string
+          id: string
+          issued_at: string
+          user_id: string
+        }
+        Insert: {
+          code: string
+          course_id: string
+          id?: string
+          issued_at?: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          course_id?: string
+          id?: string
+          issued_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificates_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_submissions: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      courses: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          duration: string
+          id: string
+          image: string
+          is_featured: boolean
+          is_published: boolean
+          level: string
+          price_ngn: number
+          project: string
+          slug: string
+          summary: string
+          title: string
+          tools: string[]
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          duration: string
+          id?: string
+          image: string
+          is_featured?: boolean
+          is_published?: boolean
+          level?: string
+          price_ngn: number
+          project?: string
+          slug: string
+          summary: string
+          title: string
+          tools?: string[]
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          duration?: string
+          id?: string
+          image?: string
+          is_featured?: boolean
+          is_published?: boolean
+          level?: string
+          price_ngn?: number
+          project?: string
+          slug?: string
+          summary?: string
+          title?: string
+          tools?: string[]
+        }
+        Relationships: []
+      }
+      enrollments: {
+        Row: {
+          course_id: string
+          enrolled_at: string
+          id: string
+          progress: number
+          user_id: string
+        }
+        Insert: {
+          course_id: string
+          enrolled_at?: string
+          id?: string
+          progress?: number
+          user_id: string
+        }
+        Update: {
+          course_id?: string
+          enrolled_at?: string
+          id?: string
+          progress?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lesson_progress: {
+        Row: {
+          completed_at: string
+          id: string
+          lesson_id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          id?: string
+          lesson_id: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          id?: string
+          lesson_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_progress_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lessons: {
+        Row: {
+          content: string
+          course_id: string
+          id: string
+          position: number
+          slug: string
+          title: string
+          video_url: string | null
+        }
+        Insert: {
+          content: string
+          course_id: string
+          id?: string
+          position: number
+          slug: string
+          title: string
+          video_url?: string | null
+        }
+        Update: {
+          content?: string
+          course_id?: string
+          id?: string
+          position?: number
+          slug?: string
+          title?: string
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lessons_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string
+          id: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      testimonials: {
+        Row: {
+          course_id: string | null
+          id: number
+          name: string
+          quote: string
+          role: string
+        }
+        Insert: {
+          course_id?: string | null
+          id?: never
+          name: string
+          quote: string
+          role: string
+        }
+        Update: {
+          course_id?: string | null
+          id?: never
+          name?: string
+          quote?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "testimonials_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      verify_certificate: {
+        Args: { lookup_code: string }
+        Returns: {
+          code: string
+          course_category: string
+          course_title: string
+          issued_at: string
+          student_name: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
