@@ -6,6 +6,7 @@
 import { deleteCookie, getCookie, setCookie } from "@tanstack/react-start/server";
 
 import { assessments, PASS_MARK } from "../data/assessments";
+import { applyPass, canUnlock, passTier } from "../data/passes";
 import { localBackend } from "./local-backend";
 import { getSupabaseConfig, setRequestAccessToken, supabaseBackend } from "./supabase-backend";
 import type {
@@ -123,14 +124,26 @@ export async function getMe() {
 
 export async function enroll(courseId: string) {
   const user = await requireUser();
-  // Once a Paystack key is saved, paid courses can only be unlocked by a
-  // verified payment (see confirmCheckout). Free courses still enroll directly.
-  if (paystackKey()) {
-    const course = (await backend().listCourses()).find((c) => c.id === courseId);
-    if (!course) throw new Error("Course not found.");
-    if (course.priceNgn > 0) throw new Error("Please complete payment to enroll.");
+  const all = await backend().listCourses();
+  const course = all.find((c) => c.id === courseId);
+  if (!course) throw new Error("Course not found.");
+  const existing = (await backend().listEnrollments(user.id)).some((e) => e.courseId === courseId);
+  if (existing) return backend().enroll(user.id, courseId);
+  // Until a Paystack key is saved, enrollment stays open (testing mode).
+  if (!paystackKey()) return backend().enroll(user.id, courseId);
+  const wallet = await backend().getWallet(user.id);
+  if (!canUnlock(wallet)) throw new Error("Get a course pass to unlock this course.");
+  if (!wallet.allAccess) {
+    await backend().saveWallet(user.id, { ...wallet, creditsUsed: wallet.creditsUsed + 1 });
   }
   return backend().enroll(user.id, courseId);
+}
+
+export async function getWallet() {
+  const user = await currentUser();
+  if (!user) return null;
+  const w = await backend().getWallet(user.id);
+  return { allAccess: w.allAccess, creditsTotal: w.creditsTotal, creditsUsed: w.creditsUsed };
 }
 
 // ───────────────────────────── Paystack ─────────────────────────────
@@ -144,22 +157,23 @@ export function paymentsEnabled() {
   return { enabled: Boolean(key), mode: key?.startsWith("sk_live_") ? "live" : "test" };
 }
 
-export async function startCheckout(slug: string, origin: string) {
+/** Starts a Paystack payment for one of the 4 passes. */
+export async function startCheckout(tierId: string, origin: string, returnPath: string) {
   const user = await requireUser();
   const key = paystackKey();
   if (!key) throw new Error("Payments are not set up yet.");
-  const detail = await backend().getCourseBySlug(slug);
-  if (!detail) throw new Error("Course not found.");
-  const { course } = detail;
+  const tier = passTier(tierId);
+  if (!tier) throw new Error("Unknown pass.");
+  const safePath = returnPath.startsWith("/") && !returnPath.startsWith("//") ? returnPath : "/pricing";
   const res = await fetch("https://api.paystack.co/transaction/initialize", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       email: user.email,
-      amount: Math.round(course.priceNgn * 100), // kobo
+      amount: tier.priceNgn * 100, // kobo
       currency: "NGN",
-      callback_url: `${origin}/courses/${slug}?paid=1`,
-      metadata: { userId: user.id, courseId: course.id, slug },
+      callback_url: `${origin}${safePath}`,
+      metadata: { userId: user.id, tierId: tier.id },
     }),
   });
   const body = (await res.json()) as {
@@ -173,6 +187,7 @@ export async function startCheckout(slug: string, origin: string) {
   return { url: body.data.authorization_url, reference: body.data.reference };
 }
 
+/** Checks the payment with Paystack, then adds the pass to the wallet. */
 export async function confirmCheckout(reference: string) {
   const user = await requireUser();
   const key = paystackKey();
@@ -187,21 +202,25 @@ export async function confirmCheckout(reference: string) {
       status: string;
       amount: number;
       currency: string;
-      metadata?: { userId?: string; courseId?: string };
+      reference: string;
+      metadata?: { userId?: string; tierId?: string };
     };
   };
   const tx = body.data;
   if (!res.ok || !body.status || !tx || tx.status !== "success") {
     throw new Error("We could not confirm this payment yet.");
   }
-  const courseId = tx.metadata?.courseId;
-  if (!courseId || tx.metadata?.userId !== user.id) throw new Error("Payment does not match your account.");
-  const course = (await backend().listCourses()).find((c) => c.id === courseId);
-  if (!course) throw new Error("Course not found.");
-  if (tx.currency !== "NGN" || tx.amount < Math.round(course.priceNgn * 100)) {
-    throw new Error("Payment amount does not match the course price.");
+  if (tx.metadata?.userId !== user.id) throw new Error("Payment does not match your account.");
+  const tier = passTier(tx.metadata?.tierId ?? "");
+  if (!tier) throw new Error("Unknown pass.");
+  if (tx.currency !== "NGN" || tx.amount < tier.priceNgn * 100) {
+    throw new Error("Payment amount does not match the pass price.");
   }
-  return backend().enroll(user.id, courseId);
+  const wallet = await backend().getWallet(user.id);
+  if (!wallet.references.includes(tx.reference)) {
+    await backend().saveWallet(user.id, applyPass(wallet, tier, tx.reference));
+  }
+  return { tier: tier.name };
 }
 
 export async function getDashboard() {

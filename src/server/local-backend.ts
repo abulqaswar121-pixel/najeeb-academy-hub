@@ -24,6 +24,7 @@ import {
   lessonSlug,
   lessonVideoUrl,
 } from "../data/content";
+import { EMPTY_WALLET, type PassWallet } from "../data/passes";
 import type {
   AdminCourseRecord,
   AdminOverview,
@@ -94,6 +95,7 @@ interface LocalState {
   testimonialOverrides: Record<string, TestimonialStatus>;
   courseOverrides: Record<string, CourseOverride>;
   contactSubmissions: ContactMessageRecord[];
+  wallets?: Record<string, PassWallet>;
 }
 
 const DATA_DIR = path.join(process.cwd(), ".data");
@@ -176,6 +178,7 @@ function emptyState(): LocalState {
     testimonialOverrides: {},
     courseOverrides: {},
     contactSubmissions: [],
+    wallets: {},
   };
 }
 
@@ -449,6 +452,15 @@ export const localBackend: DataBackend = {
     state.enrollments.push(enrollment);
     persist();
     return enrollment;
+  },
+
+  async getWallet(userId) {
+    return state.wallets?.[userId] ?? { ...EMPTY_WALLET, references: [] };
+  },
+
+  async saveWallet(userId, wallet) {
+    state.wallets = { ...(state.wallets ?? {}), [userId]: wallet };
+    persist();
   },
 
   async listEnrollments(userId): Promise<EnrollmentWithCourse[]> {

@@ -230,6 +230,8 @@ export interface DataBackend {
 
   // student (all take the authenticated user id)
   enroll(userId: string, courseId: string): Promise<EnrollmentRecord>;
+  getWallet(userId: string): Promise<import("../data/passes").PassWallet>;
+  saveWallet(userId: string, wallet: import("../data/passes").PassWallet): Promise<void>;
   listEnrollments(userId: string): Promise<EnrollmentWithCourse[]>;
   getLearnState(userId: string, courseSlug: string): Promise<LearnState | null>;
   /** Persist watch progress for a lesson window; returns the resulting state. */
