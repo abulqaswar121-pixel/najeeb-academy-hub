@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useLocation,
   HeadContent,
   Scripts,
   type ErrorComponentProps,
@@ -141,21 +142,27 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+const PORTAL_PREFIXES = ["/learn", "/dashboard", "/admin"];
+const NO_ASSISTANT = ["/login", "/signup", "/verify"];
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useLocation({ select: (l) => l.pathname });
+  const isPortal = PORTAL_PREFIXES.some((p) => pathname.startsWith(p));
+  const showAssistant = !isPortal && !NO_ASSISTANT.some((p) => pathname.startsWith(p));
 
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <CurrencyProvider>
           <div className="bg-background text-foreground flex min-h-screen flex-col">
-            <SiteHeader />
+            <SiteHeader portal={isPortal} />
             <main className="flex-1">
               {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
               <Outlet />
             </main>
-            <SiteFooter />
-            <AssistantWidget />
+            {!isPortal && <SiteFooter variant={pathname === "/" ? "full" : "compact"} />}
+            {showAssistant && <AssistantWidget />}
           </div>
           <Toaster position="bottom-right" />
         </CurrencyProvider>
