@@ -84,6 +84,22 @@ export const enrollFn = createServerFn({ method: "POST" })
     return (await api()).enroll(data.courseId);
   });
 
+export const paymentsStatusFn = createServerFn({ method: "GET" }).handler(async () => {
+  return (await api()).paymentsEnabled();
+});
+
+export const startCheckoutFn = createServerFn({ method: "POST" })
+  .inputValidator(z.object({ slug: z.string().min(1), origin: z.string().url() }))
+  .handler(async ({ data }) => {
+    return (await api()).startCheckout(data.slug, data.origin);
+  });
+
+export const confirmCheckoutFn = createServerFn({ method: "POST" })
+  .inputValidator(z.object({ reference: z.string().min(1).max(200) }))
+  .handler(async ({ data }) => {
+    return (await api()).confirmCheckout(data.reference);
+  });
+
 export const fetchDashboard = createServerFn({ method: "GET" }).handler(async () => {
   return (await api()).getDashboard();
 });

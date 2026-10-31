@@ -123,6 +123,84 @@ export async function getMe() {
 
 export async function enroll(courseId: string) {
   const user = await requireUser();
+  // Once a Paystack key is saved, paid courses can only be unlocked by a
+  // verified payment (see confirmCheckout). Free courses still enroll directly.
+  if (paystackKey()) {
+    const course = (await backend().listCourses()).find((c) => c.id === courseId);
+    if (!course) throw new Error("Course not found.");
+    if (course.priceNgn > 0) throw new Error("Please complete payment to enroll.");
+  }
+  return backend().enroll(user.id, courseId);
+}
+
+// ───────────────────────────── Paystack ─────────────────────────────
+
+function paystackKey(): string | undefined {
+  return process.env["PAYSTACK_SECRET_KEY"] || undefined;
+}
+
+export function paymentsEnabled() {
+  const key = paystackKey();
+  return { enabled: Boolean(key), mode: key?.startsWith("sk_live_") ? "live" : "test" };
+}
+
+export async function startCheckout(slug: string, origin: string) {
+  const user = await requireUser();
+  const key = paystackKey();
+  if (!key) throw new Error("Payments are not set up yet.");
+  const detail = await backend().getCourseBySlug(slug);
+  if (!detail) throw new Error("Course not found.");
+  const { course } = detail;
+  const res = await fetch("https://api.paystack.co/transaction/initialize", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: user.email,
+      amount: Math.round(course.priceNgn * 100), // kobo
+      currency: "NGN",
+      callback_url: `${origin}/courses/${slug}?paid=1`,
+      metadata: { userId: user.id, courseId: course.id, slug },
+    }),
+  });
+  const body = (await res.json()) as {
+    status: boolean;
+    message?: string;
+    data?: { authorization_url: string; reference: string };
+  };
+  if (!res.ok || !body.status || !body.data) {
+    throw new Error(body.message || "Could not start payment. Please try again.");
+  }
+  return { url: body.data.authorization_url, reference: body.data.reference };
+}
+
+export async function confirmCheckout(reference: string) {
+  const user = await requireUser();
+  const key = paystackKey();
+  if (!key) throw new Error("Payments are not set up yet.");
+  const res = await fetch(
+    `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
+    { headers: { Authorization: `Bearer ${key}` } },
+  );
+  const body = (await res.json()) as {
+    status: boolean;
+    data?: {
+      status: string;
+      amount: number;
+      currency: string;
+      metadata?: { userId?: string; courseId?: string };
+    };
+  };
+  const tx = body.data;
+  if (!res.ok || !body.status || !tx || tx.status !== "success") {
+    throw new Error("We could not confirm this payment yet.");
+  }
+  const courseId = tx.metadata?.courseId;
+  if (!courseId || tx.metadata?.userId !== user.id) throw new Error("Payment does not match your account.");
+  const course = (await backend().listCourses()).find((c) => c.id === courseId);
+  if (!course) throw new Error("Course not found.");
+  if (tx.currency !== "NGN" || tx.amount < Math.round(course.priceNgn * 100)) {
+    throw new Error("Payment amount does not match the course price.");
+  }
   return backend().enroll(user.id, courseId);
 }
 
