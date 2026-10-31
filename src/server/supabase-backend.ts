@@ -9,6 +9,7 @@
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
+import { EMPTY_WALLET } from "../data/passes";
 import type {
   AdminCourseRecord,
   AdminOverview,
@@ -443,6 +444,40 @@ export const supabaseBackend: DataBackend = {
       .single();
     if (error) throw new Error(error.message);
     return mapEnrollment(data);
+  },
+
+  async getWallet(userId) {
+    const { data } = await clientForUser()
+      .from("pass_wallets")
+      .select("*")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!data) return { ...EMPTY_WALLET, references: [] };
+    return {
+      allAccess: Boolean(data.all_access),
+      creditsTotal: Number(data.credits_total ?? 0),
+      creditsUsed: Number(data.credits_used ?? 0),
+      references: (data.references as string[] | null) ?? [],
+    };
+  },
+
+  async saveWallet(userId, wallet) {
+    // Only the server may change wallets, so this uses the service key.
+    const cfg = getSupabaseConfig();
+    const key = process.env["SUPABASE_SERVICE_ROLE_KEY"];
+    if (!cfg || !key) throw new Error("Pass storage is not set up yet.");
+    const admin = createClient(cfg.url, key, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { error } = await admin.from("pass_wallets").upsert({
+      user_id: userId,
+      all_access: wallet.allAccess,
+      credits_total: wallet.creditsTotal,
+      credits_used: wallet.creditsUsed,
+      references: wallet.references,
+      updated_at: new Date().toISOString(),
+    });
+    if (error) throw new Error(error.message);
   },
 
   async listEnrollments(userId): Promise<EnrollmentWithCourse[]> {
