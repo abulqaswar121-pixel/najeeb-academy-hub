@@ -3,20 +3,21 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import {
   ArrowRight,
   Award,
-  BadgeCheck,
-  BookOpen,
-  FileCheck,
-  Hammer,
-  Infinity as InfinityIcon,
+  Check,
+  CreditCard,
+  Minus,
   ShieldCheck,
+  Sparkles,
+  Ticket,
 } from "lucide-react";
 
+import { PassPlans } from "../components/academy/PassPlans";
 import { SectionHeading } from "../components/academy/SectionHeading";
 import { Button } from "../components/ui/button";
-import { PassPlans } from "../components/academy/PassPlans";
-import { categories } from "../data/categories";
+import { PASS_TIERS } from "../data/passes";
 import { seo } from "../lib/academy";
 import { formatPrice, useCurrency } from "../lib/currency";
+import { passName } from "../lib/passes-ui";
 import { fetchCourses } from "../lib/server-fns";
 
 const coursesQuery = { queryKey: ["courses"], queryFn: () => fetchCourses() };
@@ -24,9 +25,9 @@ const coursesQuery = { queryKey: ["courses"], queryFn: () => fetchCourses() };
 export const Route = createFileRoute("/pricing")({
   head: () =>
     seo({
-      title: "Pricing — Simple Per-Course Fees in ₦ NGN",
+      title: "Passes & Pricing — Starter ₦3,000 to All-Access ₦25,000",
       description:
-        "One transparent price per course in Nigerian Naira. Every course includes all lessons, the final assessment, project review and a signed, verifiable certificate.",
+        "One pass, any courses. Starter Pass ₦3,000 (3 Courses), Skill Pack ₦6,500 (8 Courses), Pro Track ₦12,000 (18 Courses) or All-Access ₦25,000 for every course plus future releases. Certificates included.",
       path: "/pricing",
     }),
   loader: async ({ context }) => {
@@ -35,172 +36,225 @@ export const Route = createFileRoute("/pricing")({
   component: PricingPage,
 });
 
-const included = [
+const steps = [
   {
-    icon: BookOpen,
-    title: "All lessons & exercises",
-    text: "Every lesson in the course, with hands-on exercises and model answers.",
+    icon: Ticket,
+    title: "Pick your pass",
+    text: "Starter, Skill Pack, Pro Track or All-Access — a one-time payment, no subscription.",
   },
   {
-    icon: FileCheck,
-    title: "Final assessment",
-    text: "A practical assessment with a 70% pass mark and unlimited retakes.",
-  },
-  {
-    icon: Hammer,
-    title: "Capstone project",
-    text: "A real portfolio project with clear requirements — the proof that you can do the work.",
+    icon: CreditCard,
+    title: "Credits land in your wallet",
+    text: "Your dashboard shows the credits you own. Spend them on any course in the catalog.",
   },
   {
     icon: Award,
-    title: "Signed certificate",
-    text: "A signed Najeeb Academy certificate with a unique, publicly verifiable code.",
+    title: "Learn, build, get certified",
+    text: "Finish the lessons, pass the 70% assessment and ship a project — certificate issued instantly.",
   },
-  {
-    icon: InfinityIcon,
-    title: "Lifetime access",
-    text: "Pay once. Keep the course, every exercise and all future updates forever.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Secure NGN payments",
-    text: "Priced in Naira for African learners. No subscriptions, no hidden fees.",
-  },
+];
+
+type Row = { label: string; values: (string | boolean)[] };
+
+const COMPARISON: Row[] = [
+  { label: "Course credits", values: ["3 courses", "8 courses", "18 courses", "Unlimited"] },
+  { label: "All lessons, notes & exercises", values: [true, true, true, true] },
+  { label: "Final assessment + retakes", values: [true, true, true, true] },
+  { label: "Capstone project review", values: [true, true, true, true] },
+  { label: "Signed, verifiable certificate", values: [true, true, true, true] },
+  { label: "Lifetime access & updates", values: [true, true, true, true] },
+  { label: "Priority mentor feedback", values: [false, false, true, true] },
+  { label: "Future course releases", values: [false, false, false, true] },
+  { label: "All-Access VIP badge", values: [false, false, false, true] },
 ];
 
 function PricingPage() {
   const { data: courses = [] } = useQuery(coursesQuery);
   const { currency } = useCurrency();
-  const prices = courses.map((c) => c.priceNgn);
-  const minPrice = prices.length ? Math.min(...prices) : 12500;
-  const maxPrice = prices.length ? Math.max(...prices) : 26000;
+  const courseCount = courses.length || 60;
 
   return (
-    <div className="relative">
-      <div
-        className="bg-grid-pattern absolute inset-x-0 top-0 h-96 opacity-40"
-        aria-hidden="true"
-      />
-      <div className="relative mx-auto max-w-7xl space-y-16 px-4 py-16 sm:px-6 lg:px-8">
-        <SectionHeading
-          eyebrow="Pricing"
-          title={
-            <>
-              Pick a pass.{" "}
-              <span className="text-gradient-brand">Everything included.</span>
-            </>
-          }
-          description="Pay once in Naira, then choose the courses you want. Starter ₦3,000 (3 courses), Skill Pack ₦6,500 (8), Pro Track ₦12,000 (18), or All-Access ₦25,000 for everything."
+    <div>
+      {/* ───────── Hero ───────── */}
+      <section className="band-dark relative overflow-hidden py-16 sm:py-20">
+        <div className="bg-grid-pattern absolute inset-0 opacity-50" aria-hidden="true" />
+        <div
+          className="hero-glow top-0 left-1/2 h-[320px] w-[680px] -translate-x-1/2"
+          aria-hidden="true"
         />
+        <div className="relative z-10 mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
+          <div className="bg-brand-subtle border-primary/30 text-brand-soft inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold">
+            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+            Passes, not per-course prices
+          </div>
+          <h1 className="text-foreground mx-auto mt-5 max-w-4xl text-4xl leading-[1.05] font-black tracking-tight sm:text-6xl">
+            One pass. <span className="text-gradient-brand">Any courses you choose.</span>
+          </h1>
+          <p className="text-muted-foreground mx-auto mt-5 max-w-2xl text-base leading-relaxed sm:text-lg">
+            Every course in the catalog — {courseCount} and counting — is covered by a single pass.
+            Buy once, spend your credits on the skills you actually need. Certificates included.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
+            {PASS_TIERS.map((tier) => (
+              <span
+                key={tier.id}
+                className="bg-card/80 text-foreground border-border rounded-full border px-3.5 py-1.5 text-xs font-bold backdrop-blur"
+              >
+                {passName(tier.id)} · {formatPrice(tier.priceNgn, currency)}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
 
+      {/* ───────── The four passes ───────── */}
+      <section className="mx-auto max-w-7xl space-y-10 px-4 py-16 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow="The four passes"
+          title="Choose your credit budget"
+          description="Not sure which to pick? Most learners start with the Starter Pass and top up later — credits never expire."
+        />
         <PassPlans />
+      </section>
 
-        {/* Price band card */}
-        <div className="bg-card border-border mx-auto max-w-4xl overflow-hidden rounded-3xl border shadow-2xl">
-          <div className="bg-gradient-cta p-[1px]">
-            <div className="bg-card grid grid-cols-1 gap-0 rounded-t-3xl sm:grid-cols-3">
-              {[
-                {
-                  label: "Core essentials",
-                  range: `from ${formatPrice(minPrice, currency)}`,
-                  sub: "Beginner foundations",
-                },
-                {
-                  label: "Practitioner & agency",
-                  range: `${formatPrice(25000, currency)}–${formatPrice(35000, currency)}`,
-                  sub: "Hands-on professional tracks",
-                  highlight: true,
-                },
-                {
-                  label: "AI engineering flagship",
-                  range: `up to ${formatPrice(maxPrice, currency)}`,
-                  sub: "Build & ship real products",
-                },
-              ].map((tier) => (
-                <div
-                  key={tier.label}
-                  className={`p-8 text-center ${tier.highlight ? "bg-brand-subtle/50" : ""}`}
-                >
-                  <p className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                    {tier.label}
-                  </p>
-                  <p className="text-foreground mt-3 font-mono text-2xl font-black">{tier.range}</p>
-                  <p className="text-muted-foreground mt-1 text-xs">{tier.sub}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="border-border border-t p-8">
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {included.map((item) => (
-                <div key={item.title} className="flex items-start gap-3">
-                  <div className="bg-brand-subtle border-primary/30 text-brand-soft flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border">
-                    <item.icon className="h-4 w-4" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <h3 className="text-foreground text-sm font-bold">{item.title}</h3>
-                    <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
-                      {item.text}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Per-track price list */}
-        <section className="space-y-8">
+      {/* ───────── Comparison ───────── */}
+      <section className="bg-surface border-border border-y py-16">
+        <div className="mx-auto max-w-7xl space-y-8 px-4 sm:px-6 lg:px-8">
           <SectionHeading
-            title="Browse prices by track"
-            description="Exact prices are shown on every course card and course page — browse the catalog free, pay only when you enroll."
+            eyebrow="Compare"
+            title="What every pass includes"
+            description="Every tier gets the full academy experience — the difference is how many courses you unlock at once."
           />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {categories.map((cat) => {
-              const tracked = courses.filter((c) => c.category === cat.slug);
-              if (tracked.length === 0) return null;
-              const lo = Math.min(...tracked.map((c) => c.priceNgn));
-              const hi = Math.max(...tracked.map((c) => c.priceNgn));
-              return (
-                <Link
-                  key={cat.slug}
-                  to="/courses"
-                  search={{ category: cat.slug }}
-                  className="group bg-card border-border hover:border-primary/50 flex items-center justify-between gap-4 rounded-2xl border p-5 shadow-lg transition-all hover:-translate-y-0.5"
-                >
-                  <div className="min-w-0">
-                    <h3 className="text-foreground group-hover:text-brand-soft truncate text-sm font-bold transition-colors">
-                      {cat.name}
-                    </h3>
-                    <p className="text-muted-foreground mt-1 text-xs">{tracked.length} courses</p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="text-brand-soft font-mono text-sm font-black">
-                      {lo === hi ? formatPrice(lo, currency) : `${formatPrice(lo, currency)}+`}
-                    </p>
-                    <BadgeCheck
-                      className="text-success mt-1 ml-auto h-3.5 w-3.5"
-                      aria-hidden="true"
-                    />
-                  </div>
-                </Link>
-              );
-            })}
+          <div className="bg-card border-border overflow-hidden rounded-3xl border shadow-xl">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[680px] border-collapse text-left text-sm">
+                <caption className="sr-only">Pass comparison</caption>
+                <thead>
+                  <tr className="border-border bg-brand-subtle/50 border-b">
+                    <th scope="col" className="text-muted-foreground px-5 py-4 text-xs font-bold">
+                      Features
+                    </th>
+                    {PASS_TIERS.map((tier) => (
+                      <th
+                        key={tier.id}
+                        scope="col"
+                        className="text-foreground px-4 py-4 text-center"
+                      >
+                        <span className="block text-sm font-black">{passName(tier.id)}</span>
+                        <span className="text-brand-soft mt-0.5 block font-mono text-[11px] font-bold">
+                          {formatPrice(tier.priceNgn, currency)}
+                        </span>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {COMPARISON.map((row) => (
+                    <tr key={row.label} className="border-border/70 border-b last:border-0">
+                      <th
+                        scope="row"
+                        className="text-muted-foreground px-5 py-3.5 text-left text-xs font-semibold"
+                      >
+                        {row.label}
+                      </th>
+                      {row.values.map((value, i) => (
+                        <td key={i} className="px-4 py-3.5 text-center">
+                          {typeof value === "string" ? (
+                            <span className="text-foreground font-mono text-xs font-bold">
+                              {value}
+                            </span>
+                          ) : value ? (
+                            <Check className="text-success mx-auto h-4 w-4" aria-label="Included" />
+                          ) : (
+                            <Minus
+                              className="text-muted-foreground/40 mx-auto h-4 w-4"
+                              aria-label="Not included"
+                            />
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="border-border bg-background/50 border-t px-5 py-4 text-center">
+              <p className="text-muted-foreground text-xs">
+                Prices are in Nigerian Naira (₦). Nothing renews automatically — you only pay when
+                you buy a pass.
+              </p>
+            </div>
           </div>
-        </section>
-
-        <div className="text-center">
-          <Button
-            asChild
-            size="lg"
-            className="bg-gradient-cta shadow-glow-primary rounded-2xl px-10 font-extrabold transition-transform hover:scale-105"
-          >
-            <Link to="/courses">
-              Find your course <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
-          </Button>
         </div>
-      </div>
+      </section>
+
+      {/* ───────── How credits work ───────── */}
+      <section className="mx-auto max-w-7xl space-y-10 px-4 py-16 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow="How it works"
+          title="Three steps from pass to certificate"
+          description="No subscriptions, no surprise charges, no per-course price tags to compare. Just credits and courses."
+        />
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {steps.map((step, i) => (
+            <div
+              key={step.title}
+              className="bg-card border-border rounded-2xl border p-6 shadow-lg"
+            >
+              <div className="flex items-center gap-3">
+                <div className="bg-brand-subtle border-primary/25 text-brand-soft flex h-10 w-10 items-center justify-center rounded-xl border">
+                  <step.icon className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <span className="text-muted-foreground font-mono text-xs font-bold tracking-wider uppercase">
+                  Step 0{i + 1}
+                </span>
+              </div>
+              <h3 className="text-foreground mt-4 text-base font-black tracking-tight">
+                {step.title}
+              </h3>
+              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{step.text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ───────── Closing CTA ───────── */}
+      <section className="band-dark relative overflow-hidden py-14">
+        <div
+          className="hero-glow -top-24 left-1/2 h-[280px] w-[620px] -translate-x-1/2"
+          aria-hidden="true"
+        />
+        <div className="relative z-10 mx-auto max-w-3xl space-y-6 px-4 text-center sm:px-6">
+          <h2 className="text-foreground text-3xl font-black tracking-tight sm:text-4xl">
+            Still deciding? Browse first.
+          </h2>
+          <p className="text-muted-foreground text-base leading-relaxed">
+            The catalog is free to explore — every curriculum, project brief and lesson outline is
+            public. Buy a pass only when a course is right for you.
+          </p>
+          <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Button
+              asChild
+              size="lg"
+              className="bg-gradient-cta shadow-glow-primary w-full rounded-2xl px-8 font-extrabold sm:w-auto"
+            >
+              <Link to="/courses">
+                Browse the catalog <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="w-full rounded-2xl px-8 font-bold sm:w-auto"
+            >
+              <Link to="/faq">
+                <ShieldCheck className="h-4 w-4" aria-hidden="true" /> Read the FAQ
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

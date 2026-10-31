@@ -6,9 +6,9 @@ import {
   Copy,
   Check,
   Sparkles,
+  Ticket,
   Timer,
   X,
-  Zap,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -33,23 +33,21 @@ type Promo = {
 
 const PROMOS: Promo[] = [
   {
-    id: "flash-sale",
-    icon: Zap,
-    message: "Flash Sale — 30% off every course, this week only.",
-    cta: { label: "Grab the deal", to: "/courses" },
-    coupon: "FLASH30",
-    endsAt: "2026-10-12T23:59:59+01:00",
+    id: "starter-pass",
+    icon: Ticket,
+    message: "Starter Pass — ₦3,000 unlocks any 3 courses.",
+    cta: { label: "See the passes", to: "/pricing" },
   },
   {
-    id: "new-tracks",
+    id: "all-access",
     icon: Sparkles,
-    message: "New: Agentic AI engineering courses now in the catalog.",
-    cta: { label: "See what's new", to: "/courses" },
+    message: "All-Access Pass — every course, plus every future release.",
+    cta: { label: "Go All-Access", to: "/pricing" },
   },
   {
     id: "free-account",
     icon: BadgePercent,
-    message: "Create a free account — pay only for the courses you take.",
+    message: "Browse the full catalog free — pick a pass when you're ready.",
     cta: { label: "Sign up free", to: "/signup" },
   },
 ];

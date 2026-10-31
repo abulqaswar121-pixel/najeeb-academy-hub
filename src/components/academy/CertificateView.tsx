@@ -17,7 +17,7 @@ export function CertificateView({
   code,
 }: CertificateViewProps) {
   return (
-    <div className="border-gold/50 bg-card relative overflow-hidden rounded-3xl border-2 p-8 shadow-2xl sm:p-10">
+    <div className="border-gold/50 bg-card print-certificate relative overflow-hidden rounded-3xl border-2 p-8 shadow-2xl sm:p-10">
       <div className="bg-dots-pattern absolute inset-0 opacity-40" aria-hidden="true" />
       <div className="hero-glow -top-24 -right-24 h-[260px] w-[360px]" aria-hidden="true" />
       <div className="relative z-10 space-y-6 text-center">

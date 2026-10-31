@@ -6,30 +6,28 @@ import {
   BookOpen,
   CheckCircle2,
   Clock,
+  CreditCard,
   FileCheck,
   GraduationCap,
   Hammer,
+  Infinity as InfinityIcon,
   Lock,
   PlayCircle,
   Star,
+  Ticket,
   Wrench,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { CourseCard } from "../components/academy/CourseCard";
-import { PassPlans } from "../components/academy/PassPlans";
+import { CoursePassBadge } from "../components/academy/PassBadge";
+import { PassPlans, paymentsQuery, walletQuery } from "../components/academy/PassPlans";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { categoryBySlug } from "../data/categories";
-import { meQueryOptions, seo, useMe } from "../lib/academy";
-import { formatPrice, useCurrency } from "../lib/currency";
+import { sanitizeCourseCopy, seo, useMe } from "../lib/academy";
 
-import {
-  enrollFn,
-  fetchCourseDetail,
-  fetchDashboard,
-  paymentsStatusFn,
-} from "../lib/server-fns";
+import { enrollFn, fetchCourseDetail, fetchDashboard } from "../lib/server-fns";
 
 const detailQuery = (slug: string) => ({
   queryKey: ["course", slug],
@@ -56,10 +54,11 @@ export const Route = createFileRoute("/courses/$slug")({
 
 function CourseDetailPage() {
   const { slug } = Route.useParams();
-  const { currency } = useCurrency();
   const { data: detail } = useQuery(detailQuery(slug));
   const { data: me } = useMe();
   const { data: dashboard } = useQuery({ ...dashboardQuery, enabled: Boolean(me) });
+  const { data: wallet } = useQuery({ ...walletQuery, enabled: Boolean(me) });
+  const { data: payments } = useQuery(paymentsQuery);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -74,20 +73,25 @@ function CourseDetailPage() {
       toast.error(err instanceof Error ? err.message : "Enrollment failed. Please try again."),
   });
 
-  const { data: payments } = useQuery({
-    queryKey: ["payments-status"],
-    queryFn: () => paymentsStatusFn(),
-  });
-
   if (!detail) return null;
   const { course, lessons, related } = detail;
   const category = categoryBySlug(course.category);
   const enrollment = dashboard?.enrollments.find((e) => e.courseId === course.id);
 
+  const creditsLeft = wallet ? Math.max(0, wallet.creditsTotal - wallet.creditsUsed) : 0;
+  const allAccess = Boolean(wallet?.allAccess);
+  const paidMode = Boolean(payments?.enabled);
+  const needsPass = paidMode && !allAccess && creditsLeft === 0;
+
   const handleEnroll = () => {
     if (!me) {
-      toast.info("Create a free account to enroll.");
+      toast.info("Create a free account, then unlock this course with one credit.");
       navigate({ to: "/signup", search: { redirect: `/courses/${slug}` } });
+      return;
+    }
+    if (needsPass) {
+      toast.info("You have no course credits left — pick a pass to unlock this course.");
+      navigate({ to: "/pricing" });
       return;
     }
     enroll.mutate(course.id);
@@ -163,15 +167,32 @@ function CourseDetailPage() {
                 <div className="from-card absolute inset-0 bg-gradient-to-t to-transparent" />
               </div>
               <div className="space-y-4 p-6">
-                <div className="flex items-end justify-between">
-                  <div>
-                    <div className="text-foreground font-mono text-3xl font-black">
-                      From ₦1,000
-                    </div>
-                    <div className="text-muted-foreground text-xs">
-                      Included in every course pass · lifetime access
-                    </div>
-                  </div>
+                <div className="space-y-2">
+                  <p className="text-muted-foreground font-mono text-[10px] tracking-wider uppercase">
+                    How to unlock
+                  </p>
+                  <p className="text-foreground flex flex-wrap items-center gap-2 text-lg font-black tracking-tight">
+                    <Ticket className="text-brand-soft h-5 w-5" aria-hidden="true" />1 Course Credit
+                    <span className="text-muted-foreground text-xs font-semibold">or</span>
+                    <InfinityIcon className="text-brand-soft h-5 w-5" aria-hidden="true" />
+                    All-Access
+                  </p>
+                  <CoursePassBadge />
+                  {paidMode && me && !allAccess && (
+                    <p className="text-brand-soft font-mono text-xs font-bold">
+                      {creditsLeft} credit{creditsLeft === 1 ? "" : "s"} in your wallet
+                    </p>
+                  )}
+                  {allAccess && (
+                    <p className="text-gold text-xs font-bold">
+                      All-Access is active — this course is already yours.
+                    </p>
+                  )}
+                  {!paidMode && (
+                    <p className="text-muted-foreground text-xs">
+                      Free to join while checkout is being switched on.
+                    </p>
+                  )}
                 </div>
                 {enrollment ? (
                   <Button
@@ -191,12 +212,27 @@ function CourseDetailPage() {
                     onClick={handleEnroll}
                     disabled={busy}
                   >
-                    <GraduationCap className="h-5 w-5" aria-hidden="true" />
+                    {needsPass ? (
+                      <CreditCard className="h-5 w-5" aria-hidden="true" />
+                    ) : (
+                      <GraduationCap className="h-5 w-5" aria-hidden="true" />
+                    )}
                     {enroll.isPending
-                      ? "Enrolling…"
-                      : payments?.enabled
-                        ? "Unlock with my pass"
-                        : "Enroll now"}
+                      ? "Unlocking…"
+                      : needsPass
+                        ? "Get Course Pass"
+                        : allAccess
+                          ? "Start course — All-Access"
+                          : !me
+                            ? "Unlock with 1 Credit"
+                            : paidMode
+                              ? "Unlock with 1 Credit"
+                              : "Start this course"}
+                  </Button>
+                )}
+                {!enrollment && (
+                  <Button asChild variant="outline" className="w-full rounded-xl font-bold">
+                    <Link to="/pricing">See all 4 passes</Link>
                   </Button>
                 )}
                 <ul className="text-muted-foreground space-y-2 text-xs">
@@ -222,11 +258,22 @@ function CourseDetailPage() {
           </div>
         </div>
       </section>
-      {!enrollment && payments?.enabled && (
-        <section className="mx-auto max-w-7xl px-4 pt-12 sm:px-6 lg:px-8">
-          <h2 className="text-foreground mb-5 text-2xl font-black tracking-tight">
-            Pick a pass to unlock this course
-          </h2>
+      {!enrollment && (
+        <section className="mx-auto max-w-7xl px-4 pt-14 sm:px-6 lg:px-8">
+          <div className="mb-6 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
+            <div>
+              <p className="text-brand-soft font-mono text-[10px] tracking-wider uppercase">
+                No per-course price tags
+              </p>
+              <h2 className="text-foreground mt-1 text-2xl font-black tracking-tight">
+                Pick a pass to unlock this course
+              </h2>
+            </div>
+            <p className="text-muted-foreground max-w-sm text-xs leading-relaxed">
+              Buy credits once, then spend them here. Every pass includes assessments, mentor
+              project reviews and signed certificates.
+            </p>
+          </div>
           <PassPlans />
         </section>
       )}
@@ -256,11 +303,13 @@ function CourseDetailPage() {
             <h2 className="text-foreground text-2xl font-black tracking-tight">
               About this course
             </h2>
-            {course.description.split("\n\n").map((para, i) => (
-              <p key={i} className="text-muted-foreground text-sm leading-relaxed sm:text-base">
-                {para}
-              </p>
-            ))}
+            {sanitizeCourseCopy(course.description)
+              .split("\n\n")
+              .map((para, i) => (
+                <p key={i} className="text-muted-foreground text-sm leading-relaxed sm:text-base">
+                  {para}
+                </p>
+              ))}
           </section>
 
           {/* Curriculum */}

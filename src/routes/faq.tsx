@@ -45,11 +45,11 @@ const faqs = [
     items: [
       {
         q: "How much do courses cost?",
-        a: "Each course is a one-time fee in Nigerian Naira — currently between ₦15,000 and ₦50,000 depending on depth and tier. That includes the full course video, all guided lessons, the assessment, project review and your certificate. No subscriptions.",
+        a: "We use four one-time passes instead of per-course prices: Starter Pass ₦3,000 (any 3 courses), Skill Pack ₦6,500 (any 8), Pro Track ₦12,000 (any 18) and All-Access ₦25,000 (every course plus future releases). Every pass includes lessons, assessments, project review, certificates and lifetime access. No subscriptions.",
       },
       {
         q: "What is your refund policy?",
-        a: "If a course isn't what you expected, contact us within 7 days of enrollment and before completing more than 20% of the lessons, and we'll refund you in full. Refunds are returned to your original payment method within 5–10 business days.",
+        a: "If your pass isn't right for you, contact us within 7 days of purchase and before you've used more than one credit, and we'll refund you in full. Refunds are returned to your original payment method within 5–10 business days.",
       },
       {
         q: "Do I keep access after finishing?",

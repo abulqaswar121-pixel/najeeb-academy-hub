@@ -56,9 +56,12 @@ export function useCurrency() {
   return useContext(CurrencyContext);
 }
 
-/** Always-NGN formatter (receipts, admin console, certificate-adjacent copy). */
+/** Always-NGN formatter — deterministic grouping so SSR and hydration agree. */
 export function formatNaira(amount: number): string {
-  return `₦${amount.toLocaleString("en-NG")}`;
+  const grouped = Math.round(amount)
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return `₦${grouped}`;
 }
 
 /** Preference-aware price: ₦15,000 → ≈ $10 when the visitor picked USD. */

@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "../components/ui/button";
-import { seo, formatNaira } from "../lib/academy";
+import { seo } from "../lib/academy";
 import { courseForStory, stories, storyBySlug } from "../lib/stories";
 
 export const Route = createFileRoute("/stories/$slug")({
@@ -172,10 +172,10 @@ function StoryPage() {
                     </div>
                     <div>
                       <dt className="text-muted-foreground text-[11px] font-bold tracking-wider uppercase">
-                        Tuition (one-time)
+                        How it was unlocked
                       </dt>
-                      <dd className="text-foreground mt-1 font-mono font-bold">
-                        {formatNaira(course.priceNgn)}
+                      <dd className="text-foreground mt-1 font-bold">
+                        1 course credit or the All-Access Pass
                       </dd>
                     </div>
                   </>

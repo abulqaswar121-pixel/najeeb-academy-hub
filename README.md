@@ -9,6 +9,8 @@ and earn a **signed, publicly verifiable certificate**.
 
 - **TanStack Start v1** (React 19, SSR) + Vite — file-based routing in `src/routes/`
 - **@tanstack/react-router** + **@tanstack/react-query** + `createServerFn` server functions
+- **@tanstack/react-router-ssr-query** streams loader-prefetched query state into the SSR payload and
+  rehydrates it on the client, so the first client render matches the server HTML (no auth/data flicker)
 - **Tailwind CSS v4** (`src/styles.css`, `@theme inline` semantic tokens — no hardcoded colors in components)
 - shadcn-style components on Radix UI, lucide-react, CVA
 - **Lovable Cloud (Supabase)**: Postgres + RLS, email/password auth
@@ -34,9 +36,11 @@ bundle in `content/bundle/`:
   verified live (2026-10-01); 21 dead/invalid IDs were replaced with verified tutorials
   (flagged `videoReplaced`, originals kept in `originalVideoId`).
 - `content/bundle/academy-catalog.json` (mirrored at `src/data/academy-catalog.json`) —
-  the processed catalog the app consumes: 60 courses, 6 tracks, slugs, pricing tiers
-  (₦15,000–₦50,000), tools, capstones and 6 guided lessons per course with notes,
-  activities, reflections and watch windows.
+  the processed catalog the app consumes: 60 courses, 6 tracks, slugs, tools, capstones
+  and 6 guided lessons per course with notes, activities, reflections and watch windows.
+  Courses are never sold individually — the UI renders the 4-tier pass model in
+  `src/data/passes.ts` (Starter ₦3,000 / Skill Pack ₦6,500 / Pro Track ₦12,000 /
+  All-Access Pass ₦25,000) and ignores the legacy per-course `priceNgn` field.
 - `content/bundle/cover_images/` — the 60 original course covers.
 
 `src/data/courses.ts` transforms the catalog into `CourseSeed`s; `content.ts` builds the
@@ -53,10 +57,19 @@ In production, adding a course is a plain `INSERT` into `courses` + `lessons` �
 ## Pages
 
 `/` home · `/courses` catalog (search + category filters) · `/courses/$slug` detail ·
-`/pricing` · `/about` · `/faq` · `/contact` · `/login` · `/signup` · `/dashboard` (student) ·
-`/learn/$slug` (course player + capstone project + final assessment) · `/admin` (admin portal) ·
-`/verify` + `/verify/$code` (public certificate verification). Every route ships unique
+`/pricing` (4 pass tiers + comparison) · `/about` · `/faq` · `/contact` · `/login` · `/signup` ·
+`/dashboard` (credit wallet + student courses) · `/learn/$slug` (dark learning room: collapsible
+curriculum, capstone + final assessment) · `/admin` (compact admin portal) · `/verify` +
+`/verify/$code` (public certificate verification). Every route ships unique
 title/description/OG metadata.
+
+## Chrome & portals
+
+`src/routes/__root.tsx` picks the shell by path. Public pages get the promo bar, site header,
+footer (full footer only on `/` with the NDH hub/agency links) and the floating assistant.
+Portals (`/learn`, `/dashboard`, `/admin`) render a slim dark `PortalHeader` and a
+distraction-free canvas; auth and verification screens (`/login`, `/signup`, `/verify`) hide the
+promo bar, footer and assistant too. There is no ecosystem switcher — the academy stands alone.
 
 ## Student portal
 
@@ -85,6 +98,8 @@ course management (edit title/summary/price, feature, hide/unhide, soft-delete/r
 capstone review (approve / request changes with feedback), testimonial moderation
 (publish/hide/delete — pending student stories included), and the contact inbox.
 
+The admin shell is compact: a slim sidebar (Overview, Project grading, Course reviews,
+Contact messages, Students, Courses) on desktop and a scrollable tab strip on mobile.
 Local backend seeds a default admin: `admin@ndh.com.ng` / `NdhAdmin#2026`.
 On Lovable Cloud promote an account with:
 `update public.profiles set role = 'admin' where email = 'you@example.com';`

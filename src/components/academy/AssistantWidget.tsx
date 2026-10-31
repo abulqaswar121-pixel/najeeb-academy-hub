@@ -6,7 +6,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import assistantAvatar from "../../assets/ndh-ai-assistant.png";
 import { categories } from "../../data/categories";
 import { NDH_EMAIL_HELLO, NDH_PHONE_DISPLAY, NDH_WHATSAPP_URL } from "../../lib/contact";
-import { formatPrice, useCurrency } from "../../lib/currency";
 import { fetchCourses } from "../../lib/server-fns";
 import type { CourseRecord } from "../../server/types";
 import { Button } from "../ui/button";
@@ -63,7 +62,6 @@ function readStoredMessages(): ChatMessage[] | null {
  */
 export function AssistantWidget() {
   const [open, setOpen] = useState(false);
-  const { currency } = useCurrency();
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
   const welcome = useMemo<ChatMessage>(
@@ -246,7 +244,7 @@ export function AssistantWidget() {
                           <span>
                             <strong>{c.title}</strong>
                             <small className="gw-chat-card-meta">
-                              {formatPrice(c.priceNgn, currency)} · {c.lessonCount} lessons
+                              1 credit or All-Access · {c.lessonCount} lessons
                             </small>
                           </span>
                         </span>
@@ -505,7 +503,7 @@ function buildReply(query: string, courses: CourseRecord[]): Omit<ChatMessage, "
   if (/(price|cost|pay|fee|naira|₦|how much|cheap|expensive)/.test(q)) {
     return {
       sender: "assistant",
-      text: "Courses are one-time fees in Naira — from ₦15,000 for core essentials up to ₦50,000 for the AI engineering flagship tracks. That includes the full course video, all guided lessons, the final assessment, project review, a signed certificate and lifetime access. No subscriptions, ever.",
+      text: "We use four one-time passes instead of per-course prices. Starter is ₦3,000 for any 3 courses, Skill Pack ₦6,500 for any 8, Pro Track ₦12,000 for any 18, and All-Access is ₦25,000 for every course plus future releases. Every pass includes assessments, project review, certificates and lifetime access. No subscriptions, ever.",
       links: [
         { label: "See pricing", to: "/pricing" },
         { label: "Browse courses", to: "/courses" },

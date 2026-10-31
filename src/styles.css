@@ -84,79 +84,79 @@
   --radius: 0.75rem;
 
   /* Canvas + ink (light reading surfaces) */
-  --background: #f1f4fa; /* porcelain canvas */
-  --foreground: #101b40; /* ecosystem ink */
-  --card: #ffffff; /* elevated precision cards */
-  --card-foreground: #101b40;
+  --background: #eef3f9; /* porcelain canvas */
+  --foreground: #0b1c3a; /* deep navy ink */
+  --card: #ffffff; /* crisp white cards */
+  --card-foreground: #0b1c3a;
   --popover: #ffffff;
-  --popover-foreground: #101b40;
+  --popover-foreground: #0b1c3a;
 
-  /* Accent — ecosystem cobalt */
-  --primary: #3159c6;
+  /* Accent — deep navy base + electric cyan highlights */
+  --primary: #0d2a52;
   --primary-foreground: #ffffff;
-  --secondary: #e8ecff; /* eco soft periwinkle */
-  --secondary-foreground: #101b40;
-  --muted: #e9edf6;
-  --muted-foreground: #4c5975;
-  --accent: #e8ecff;
-  --accent-foreground: #101b40;
+  --secondary: #e2f5fb; /* ice cyan tint */
+  --secondary-foreground: #0b1c3a;
+  --muted: #e7eef6;
+  --muted-foreground: #4a5a75;
+  --accent: #e2f5fb;
+  --accent-foreground: #0b1c3a;
 
   /* Status */
   --destructive: #b42318;
   --destructive-foreground: #ffffff;
 
   /* Lines + focus */
-  --border: #d9e1ef;
-  --input: #d9e1ef;
-  --ring: #3159c6;
+  --border: #d5e1ee;
+  --input: #d5e1ee;
+  --ring: #0891b2;
 
   /* Charts — family hues */
-  --chart-1: #3159c6;
-  --chart-2: #55d5fb;
+  --chart-1: #0891b2;
+  --chart-2: #22d3ee;
   --chart-3: #34d399;
-  --chart-4: #6366f1;
+  --chart-4: #0d2a52;
   --chart-5: #f59e0b;
 
   /* Sidebar */
-  --sidebar: #f7f9fd;
-  --sidebar-foreground: #101b40;
-  --sidebar-primary: #3159c6;
+  --sidebar: #f7fafd;
+  --sidebar-foreground: #0b1c3a;
+  --sidebar-primary: #0d2a52;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e8ecff;
-  --sidebar-accent-foreground: #101b40;
-  --sidebar-border: #d9e1ef;
-  --sidebar-ring: #3159c6;
+  --sidebar-accent: #e2f5fb;
+  --sidebar-accent-foreground: #0b1c3a;
+  --sidebar-border: #d5e1ee;
+  --sidebar-ring: #0891b2;
 
   /* Brand extensions (academy semantic names, master values) */
   --surface: #ffffff; /* pure-white strips */
-  --surface-deep: #091b3f; /* ecosystem deep navy (footer anchors) */
-  --surface-raised: #f7f9fd;
+  --surface-deep: #071634; /* ecosystem deep navy (footer anchors) */
+  --surface-raised: #f7fafd;
   --success: #067647;
   --success-foreground: #ffffff;
-  --highlight: #0891b2;
-  --highlight-foreground: #ffffff;
+  --highlight: #06b6d4; /* electric cyan */
+  --highlight-foreground: #04121f;
   --gold: #b45309;
   --gold-foreground: #ffffff;
-  --brand-subtle: #e8ecff; /* soft periwinkle panel tint */
-  --brand-soft: #3159c6; /* accent text/icons on light */
+  --brand-subtle: #e2f5fb; /* ice-cyan panel tint */
+  --brand-soft: #0e7490; /* cyan accent text/icons on light */
 
   /* Extra precision tokens */
-  --eco-dark: #091b3f;
-  --eco-dark-2: #13285c;
-  --eco-electric: #55d5fb;
-  --eco-lilac: #bfa4ff;
-  --eco-on-dark: #f6f8ff;
-  --eco-on-dark-muted: #c4d0eb;
-  --gw-iris: #6366f1;
-  --gw-violet: #a855f7;
+  --eco-dark: #071634;
+  --eco-dark-2: #0f2a54;
+  --eco-electric: #22d3ee;
+  --eco-lilac: #7dd3fc;
+  --eco-on-dark: #f2f8ff;
+  --eco-on-dark-muted: #b9cbe4;
+  --gw-iris: #0e7490;
+  --gw-violet: #22d3ee;
   --gw-emerald: #34d399;
-  --accent-hover: #13285c; /* mirrors the parent's navy hover */
-  --accent-line: #b7c6ec; /* cobalt-tinted hairline for assistant chrome */
+  --accent-hover: #12386b; /* deep navy hover */
+  --accent-line: #9fd8e8; /* cyan-tinted hairline */
 
   /* Gradient stops used by the helper utilities below */
-  --gradient-from: #3159c6;
-  --gradient-via: #6366f1;
-  --gradient-to: #0891b2;
+  --gradient-from: #0d2a52;
+  --gradient-via: #0e7490;
+  --gradient-to: #22d3ee;
 }
 
 /* ============================================================
@@ -166,38 +166,38 @@
    ============================================================ */
 
 .band-dark {
-  --background: #0c1f44;
-  --foreground: #f6f8ff;
-  --card: #13285c;
-  --card-foreground: #f6f8ff;
-  --popover: #13285c;
-  --popover-foreground: #f6f8ff;
-  --primary: #6366f1; /* iris CTAs on navy, as on the gateway */
-  --primary-foreground: #ffffff;
-  --secondary: #1b3670;
-  --secondary-foreground: #f6f8ff;
-  --muted: #173058;
-  --muted-foreground: #c4d0eb;
-  --accent: rgb(246 248 255 / 0.1);
-  --accent-foreground: #f6f8ff;
+  --background: #0a1c3d;
+  --foreground: #f2f8ff;
+  --card: #102a54;
+  --card-foreground: #f2f8ff;
+  --popover: #102a54;
+  --popover-foreground: #f2f8ff;
+  --primary: #22d3ee; /* electric cyan CTAs on navy */
+  --primary-foreground: #04121f;
+  --secondary: #16356a;
+  --secondary-foreground: #f2f8ff;
+  --muted: #132f5c;
+  --muted-foreground: #b9cbe4;
+  --accent: rgb(242 248 255 / 0.1);
+  --accent-foreground: #f2f8ff;
   --destructive: #fb7185;
-  --border: rgb(246 248 255 / 0.18);
-  --input: rgb(246 248 255 / 0.26);
-  --ring: #55d5fb;
-  --surface: #13285c;
-  --surface-raised: #173058;
+  --border: rgb(186 230 253 / 0.18);
+  --input: rgb(186 230 253 / 0.28);
+  --ring: #22d3ee;
+  --surface: #0f2850;
+  --surface-raised: #132f5c;
   --success: #34d399;
-  --highlight: #55d5fb;
+  --highlight: #22d3ee;
   --gold: #fbbf24;
-  --brand-subtle: rgb(85 213 251 / 0.12);
-  --brand-soft: #55d5fb; /* electric on navy */
-  --accent-line: rgb(85 213 251 / 0.4);
-  --gradient-from: #55d5fb;
-  --gradient-via: #bfa4ff;
-  --gradient-to: #818cf8;
+  --brand-subtle: rgb(34 211 238 / 0.12);
+  --brand-soft: #67e8f9; /* electric cyan on navy */
+  --accent-line: rgb(34 211 238 / 0.4);
+  --gradient-from: #22d3ee;
+  --gradient-via: #7dd3fc;
+  --gradient-to: #38bdf8;
 
-  background: radial-gradient(ellipse at 85% 55%, #13285c, #091b3f 72%);
-  background-color: #091b3f;
+  background: radial-gradient(ellipse at 85% 55%, #102a54, #071534 72%);
+  background-color: #071534;
   color: var(--foreground);
 }
 
@@ -242,7 +242,12 @@ body {
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: "DM Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-family:
+    "DM Sans",
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 
 h1,
@@ -411,7 +416,7 @@ h4 {
    ============================================================ */
 
 .promo-bar {
-  background: linear-gradient(100deg, var(--gw-iris), var(--gw-violet));
+  background: linear-gradient(100deg, #071634 0%, #0d2a52 55%, #0e7490 100%);
   color: #ffffff;
 }
 .promo-bar-inner {
@@ -1044,8 +1049,7 @@ h4 {
   border-radius: 14px;
   border: 1px solid rgb(15 23 42 / 0.1);
   background:
-    linear-gradient(150deg, rgb(49 89 198 / 0.07), rgb(99 102 241 / 0.06)),
-    var(--surface);
+    linear-gradient(150deg, rgb(49 89 198 / 0.07), rgb(99 102 241 / 0.06)), var(--surface);
   text-decoration: none;
   transition:
     border-color 0.15s ease,
@@ -1295,9 +1299,15 @@ h4 {
   );
 }
 
-/* Primary CTA — the gateway's iris → violet precision gradient */
+/* Primary CTA — deep navy → electric cyan precision gradient */
 .bg-gradient-cta {
-  background-image: linear-gradient(100deg, var(--gw-iris), var(--gw-violet));
+  background-image: linear-gradient(100deg, #0d2a52 0%, #0e7490 62%, #0891b2 100%);
+  color: #ffffff;
+}
+
+.band-dark .bg-gradient-cta {
+  background-image: linear-gradient(100deg, #0e7490 0%, #0891b2 58%, #22d3ee 100%);
+  color: #04121f;
 }
 
 .hero-glow {
@@ -1370,4 +1380,110 @@ h4 {
 .lesson-content li {
   margin-bottom: 0.375rem;
   line-height: 1.6;
+}
+
+/* ============================================================
+   Learning room — dark, distraction-free player chrome
+   ============================================================ */
+
+.learning-room {
+  background:
+    radial-gradient(ellipse at 12% 0%, #12325f 0%, transparent 55%),
+    radial-gradient(ellipse at 90% 10%, #0b4a5f 0%, transparent 45%), #071534;
+  background-color: #071534;
+}
+
+.learning-room .curriculum-item {
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.lesson-prose p {
+  margin-bottom: 1rem;
+  line-height: 1.75;
+  color: var(--muted-foreground);
+}
+.lesson-prose h3 {
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+  font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 700;
+  color: var(--foreground);
+}
+.lesson-prose ul {
+  margin-bottom: 1rem;
+  padding-left: 1.25rem;
+  list-style: disc;
+  color: var(--muted-foreground);
+}
+.lesson-prose li {
+  margin-bottom: 0.375rem;
+  line-height: 1.6;
+}
+.lesson-prose strong {
+  color: var(--foreground);
+  font-weight: 700;
+}
+
+/* ============================================================
+   Portal chrome — keep the brand lockup legible on small screens
+   ============================================================ */
+
+@media (max-width: 480px) {
+  .portal-brand .brand-lockup-badge {
+    display: none;
+  }
+  .portal-brand .brand-lockup small {
+    display: none;
+  }
+  .portal-brand .brand-lockup strong {
+    font-size: 11px;
+    letter-spacing: 0.03em;
+  }
+  .portal-brand .ndh-family-tile {
+    width: 30px;
+    height: 30px;
+  }
+  .portal-brand .ndh-family-sector {
+    width: 16px;
+    height: 16px;
+    right: -5px;
+    bottom: -4px;
+  }
+  .portal-brand .ndh-family-sector svg {
+    width: 9px;
+    height: 9px;
+  }
+}
+
+/* ============================================================
+   Print — clean certificate sheets (download / save as PDF)
+   ============================================================ */
+
+@media print {
+  .promo-bar,
+  .site-footer,
+  header,
+  .ai-assistant-launcher,
+  .ai-assistant-dialog,
+  .no-print {
+    display: none !important;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+  }
+
+  .print-certificate {
+    border: 2px solid #b45309 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+
+  @page {
+    margin: 14mm;
+  }
 }

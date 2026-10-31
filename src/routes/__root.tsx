@@ -12,9 +12,11 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import { meQueryOptions } from "../lib/academy";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CurrencyProvider } from "../lib/currency";
 import { LanguageProvider } from "../lib/i18n";
+import { PortalHeader } from "../components/layout/PortalHeader";
 import { SiteHeader } from "../components/layout/SiteHeader";
 import { SiteFooter } from "../components/layout/SiteFooter";
 import { AssistantWidget } from "../components/academy/AssistantWidget";
@@ -81,6 +83,16 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  // Seed the session query once per request so the header renders in the same
+  // auth state on the server and on the first client render (no auth flicker).
+  loader: async ({ context }) => {
+    try {
+      return await context.queryClient.ensureQueryData(meQueryOptions);
+    } catch {
+      // A failed session lookup should never block a public page render.
+      return null;
+    }
+  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -142,26 +154,36 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
-const PORTAL_PREFIXES = ["/learn", "/dashboard", "/admin"];
-const NO_ASSISTANT = ["/login", "/signup", "/verify"];
+/* Distraction-free zones: portals and auth screens hide the big footer, the
+   promo bar and the floating assistant. The public site keeps them. */
+const AUTH_PREFIXES = ["/login", "/signup", "/verify"] as const;
+
+function portalArea(pathname: string): "learn" | "dashboard" | "admin" | null {
+  if (pathname.startsWith("/learn")) return "learn";
+  if (pathname.startsWith("/admin")) return "admin";
+  if (pathname.startsWith("/dashboard")) return "dashboard";
+  return null;
+}
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useLocation({ select: (l) => l.pathname });
-  const isPortal = PORTAL_PREFIXES.some((p) => pathname.startsWith(p));
-  const showAssistant = !isPortal && !NO_ASSISTANT.some((p) => pathname.startsWith(p));
+  const area = portalArea(pathname);
+  const isAuth = AUTH_PREFIXES.some((p) => pathname.startsWith(p));
+  const distractionFree = area !== null || isAuth;
+  const showAssistant = !distractionFree;
 
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <CurrencyProvider>
           <div className="bg-background text-foreground flex min-h-screen flex-col">
-            <SiteHeader portal={isPortal} />
+            {area ? <PortalHeader area={area} /> : <SiteHeader showPromo={!distractionFree} />}
             <main className="flex-1">
               {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
               <Outlet />
             </main>
-            {!isPortal && <SiteFooter variant={pathname === "/" ? "full" : "compact"} />}
+            {!distractionFree && <SiteFooter variant={pathname === "/" ? "full" : "compact"} />}
             {showAssistant && <AssistantWidget />}
           </div>
           <Toaster position="bottom-right" />
