@@ -17,20 +17,18 @@ import {
 import { toast } from "sonner";
 
 import { CourseCard } from "../components/academy/CourseCard";
+import { PassPlans } from "../components/academy/PassPlans";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { categoryBySlug } from "../data/categories";
 import { meQueryOptions, seo, useMe } from "../lib/academy";
 import { formatPrice, useCurrency } from "../lib/currency";
-import { useEffect, useRef } from "react";
 
 import {
-  confirmCheckoutFn,
   enrollFn,
   fetchCourseDetail,
   fetchDashboard,
   paymentsStatusFn,
-  startCheckoutFn,
 } from "../lib/server-fns";
 
 const detailQuery = (slug: string) => ({
@@ -81,36 +79,6 @@ function CourseDetailPage() {
     queryFn: () => paymentsStatusFn(),
   });
 
-  const checkout = useMutation({
-    mutationFn: () => startCheckoutFn({ data: { slug, origin: window.location.origin } }),
-    onSuccess: ({ url }) => {
-      window.location.href = url;
-    },
-    onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Could not start payment."),
-  });
-
-  const confirm = useMutation({
-    mutationFn: (reference: string) => confirmCheckoutFn({ data: { reference } }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      toast.success("Payment received — you're enrolled!");
-      navigate({ to: "/learn/$slug", params: { slug } });
-    },
-    onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "We could not confirm your payment."),
-  });
-
-  // Paystack sends the student back here with ?reference=... after paying.
-  const confirmedRef = useRef(false);
-  useEffect(() => {
-    if (confirmedRef.current || !me) return;
-    const ref = new URLSearchParams(window.location.search).get("reference");
-    if (!ref) return;
-    confirmedRef.current = true;
-    confirm.mutate(ref);
-  }, [me, confirm]);
-
   if (!detail) return null;
   const { course, lessons, related } = detail;
   const category = categoryBySlug(course.category);
@@ -122,13 +90,9 @@ function CourseDetailPage() {
       navigate({ to: "/signup", search: { redirect: `/courses/${slug}` } });
       return;
     }
-    if (payments?.enabled && course.priceNgn > 0) {
-      checkout.mutate();
-      return;
-    }
     enroll.mutate(course.id);
   };
-  const busy = enroll.isPending || checkout.isPending || confirm.isPending;
+  const busy = enroll.isPending;
 
   const outcomes = lessons.slice(0, 6).map((l) => l.title);
 
@@ -202,10 +166,10 @@ function CourseDetailPage() {
                 <div className="flex items-end justify-between">
                   <div>
                     <div className="text-foreground font-mono text-3xl font-black">
-                      {formatPrice(course.priceNgn, currency)}
+                      From ₦1,000
                     </div>
                     <div className="text-muted-foreground text-xs">
-                      One-time fee · lifetime access
+                      Included in every course pass · lifetime access
                     </div>
                   </div>
                 </div>
@@ -228,15 +192,11 @@ function CourseDetailPage() {
                     disabled={busy}
                   >
                     <GraduationCap className="h-5 w-5" aria-hidden="true" />
-                    {confirm.isPending
-                      ? "Confirming payment…"
-                      : checkout.isPending
-                        ? "Opening secure checkout…"
-                        : enroll.isPending
-                          ? "Enrolling…"
-                          : payments?.enabled && course.priceNgn > 0
-                            ? "Pay & enroll"
-                            : "Enroll now"}
+                    {enroll.isPending
+                      ? "Enrolling…"
+                      : payments?.enabled
+                        ? "Unlock with my pass"
+                        : "Enroll now"}
                   </Button>
                 )}
                 <ul className="text-muted-foreground space-y-2 text-xs">
@@ -262,6 +222,14 @@ function CourseDetailPage() {
           </div>
         </div>
       </section>
+      {!enrollment && payments?.enabled && (
+        <section className="mx-auto max-w-7xl px-4 pt-12 sm:px-6 lg:px-8">
+          <h2 className="text-foreground mb-5 text-2xl font-black tracking-tight">
+            Pick a pass to unlock this course
+          </h2>
+          <PassPlans />
+        </section>
+      )}
 
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-12 px-4 py-14 sm:px-6 lg:grid-cols-3 lg:px-8">
         <div className="space-y-12 lg:col-span-2">

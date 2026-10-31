@@ -13,6 +13,7 @@ import {
 
 import { SectionHeading } from "../components/academy/SectionHeading";
 import { Button } from "../components/ui/button";
+import { PassPlans } from "../components/academy/PassPlans";
 import { categories } from "../data/categories";
 import { seo } from "../lib/academy";
 import { formatPrice, useCurrency } from "../lib/currency";
@@ -85,12 +86,14 @@ function PricingPage() {
           eyebrow="Pricing"
           title={
             <>
-              One course. One price.{" "}
+              Pick a pass.{" "}
               <span className="text-gradient-brand">Everything included.</span>
             </>
           }
-          description={`No subscriptions and no upsells. Each course is a one-time fee between ${formatPrice(minPrice, currency)} and ${formatPrice(maxPrice, currency)}, set by its depth and length — and every course includes the same complete package.${currency === "USD" ? " USD is an approximate display conversion — enrolment is charged in Naira (₦)." : ""}`}
+          description="Pay once in Naira, then choose the courses you want. Starter ₦3,000 (3 courses), Skill Pack ₦6,500 (8), Pro Track ₦12,000 (18), or All-Access ₦25,000 for everything."
         />
+
+        <PassPlans />
 
         {/* Price band card */}
         <div className="bg-card border-border mx-auto max-w-4xl overflow-hidden rounded-3xl border shadow-2xl">
