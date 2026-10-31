@@ -1,14 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import {
+  ArrowUpRight,
   Award,
   BookOpen,
+  CheckCircle2,
   Eye,
   EyeOff,
   FolderGit2,
   GraduationCap,
   Inbox,
   LayoutDashboard,
+  Mail,
   MessageSquareQuote,
   Pencil,
   RotateCcw,
@@ -17,7 +20,7 @@ import {
   Trash2,
   Users,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { EmptyState } from "../components/academy/EmptyState";
@@ -34,7 +37,8 @@ import {
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
-import { formatDate, formatNaira, meQueryOptions, seo, useMe } from "../lib/academy";
+import { formatDate, meQueryOptions, seo, useMe } from "../lib/academy";
+import type { AdminOverview } from "../server/types";
 import {
   adminCoursesFn,
   adminDeleteMessageFn,
@@ -57,28 +61,78 @@ export const Route = createFileRoute("/admin")({
     seo({
       title: "Admin Portal",
       description:
-        "Najeeb Academy admin portal — manage courses, students, project submissions, testimonials and messages.",
+        "Najeeb Academy admin portal — grade capstone projects, approve student reviews and stories, read contact messages and manage the academy.",
       path: "/admin",
     }),
   loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(meQueryOptions);
+    const me = await context.queryClient.ensureQueryData(meQueryOptions);
+    // Prefetch the overview only for admins — the loader must not throw for
+    // regular visitors who hit /admin and see the access gate.
+    if (me?.role === "admin") {
+      await context.queryClient.ensureQueryData(overviewQuery);
+    }
   },
   component: AdminPage,
 });
 
-type Tab = "overview" | "students" | "courses" | "projects" | "testimonials" | "messages";
+type Tab = "overview" | "projects" | "reviews" | "messages" | "students" | "courses";
 
-const TABS: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
-  { id: "overview", label: "Overview", icon: LayoutDashboard },
-  { id: "students", label: "Students", icon: Users },
-  { id: "courses", label: "Courses", icon: BookOpen },
-  { id: "projects", label: "Projects", icon: FolderGit2 },
-  { id: "testimonials", label: "Testimonials", icon: MessageSquareQuote },
-  { id: "messages", label: "Messages", icon: Inbox },
+const TABS: {
+  id: Tab;
+  label: string;
+  shortLabel: string;
+  icon: typeof LayoutDashboard;
+  hint: string;
+}[] = [
+  {
+    id: "overview",
+    label: "Overview",
+    shortLabel: "Overview",
+    icon: LayoutDashboard,
+    hint: "Platform stats & queues",
+  },
+  {
+    id: "projects",
+    label: "Project grading",
+    shortLabel: "Projects",
+    icon: FolderGit2,
+    hint: "Review capstone submissions",
+  },
+  {
+    id: "reviews",
+    label: "Course reviews",
+    shortLabel: "Reviews",
+    icon: MessageSquareQuote,
+    hint: "Approve student stories",
+  },
+  {
+    id: "messages",
+    label: "Contact messages",
+    shortLabel: "Messages",
+    icon: Inbox,
+    hint: "Inbox from the contact form",
+  },
+  {
+    id: "students",
+    label: "Students",
+    shortLabel: "Students",
+    icon: Users,
+    hint: "Accounts & activity",
+  },
+  {
+    id: "courses",
+    label: "Courses",
+    shortLabel: "Courses",
+    icon: BookOpen,
+    hint: "Publish, feature, edit",
+  },
 ];
+
+const overviewQuery = { queryKey: ["admin", "overview"], queryFn: () => adminOverviewFn() };
 
 function AdminPage() {
   const { data: me, isLoading } = useMe();
+  const { data: overview } = useQuery({ ...overviewQuery, enabled: Boolean(me?.role === "admin") });
   const [tab, setTab] = useState<Tab>("overview");
 
   if (isLoading) return null;
@@ -89,7 +143,7 @@ function AdminPage() {
         <EmptyState
           icon={ShieldCheck}
           title="Admin access required"
-          description="This is the Najeeb Academy admin portal. Log in with an administrator account to manage courses, students, projects and testimonials."
+          description="This is the Najeeb Academy admin portal. Log in with an administrator account to grade projects, approve reviews and manage courses."
           action={
             <Button asChild>
               <Link to="/login" search={{ redirect: "/admin" }}>
@@ -102,48 +156,92 @@ function AdminPage() {
     );
   }
 
+  const counts: Partial<Record<Tab, number | undefined>> = {
+    projects: overview?.pendingProjects,
+    reviews: overview?.pendingTestimonials,
+    messages: overview?.messages,
+  };
+
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-      <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      {/* Header */}
+      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
         <div>
-          <p className="text-brand-soft font-mono text-xs tracking-wider uppercase">Admin portal</p>
-          <h1 className="text-foreground mt-2 text-3xl font-black tracking-tight sm:text-4xl">
+          <p className="text-brand-soft font-mono text-[10px] tracking-wider uppercase">
+            Admin portal
+          </p>
+          <h1 className="text-foreground mt-1.5 text-2xl font-black tracking-tight sm:text-3xl">
             Run the academy, {me.name.split(" ")[0]}
           </h1>
-          <p className="text-muted-foreground mt-2 text-sm">
-            Courses, students, capstone reviews, homepage testimonials and inbox — all in one place.
-          </p>
         </div>
+        <Button asChild size="sm" variant="outline" className="rounded-xl font-bold">
+          <Link to="/dashboard">
+            <GraduationCap className="h-4 w-4" aria-hidden="true" /> Student view
+          </Link>
+        </Button>
       </div>
 
-      {/* Tab bar */}
-      <div className="no-scrollbar mt-8 flex gap-1.5 overflow-x-auto pb-1" role="tablist">
-        {TABS.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={tab === id}
-            onClick={() => setTab(id)}
-            className={`flex shrink-0 items-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-bold transition-colors ${
-              tab === id
-                ? "bg-brand-subtle border-primary/40 text-foreground"
-                : "border-border text-muted-foreground hover:text-foreground hover:bg-accent/50"
-            }`}
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[236px_minmax(0,1fr)]">
+        {/* Compact sidebar / mobile tab strip */}
+        <aside className="lg:sticky lg:top-20 lg:self-start">
+          <nav
+            className="no-scrollbar flex gap-1.5 overflow-x-auto lg:flex-col lg:overflow-visible"
+            aria-label="Admin sections"
           >
-            <Icon className="h-4 w-4" aria-hidden="true" />
-            {label}
-          </button>
-        ))}
-      </div>
+            {TABS.map(({ id, label, shortLabel, icon: Icon, hint }) => {
+              const count = counts[id];
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  aria-current={tab === id ? "page" : undefined}
+                  onClick={() => setTab(id)}
+                  className={`group flex shrink-0 items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors lg:w-full ${
+                    tab === id
+                      ? "border-primary/40 bg-brand-subtle text-foreground"
+                      : "border-transparent text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                  }`}
+                >
+                  <Icon
+                    className={`h-4 w-4 shrink-0 ${tab === id ? "text-brand-soft" : ""}`}
+                    aria-hidden="true"
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-xs font-bold">
+                      <span className="lg:hidden">{shortLabel}</span>
+                      <span className="hidden lg:inline">{label}</span>
+                    </span>
+                    <span className="text-muted-foreground/80 hidden truncate text-[10px] lg:block">
+                      {hint}
+                    </span>
+                  </span>
+                  {typeof count === "number" && count > 0 && (
+                    <span className="bg-primary text-primary-foreground shrink-0 rounded-full px-1.5 py-0.5 font-mono text-[10px] font-bold">
+                      {count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+          <div className="border-border mt-3 hidden border-t pt-3 lg:block">
+            <Link
+              to="/"
+              className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-[11px] font-bold transition-colors"
+            >
+              <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" /> Back to the academy
+            </Link>
+          </div>
+        </aside>
 
-      <div className="mt-8">
-        {tab === "overview" && <OverviewTab onNavigate={setTab} />}
-        {tab === "students" && <StudentsTab />}
-        {tab === "courses" && <CoursesTab />}
-        {tab === "projects" && <ProjectsTab />}
-        {tab === "testimonials" && <TestimonialsTab />}
-        {tab === "messages" && <MessagesTab />}
+        <div className="min-w-0">
+          {tab === "overview" && <OverviewTab onNavigate={setTab} overview={overview} />}
+          {tab === "projects" && <ProjectsTab />}
+          {tab === "reviews" && <ReviewsTab />}
+          {tab === "messages" && <MessagesTab />}
+          {tab === "students" && <StudentsTab />}
+          {tab === "courses" && <CoursesTab />}
+        </div>
       </div>
     </div>
   );
@@ -151,58 +249,630 @@ function AdminPage() {
 
 // ───────────────────────────── Overview ─────────────────────────────
 
-function OverviewTab({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
-  const { data } = useQuery({ queryKey: ["admin", "overview"], queryFn: () => adminOverviewFn() });
-  if (!data) return <TabSkeleton />;
+function OverviewTab({
+  onNavigate,
+  overview,
+}: {
+  onNavigate: (tab: Tab) => void;
+  overview: AdminOverview | undefined;
+}) {
+  if (!overview) return <TabSkeleton />;
 
   const stats: { label: string; value: string; icon: typeof Users; tab?: Tab }[] = [
-    { label: "Students", value: String(data.students), icon: Users, tab: "students" },
-    { label: "Enrollments", value: String(data.enrollments), icon: GraduationCap },
-    { label: "Certificates issued", value: String(data.certificates), icon: Award },
+    { label: "Students", value: String(overview.students), icon: Users, tab: "students" },
+    { label: "Enrollments", value: String(overview.enrollments), icon: GraduationCap },
+    { label: "Certificates issued", value: String(overview.certificates), icon: Award },
     {
       label: "Live courses",
-      value: `${data.courses - data.hiddenCourses}/${data.courses}`,
+      value: `${overview.courses - overview.hiddenCourses}/${overview.courses}`,
       icon: BookOpen,
       tab: "courses",
     },
-    {
-      label: "Projects awaiting review",
-      value: String(data.pendingProjects),
-      icon: FolderGit2,
-      tab: "projects",
-    },
-    {
-      label: "Testimonials pending",
-      value: String(data.pendingTestimonials),
-      icon: MessageSquareQuote,
-      tab: "testimonials",
-    },
-    { label: "Inbox messages", value: String(data.messages), icon: Inbox, tab: "messages" },
-    {
-      label: "Average course rating",
-      value: data.averageRating !== null ? `${data.averageRating}/5 (${data.reviews})` : "—",
-      icon: Star,
-    },
   ];
 
+  const queue = [
+    {
+      tab: "projects" as Tab,
+      label: "Projects to grade",
+      value: overview.pendingProjects,
+      icon: FolderGit2,
+    },
+    {
+      tab: "reviews" as Tab,
+      label: "Reviews to approve",
+      value: overview.pendingTestimonials,
+      icon: MessageSquareQuote,
+    },
+    {
+      tab: "messages" as Tab,
+      label: "Contact messages to read",
+      value: overview.messages,
+      icon: Mail,
+    },
+  ].filter((item) => item.value > 0);
+
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {stats.map(({ label, value, icon: Icon, tab }) => (
-        <button
-          key={label}
-          type="button"
-          disabled={!tab}
-          onClick={() => tab && onNavigate(tab)}
-          className={`bg-card border-border rounded-2xl border p-5 text-left shadow-xl transition-colors ${
-            tab ? "hover:border-primary/40 cursor-pointer" : "cursor-default"
-          }`}
-        >
-          <div className="bg-brand-subtle border-primary/30 text-brand-soft flex h-10 w-10 items-center justify-center rounded-xl border">
-            <Icon className="h-5 w-5" aria-hidden="true" />
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        {stats.map(({ label, value, icon: Icon, tab }) => (
+          <button
+            key={label}
+            type="button"
+            disabled={!tab}
+            onClick={() => tab && onNavigate(tab)}
+            className={`bg-card border-border rounded-2xl border p-4 text-left shadow-sm transition-colors ${
+              tab ? "hover:border-primary/40 cursor-pointer" : "cursor-default"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="bg-brand-subtle border-primary/20 text-brand-soft flex h-8 w-8 items-center justify-center rounded-lg border">
+                <Icon className="h-4 w-4" aria-hidden="true" />
+              </div>
+              {tab && (
+                <ArrowUpRight className="text-muted-foreground/50 h-3.5 w-3.5" aria-hidden="true" />
+              )}
+            </div>
+            <p className="text-foreground mt-3 font-mono text-2xl font-black tracking-tight">
+              {value}
+            </p>
+            <p className="text-muted-foreground mt-0.5 text-[11px] font-medium">{label}</p>
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="bg-card border-border rounded-2xl border p-5 shadow-sm lg:col-span-2">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-foreground text-sm font-black tracking-tight">Needs attention</h2>
+            <span className="text-muted-foreground font-mono text-[10px] tracking-wider uppercase">
+              Queues
+            </span>
           </div>
-          <p className="text-foreground mt-4 text-2xl font-black tracking-tight">{value}</p>
-          <p className="text-muted-foreground mt-1 text-xs font-medium">{label}</p>
-        </button>
+          {queue.length === 0 ? (
+            <div className="mt-4 flex items-center gap-3 rounded-xl border border-success/30 bg-success/5 p-4">
+              <CheckCircle2 className="text-success h-5 w-5 shrink-0" aria-hidden="true" />
+              <p className="text-muted-foreground text-xs">
+                All clear — no projects, reviews or messages waiting.
+              </p>
+            </div>
+          ) : (
+            <div className="mt-4 space-y-2">
+              {queue.map((item) => (
+                <button
+                  key={item.tab}
+                  type="button"
+                  onClick={() => onNavigate(item.tab)}
+                  className="border-border hover:border-primary/40 hover:bg-accent/40 flex w-full items-center justify-between gap-3 rounded-xl border p-3.5 text-left transition-colors"
+                >
+                  <span className="flex min-w-0 items-center gap-3">
+                    <item.icon className="text-brand-soft h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span className="text-foreground truncate text-xs font-bold">{item.label}</span>
+                  </span>
+                  <span className="bg-primary text-primary-foreground shrink-0 rounded-full px-2 py-0.5 font-mono text-[10px] font-bold">
+                    {item.value}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-card border-border rounded-2xl border p-5 shadow-sm">
+          <h2 className="text-foreground text-sm font-black tracking-tight">Quality</h2>
+          <div className="mt-4 space-y-3">
+            <div>
+              <p className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                Average rating
+              </p>
+              <p className="text-foreground mt-1 font-mono text-2xl font-black">
+                {overview.averageRating !== null ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Star className="fill-gold text-gold h-4 w-4" aria-hidden="true" />
+                    {overview.averageRating}
+                  </span>
+                ) : (
+                  "—"
+                )}
+              </p>
+              <p className="text-muted-foreground text-[11px]">
+                across {overview.reviews} student review{overview.reviews === 1 ? "" : "s"}
+              </p>
+            </div>
+            <div className="border-border border-t pt-3">
+              <p className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                Published stories
+              </p>
+              <p className="text-foreground mt-1 font-mono text-2xl font-black">
+                {overview.publishedTestimonials}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────── Project grading ───────────────────────────
+
+function ProjectsTab() {
+  const queryClient = useQueryClient();
+  const { data } = useQuery({ queryKey: ["admin", "projects"], queryFn: () => adminProjectsFn() });
+  const [filter, setFilter] = useState<"pending" | "all" | "approved" | "changes_requested">(
+    "pending",
+  );
+  const [reviewing, setReviewing] = useState<{
+    id: string;
+    student: string;
+    course: string;
+    status: "approved" | "changes_requested";
+  } | null>(null);
+  const [feedback, setFeedback] = useState("");
+
+  const review = useMutation({
+    mutationFn: () =>
+      adminReviewProjectFn({
+        data: { submissionId: reviewing!.id, status: reviewing!.status, feedback },
+      }),
+    onSuccess: async () => {
+      toast.success(reviewing?.status === "approved" ? "Project approved." : "Changes requested.");
+      setReviewing(null);
+      setFeedback("");
+      await queryClient.invalidateQueries({ queryKey: ["admin"] });
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Review failed."),
+  });
+
+  const filtered = useMemo(() => {
+    if (!data) return [];
+    if (filter === "all") return data;
+    return data.filter((p) => p.status === filter);
+  }, [data, filter]);
+
+  if (!data) return <TabSkeleton />;
+  if (data.length === 0) {
+    return (
+      <EmptyState
+        icon={FolderGit2}
+        title="No project submissions yet"
+        description="When students finish their lessons and submit a capstone project, it lands here for grading."
+      />
+    );
+  }
+
+  const pendingCount = data.filter((p) => p.status === "pending").length;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 className="text-foreground text-base font-black tracking-tight">
+            Capstone grading queue
+          </h2>
+          <p className="text-muted-foreground text-xs">
+            {pendingCount} awaiting review · {data.length} total submission
+            {data.length === 1 ? "" : "s"}
+          </p>
+        </div>
+        <div className="no-scrollbar flex gap-1 overflow-x-auto">
+          {(
+            [
+              ["pending", "Pending"],
+              ["approved", "Approved"],
+              ["changes_requested", "Changes"],
+              ["all", "All"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setFilter(id)}
+              aria-pressed={filter === id}
+              className={`shrink-0 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition-colors ${
+                filter === id
+                  ? "border-primary/40 bg-brand-subtle text-foreground"
+                  : "border-border text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="border-border bg-card rounded-2xl border border-dashed p-10 text-center">
+          <CheckCircle2 className="text-success mx-auto h-6 w-6" aria-hidden="true" />
+          <p className="text-foreground mt-2 text-sm font-bold">Nothing in this queue</p>
+          <p className="text-muted-foreground mt-1 text-xs">
+            Switch the filter to see other submissions.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+          {filtered.map((p) => {
+            const badge =
+              p.status === "approved"
+                ? { label: "Approved", cls: "border-success/40 text-success" }
+                : p.status === "changes_requested"
+                  ? { label: "Changes requested", cls: "border-destructive/40 text-destructive" }
+                  : { label: "Pending review", cls: "border-primary/40 text-brand-soft" };
+            return (
+              <div
+                key={p.id}
+                className="bg-card border-border flex flex-col rounded-2xl border p-4 shadow-sm"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-foreground truncate text-xs font-bold">
+                      {p.studentName}{" "}
+                      <span className="text-muted-foreground font-normal">· {p.studentEmail}</span>
+                    </p>
+                    <p className="text-muted-foreground mt-0.5 truncate text-[11px]">
+                      {p.courseTitle} · {formatDate(p.submittedAt)}
+                    </p>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-full border px-2.5 py-0.5 font-mono text-[9px] font-bold tracking-wider uppercase ${badge.cls}`}
+                  >
+                    {badge.label}
+                  </span>
+                </div>
+                <a
+                  href={p.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-brand-soft mt-2.5 block truncate text-xs font-bold hover:underline"
+                >
+                  {p.link}
+                </a>
+                {p.notes && (
+                  <p className="text-muted-foreground mt-1.5 line-clamp-2 text-[11px] leading-relaxed">
+                    {p.notes}
+                  </p>
+                )}
+                {p.feedback && (
+                  <p className="text-muted-foreground mt-1.5 line-clamp-2 text-[11px] italic">
+                    Feedback: {p.feedback}
+                  </p>
+                )}
+                <div className="mt-auto flex flex-wrap gap-1.5 pt-3">
+                  <Button
+                    size="sm"
+                    className="h-8 rounded-lg px-2.5 text-[11px] font-bold"
+                    onClick={() => {
+                      setFeedback(p.feedback ?? "");
+                      setReviewing({
+                        id: p.id,
+                        student: p.studentName,
+                        course: p.courseTitle,
+                        status: "approved",
+                      });
+                    }}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /> Approve
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 rounded-lg px-2.5 text-[11px] font-bold"
+                    onClick={() => {
+                      setFeedback(p.feedback ?? "");
+                      setReviewing({
+                        id: p.id,
+                        student: p.studentName,
+                        course: p.courseTitle,
+                        status: "changes_requested",
+                      });
+                    }}
+                  >
+                    Request changes
+                  </Button>
+                  <Button
+                    asChild
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 rounded-lg px-2.5 text-[11px] font-bold"
+                  >
+                    <a href={p.link} target="_blank" rel="noopener noreferrer">
+                      Open submission
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <Dialog open={reviewing !== null} onOpenChange={(open) => !open && setReviewing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {reviewing?.status === "approved" ? "Approve project" : "Request changes"}
+            </DialogTitle>
+            <DialogDescription>
+              {reviewing?.student} · {reviewing?.course}. Your feedback appears in the
+              student&apos;s dashboard and learning room.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            rows={4}
+            placeholder={
+              reviewing?.status === "approved"
+                ? "Great work! What stood out…"
+                : "What should the student improve before resubmitting?"
+            }
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setReviewing(null)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={
+                review.isPending ||
+                (reviewing?.status === "changes_requested" && feedback.trim().length === 0)
+              }
+              onClick={() => review.mutate()}
+            >
+              {review.isPending
+                ? "Saving…"
+                : reviewing?.status === "approved"
+                  ? "Approve & send feedback"
+                  : "Send change request"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// ─────────────────────── Reviews & stories (approvals) ───────────────────────
+
+function ReviewsTab() {
+  const queryClient = useQueryClient();
+  const { data } = useQuery({
+    queryKey: ["admin", "testimonials"],
+    queryFn: () => adminTestimonialsFn(),
+  });
+  const [filter, setFilter] = useState<"pending" | "published" | "all">("pending");
+
+  const invalidate = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["admin"] });
+    await queryClient.invalidateQueries({ queryKey: ["testimonials"] });
+  };
+
+  const setStatus = useMutation({
+    mutationFn: (input: { testimonialId: string; status: "pending" | "published" | "hidden" }) =>
+      adminSetTestimonialStatusFn({ data: input }),
+    onSuccess: async (_r, v) => {
+      toast.success(
+        v.status === "published"
+          ? "Published to the homepage."
+          : v.status === "hidden"
+            ? "Hidden from the homepage."
+            : "Moved back to pending.",
+      );
+      await invalidate();
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Update failed."),
+  });
+
+  const remove = useMutation({
+    mutationFn: (testimonialId: string) => adminDeleteTestimonialFn({ data: { testimonialId } }),
+    onSuccess: async () => {
+      toast.success("Review deleted.");
+      await invalidate();
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Delete failed."),
+  });
+
+  if (!data) return <TabSkeleton />;
+  if (data.length === 0) {
+    return (
+      <EmptyState
+        icon={MessageSquareQuote}
+        title="No student reviews yet"
+        description="When students rate a course and share their story after certification, it appears here for approval before going on the homepage."
+      />
+    );
+  }
+
+  const filtered = data.filter((t) => {
+    if (filter === "all") return true;
+    if (filter === "pending") return t.status === "pending";
+    return t.status === "published";
+  });
+  const pendingCount = data.filter((t) => t.status === "pending").length;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 className="text-foreground text-base font-black tracking-tight">
+            Course review approvals
+          </h2>
+          <p className="text-muted-foreground text-xs">
+            {pendingCount} pending · {data.length} total. Course ratings show on course pages
+            instantly; stories need your approval.
+          </p>
+        </div>
+        <div className="no-scrollbar flex gap-1 overflow-x-auto">
+          {(
+            [
+              ["pending", `Pending (${pendingCount})`],
+              ["published", "Published"],
+              ["all", "All"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setFilter(id)}
+              aria-pressed={filter === id}
+              className={`shrink-0 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition-colors ${
+                filter === id
+                  ? "border-primary/40 bg-brand-subtle text-foreground"
+                  : "border-border text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="border-border bg-card rounded-2xl border border-dashed p-10 text-center">
+          <CheckCircle2 className="text-success mx-auto h-6 w-6" aria-hidden="true" />
+          <p className="text-foreground mt-2 text-sm font-bold">Nothing waiting here</p>
+          <p className="text-muted-foreground mt-1 text-xs">
+            New student stories will appear in this queue.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+          {filtered.map((t) => {
+            const badge =
+              t.status === "published"
+                ? { label: "Published", cls: "border-success/40 text-success" }
+                : t.status === "pending"
+                  ? { label: "Pending approval", cls: "border-primary/40 text-brand-soft" }
+                  : { label: "Hidden", cls: "border-border text-muted-foreground" };
+            return (
+              <div key={t.id} className="bg-card border-border rounded-2xl border p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-foreground truncate text-xs font-bold">{t.name}</p>
+                    <p className="text-muted-foreground truncate text-[11px]">
+                      {t.role}
+                      {t.courseTitle ? ` · ${t.courseTitle}` : ""}
+                    </p>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-full border px-2.5 py-0.5 font-mono text-[9px] font-bold tracking-wider uppercase ${badge.cls}`}
+                  >
+                    {badge.label}
+                  </span>
+                </div>
+                <blockquote className="text-muted-foreground mt-2.5 line-clamp-4 text-xs leading-relaxed">
+                  “{t.quote}”
+                </blockquote>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {t.status !== "published" && (
+                    <Button
+                      size="sm"
+                      className="h-8 rounded-lg px-2.5 text-[11px] font-bold"
+                      disabled={setStatus.isPending}
+                      onClick={() => setStatus.mutate({ testimonialId: t.id, status: "published" })}
+                    >
+                      <Eye className="h-3.5 w-3.5" aria-hidden="true" /> Approve & publish
+                    </Button>
+                  )}
+                  {t.status !== "hidden" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 rounded-lg px-2.5 text-[11px] font-bold"
+                      disabled={setStatus.isPending}
+                      onClick={() => setStatus.mutate({ testimonialId: t.id, status: "hidden" })}
+                    >
+                      <EyeOff className="h-3.5 w-3.5" aria-hidden="true" /> Hide
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive h-8 rounded-lg px-2.5 text-[11px] font-bold"
+                    disabled={remove.isPending}
+                    onClick={() => remove.mutate(t.id)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" /> Delete
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ───────────────────────────── Messages ─────────────────────────────
+
+function MessagesTab() {
+  const queryClient = useQueryClient();
+  const { data } = useQuery({ queryKey: ["admin", "messages"], queryFn: () => adminMessagesFn() });
+
+  const remove = useMutation({
+    mutationFn: (messageId: string) => adminDeleteMessageFn({ data: { messageId } }),
+    onSuccess: async () => {
+      toast.success("Message deleted.");
+      await queryClient.invalidateQueries({ queryKey: ["admin"] });
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Delete failed."),
+  });
+
+  if (!data) return <TabSkeleton />;
+  if (data.length === 0) {
+    return (
+      <EmptyState
+        icon={Inbox}
+        title="Inbox zero"
+        description="Messages from the contact page land here."
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <h2 className="text-foreground text-base font-black tracking-tight">Contact messages</h2>
+      {data.map((m) => (
+        <div key={m.id} className="bg-card border-border rounded-2xl border p-4 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-foreground text-xs font-bold">{m.name}</p>
+              <a
+                href={`mailto:${m.email}`}
+                className="text-brand-soft text-[11px] font-bold hover:underline"
+              >
+                {m.email}
+              </a>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground text-[11px]">{formatDate(m.createdAt)}</span>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-destructive hover:text-destructive h-8 rounded-lg px-2 text-xs font-bold"
+                disabled={remove.isPending}
+                onClick={() => remove.mutate(m.id)}
+                aria-label={`Delete message from ${m.name}`}
+              >
+                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+              </Button>
+            </div>
+          </div>
+          <p className="text-muted-foreground mt-2 text-xs leading-relaxed whitespace-pre-line">
+            {m.message}
+          </p>
+          <div className="mt-3">
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="h-8 rounded-lg text-[11px] font-bold"
+            >
+              <a href={`mailto:${m.email}?subject=Your%20message%20to%20Najeeb%20Academy`}>
+                <Mail className="h-3.5 w-3.5" aria-hidden="true" /> Reply by email
+              </a>
+            </Button>
+          </div>
+        </div>
       ))}
     </div>
   );
@@ -214,6 +884,7 @@ function StudentsTab() {
   const queryClient = useQueryClient();
   const { data } = useQuery({ queryKey: ["admin", "students"], queryFn: () => adminStudentsFn() });
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
+  const [search, setSearch] = useState("");
 
   const deleteStudent = useMutation({
     mutationFn: (userId: string) => adminDeleteStudentFn({ data: { userId } }),
@@ -224,6 +895,16 @@ function StudentsTab() {
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "Delete failed."),
   });
+
+  const filtered = useMemo(() => {
+    if (!data) return [];
+    const term = search.trim().toLowerCase();
+    if (!term) return data;
+    return data.filter(
+      (row) =>
+        row.user.name.toLowerCase().includes(term) || row.user.email.toLowerCase().includes(term),
+    );
+  }, [data, search]);
 
   if (!data) return <TabSkeleton />;
   if (data.length === 0) {
@@ -238,51 +919,73 @@ function StudentsTab() {
 
   return (
     <>
-      <div className="bg-card border-border overflow-x-auto rounded-2xl border shadow-xl">
-        <table className="w-full min-w-[640px] text-left text-sm">
-          <thead>
-            <tr className="border-border text-muted-foreground border-b font-mono text-[10px] tracking-wider uppercase">
-              <th className="px-5 py-3.5 font-medium">Student</th>
-              <th className="px-5 py-3.5 font-medium">Joined</th>
-              <th className="px-5 py-3.5 font-medium">Enrollments</th>
-              <th className="px-5 py-3.5 font-medium">Certificates</th>
-              <th className="px-5 py-3.5 font-medium">Projects</th>
-              <th className="px-5 py-3.5 text-right font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((row) => (
-              <tr key={row.user.id} className="border-border/60 border-b last:border-0">
-                <td className="px-5 py-4">
-                  <p className="text-foreground font-bold">{row.user.name}</p>
-                  <p className="text-muted-foreground text-xs">{row.user.email}</p>
-                </td>
-                <td className="text-muted-foreground px-5 py-4 text-xs">
-                  {row.joinedAt ? formatDate(row.joinedAt) : "—"}
-                </td>
-                <td className="text-foreground px-5 py-4 font-mono text-xs font-bold">
-                  {row.enrollmentCount}
-                </td>
-                <td className="text-foreground px-5 py-4 font-mono text-xs font-bold">
-                  {row.certificateCount}
-                </td>
-                <td className="text-foreground px-5 py-4 font-mono text-xs font-bold">
-                  {row.projectCount}
-                </td>
-                <td className="px-5 py-4 text-right">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-destructive hover:text-destructive rounded-lg text-xs font-bold"
-                    onClick={() => setConfirmDelete({ id: row.user.id, name: row.user.name })}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" /> Delete
-                  </Button>
-                </td>
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-foreground text-base font-black tracking-tight">
+            Students{" "}
+            <span className="text-muted-foreground font-mono text-xs font-bold">
+              ({data.length})
+            </span>
+          </h2>
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search name or email…"
+            aria-label="Search students"
+            className="h-9 w-full max-w-xs rounded-lg text-xs"
+          />
+        </div>
+        <div className="bg-card border-border overflow-x-auto rounded-2xl border shadow-sm">
+          <table className="w-full min-w-[640px] text-left text-sm">
+            <thead>
+              <tr className="border-border text-muted-foreground border-b font-mono text-[10px] tracking-wider uppercase">
+                <th className="px-4 py-3 font-medium">Student</th>
+                <th className="px-4 py-3 font-medium">Joined</th>
+                <th className="px-4 py-3 font-medium">Courses</th>
+                <th className="px-4 py-3 font-medium">Certs</th>
+                <th className="px-4 py-3 font-medium">Projects</th>
+                <th className="px-4 py-3 text-right font-medium">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filtered.map((row) => (
+                <tr key={row.user.id} className="border-border/60 border-b last:border-0">
+                  <td className="px-4 py-3">
+                    <p className="text-foreground text-xs font-bold">{row.user.name}</p>
+                    <p className="text-muted-foreground text-[11px]">{row.user.email}</p>
+                  </td>
+                  <td className="text-muted-foreground px-4 py-3 text-[11px]">
+                    {row.joinedAt ? formatDate(row.joinedAt) : "—"}
+                  </td>
+                  <td className="text-foreground px-4 py-3 font-mono text-xs font-bold">
+                    {row.enrollmentCount}
+                  </td>
+                  <td className="text-foreground px-4 py-3 font-mono text-xs font-bold">
+                    {row.certificateCount}
+                  </td>
+                  <td className="text-foreground px-4 py-3 font-mono text-xs font-bold">
+                    {row.projectCount}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive h-8 rounded-lg px-2 text-[11px] font-bold"
+                      onClick={() => setConfirmDelete({ id: row.user.id, name: row.user.name })}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" /> Delete
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {filtered.length === 0 && (
+            <p className="text-muted-foreground p-6 text-center text-xs">
+              No students match “{search}”.
+            </p>
+          )}
+        </div>
       </div>
 
       <Dialog
@@ -324,8 +1027,8 @@ function CoursesTab() {
     id: string;
     title: string;
     summary: string;
-    priceNgn: number;
   } | null>(null);
+  const [search, setSearch] = useState("");
 
   const invalidate = async () => {
     await queryClient.invalidateQueries({ queryKey: ["admin"] });
@@ -368,7 +1071,6 @@ function CoursesTab() {
           courseId: editing!.id,
           title: editing!.title,
           summary: editing!.summary,
-          priceNgn: editing!.priceNgn,
         },
       }),
     onSuccess: async () => {
@@ -379,125 +1081,156 @@ function CoursesTab() {
     onError: (err) => toast.error(err instanceof Error ? err.message : "Update failed."),
   });
 
+  const filtered = useMemo(() => {
+    if (!data) return [];
+    const term = search.trim().toLowerCase();
+    if (!term) return data;
+    return data.filter((course) => course.title.toLowerCase().includes(term));
+  }, [data, search]);
+
   if (!data) return <TabSkeleton />;
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {data.map((course) => (
-          <div
-            key={course.id}
-            className={`bg-card border-border flex gap-4 rounded-2xl border p-4 shadow-xl ${
-              course.deleted ? "opacity-50" : ""
-            }`}
-          >
-            <img
-              src={course.image}
-              alt=""
-              loading="lazy"
-              className="hidden h-24 w-32 shrink-0 rounded-xl object-cover sm:block"
-            />
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-1.5">
-                {course.deleted ? (
-                  <Badge variant="destructive" className="text-[10px]">
-                    Deleted
-                  </Badge>
-                ) : !course.isPublished ? (
-                  <Badge variant="secondary" className="text-[10px]">
-                    Hidden
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary" className="text-success text-[10px]">
-                    Live
-                  </Badge>
-                )}
-                {course.isFeatured && (
-                  <Badge variant="secondary" className="text-gold text-[10px]">
-                    Featured
-                  </Badge>
-                )}
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-foreground text-base font-black tracking-tight">
+            Course catalog{" "}
+            <span className="text-muted-foreground font-mono text-xs font-bold">
+              ({data.filter((c) => !c.deleted).length} live)
+            </span>
+          </h2>
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search courses…"
+            aria-label="Search courses"
+            className="h-9 w-full max-w-xs rounded-lg text-xs"
+          />
+        </div>
+
+        <div className="space-y-2">
+          {filtered.map((course) => (
+            <div
+              key={course.id}
+              className={`bg-card border-border flex items-center gap-3 rounded-2xl border p-3 shadow-sm ${
+                course.deleted ? "opacity-50" : ""
+              }`}
+            >
+              <img
+                src={course.image}
+                alt=""
+                loading="lazy"
+                className="hidden h-14 w-20 shrink-0 rounded-lg object-cover sm:block"
+              />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {course.deleted ? (
+                    <Badge variant="destructive" className="text-[9px]">
+                      Deleted
+                    </Badge>
+                  ) : !course.isPublished ? (
+                    <Badge variant="secondary" className="text-[9px]">
+                      Hidden
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="text-success text-[9px]">
+                      Live
+                    </Badge>
+                  )}
+                  {course.isFeatured && (
+                    <Badge variant="secondary" className="text-gold text-[9px]">
+                      Featured
+                    </Badge>
+                  )}
+                </div>
+                <h3 className="text-foreground mt-1 truncate text-xs font-bold">{course.title}</h3>
+                <p className="text-muted-foreground mt-0.5 text-[11px]">
+                  {course.enrollmentCount} enrolled
+                  {course.ratingAvg !== null && ` · ★ ${course.ratingAvg} (${course.ratingCount})`}
+                  {` · ${course.lessonCount} lessons`}
+                </p>
               </div>
-              <h3 className="text-foreground mt-1.5 truncate text-sm font-bold">{course.title}</h3>
-              <p className="text-muted-foreground mt-0.5 text-xs">
-                {formatNaira(course.priceNgn)} · {course.enrollmentCount} enrolled
-                {course.ratingAvg !== null && ` · ★ ${course.ratingAvg} (${course.ratingCount})`}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-1.5">
+              <div className="flex shrink-0 flex-wrap justify-end gap-1">
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-8 rounded-lg px-2.5 text-[11px] font-bold"
+                  className="h-8 rounded-lg px-2 text-[11px] font-bold"
                   onClick={() =>
-                    setEditing({
-                      id: course.id,
-                      title: course.title,
-                      summary: course.summary,
-                      priceNgn: course.priceNgn,
-                    })
+                    setEditing({ id: course.id, title: course.title, summary: course.summary })
                   }
+                  aria-label={`Edit ${course.title}`}
                 >
-                  <Pencil className="h-3 w-3" aria-hidden="true" /> Edit
+                  <Pencil className="h-3 w-3" aria-hidden="true" />
+                  <span className="hidden sm:inline">Edit</span>
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-8 rounded-lg px-2.5 text-[11px] font-bold"
+                  className="h-8 rounded-lg px-2 text-[11px] font-bold"
                   disabled={setHidden.isPending || course.deleted}
                   onClick={() =>
                     setHidden.mutate({ courseId: course.id, hidden: course.isPublished })
                   }
+                  aria-label={
+                    course.isPublished ? `Hide ${course.title}` : `Unhide ${course.title}`
+                  }
                 >
                   {course.isPublished ? (
-                    <>
-                      <EyeOff className="h-3 w-3" aria-hidden="true" /> Hide
-                    </>
+                    <EyeOff className="h-3 w-3" aria-hidden="true" />
                   ) : (
-                    <>
-                      <Eye className="h-3 w-3" aria-hidden="true" /> Unhide
-                    </>
+                    <Eye className="h-3 w-3" aria-hidden="true" />
                   )}
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-8 rounded-lg px-2.5 text-[11px] font-bold"
+                  className="h-8 rounded-lg px-2 text-[11px] font-bold"
                   disabled={setFeatured.isPending || course.deleted}
                   onClick={() =>
                     setFeatured.mutate({ courseId: course.id, isFeatured: !course.isFeatured })
+                  }
+                  aria-label={
+                    course.isFeatured ? `Unfeature ${course.title}` : `Feature ${course.title}`
                   }
                 >
                   <Star
                     className={`h-3 w-3 ${course.isFeatured ? "fill-gold text-gold" : ""}`}
                     aria-hidden="true"
                   />
-                  {course.isFeatured ? "Unfeature" : "Feature"}
                 </Button>
                 {course.deleted ? (
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-8 rounded-lg px-2.5 text-[11px] font-bold"
+                    className="h-8 rounded-lg px-2 text-[11px] font-bold"
                     disabled={setDeleted.isPending}
                     onClick={() => setDeleted.mutate({ courseId: course.id, deleted: false })}
                   >
-                    <RotateCcw className="h-3 w-3" aria-hidden="true" /> Restore
+                    <RotateCcw className="h-3 w-3" aria-hidden="true" />
+                    <span className="hidden sm:inline">Restore</span>
                   </Button>
                 ) : (
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="text-destructive hover:text-destructive h-8 rounded-lg px-2.5 text-[11px] font-bold"
+                    className="text-destructive hover:text-destructive h-8 rounded-lg px-2 text-[11px] font-bold"
                     disabled={setDeleted.isPending}
                     onClick={() => setDeleted.mutate({ courseId: course.id, deleted: true })}
+                    aria-label={`Delete ${course.title}`}
                   >
-                    <Trash2 className="h-3 w-3" aria-hidden="true" /> Delete
+                    <Trash2 className="h-3 w-3" aria-hidden="true" />
                   </Button>
                 )}
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+          {filtered.length === 0 && (
+            <p className="text-muted-foreground p-6 text-center text-xs">
+              No courses match “{search}”.
+            </p>
+          )}
+        </div>
       </div>
 
       <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
@@ -505,7 +1238,8 @@ function CoursesTab() {
           <DialogHeader>
             <DialogTitle>Edit course</DialogTitle>
             <DialogDescription>
-              Changes go live immediately across the catalog, course page and checkout.
+              Changes go live immediately across the catalog and course page. Courses are unlocked
+              with pass credits — there is no per-course price to edit.
             </DialogDescription>
           </DialogHeader>
           {editing && (
@@ -527,19 +1261,6 @@ function CoursesTab() {
                   onChange={(e) => setEditing({ ...editing, summary: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-price">Price (₦)</Label>
-                <Input
-                  id="edit-price"
-                  type="number"
-                  min={0}
-                  step={500}
-                  value={editing.priceNgn}
-                  onChange={(e) =>
-                    setEditing({ ...editing, priceNgn: Math.max(0, Number(e.target.value)) })
-                  }
-                />
-              </div>
             </div>
           )}
           <DialogFooter>
@@ -556,355 +1277,11 @@ function CoursesTab() {
   );
 }
 
-// ───────────────────────────── Projects ─────────────────────────────
-
-function ProjectsTab() {
-  const queryClient = useQueryClient();
-  const { data } = useQuery({ queryKey: ["admin", "projects"], queryFn: () => adminProjectsFn() });
-  const [reviewing, setReviewing] = useState<{
-    id: string;
-    student: string;
-    course: string;
-    status: "approved" | "changes_requested";
-  } | null>(null);
-  const [feedback, setFeedback] = useState("");
-
-  const review = useMutation({
-    mutationFn: () =>
-      adminReviewProjectFn({
-        data: { submissionId: reviewing!.id, status: reviewing!.status, feedback },
-      }),
-    onSuccess: async () => {
-      toast.success(reviewing?.status === "approved" ? "Project approved." : "Changes requested.");
-      setReviewing(null);
-      setFeedback("");
-      await queryClient.invalidateQueries({ queryKey: ["admin"] });
-    },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "Review failed."),
-  });
-
-  if (!data) return <TabSkeleton />;
-  if (data.length === 0) {
-    return (
-      <EmptyState
-        icon={FolderGit2}
-        title="No project submissions yet"
-        description="When students finish their lessons and submit a capstone project, it lands here for review."
-      />
-    );
-  }
-
-  return (
-    <>
-      <div className="space-y-4">
-        {data.map((p) => {
-          const badge =
-            p.status === "approved"
-              ? { label: "Approved", cls: "border-success/40 text-success" }
-              : p.status === "changes_requested"
-                ? { label: "Changes requested", cls: "border-destructive/40 text-destructive" }
-                : { label: "Pending review", cls: "border-primary/40 text-brand-soft" };
-          return (
-            <div key={p.id} className="bg-card border-border rounded-2xl border p-5 shadow-xl">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-foreground text-sm font-bold">
-                    {p.studentName}{" "}
-                    <span className="text-muted-foreground font-normal">· {p.studentEmail}</span>
-                  </p>
-                  <p className="text-muted-foreground mt-0.5 text-xs">
-                    {p.courseTitle} · submitted {formatDate(p.submittedAt)}
-                  </p>
-                </div>
-                <span
-                  className={`shrink-0 rounded-full border px-3 py-1 font-mono text-[10px] font-bold tracking-wider uppercase ${badge.cls}`}
-                >
-                  {badge.label}
-                </span>
-              </div>
-              <a
-                href={p.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-brand-soft mt-3 block text-xs font-bold break-all hover:underline"
-              >
-                {p.link}
-              </a>
-              {p.notes && (
-                <p className="text-muted-foreground mt-2 text-xs leading-relaxed">{p.notes}</p>
-              )}
-              {p.feedback && (
-                <p className="text-muted-foreground mt-2 text-xs italic">
-                  Your feedback: {p.feedback}
-                </p>
-              )}
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  className="rounded-lg text-xs font-bold"
-                  onClick={() => {
-                    setFeedback(p.feedback ?? "");
-                    setReviewing({
-                      id: p.id,
-                      student: p.studentName,
-                      course: p.courseTitle,
-                      status: "approved",
-                    });
-                  }}
-                >
-                  Approve
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="rounded-lg text-xs font-bold"
-                  onClick={() => {
-                    setFeedback(p.feedback ?? "");
-                    setReviewing({
-                      id: p.id,
-                      student: p.studentName,
-                      course: p.courseTitle,
-                      status: "changes_requested",
-                    });
-                  }}
-                >
-                  Request changes
-                </Button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <Dialog open={reviewing !== null} onOpenChange={(open) => !open && setReviewing(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {reviewing?.status === "approved" ? "Approve project" : "Request changes"}
-            </DialogTitle>
-            <DialogDescription>
-              {reviewing?.student} · {reviewing?.course}. Your feedback appears in the student's
-              dashboard and course player.
-            </DialogDescription>
-          </DialogHeader>
-          <Textarea
-            rows={4}
-            placeholder={
-              reviewing?.status === "approved"
-                ? "Great work! What stood out…"
-                : "What should the student improve before resubmitting?"
-            }
-            value={feedback}
-            onChange={(e) => setFeedback(e.target.value)}
-          />
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setReviewing(null)}>
-              Cancel
-            </Button>
-            <Button
-              disabled={
-                review.isPending ||
-                (reviewing?.status === "changes_requested" && feedback.trim().length === 0)
-              }
-              onClick={() => review.mutate()}
-            >
-              {review.isPending
-                ? "Saving…"
-                : reviewing?.status === "approved"
-                  ? "Approve & send feedback"
-                  : "Send change request"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
-
-// ─────────────────────────── Testimonials ───────────────────────────
-
-function TestimonialsTab() {
-  const queryClient = useQueryClient();
-  const { data } = useQuery({
-    queryKey: ["admin", "testimonials"],
-    queryFn: () => adminTestimonialsFn(),
-  });
-
-  const invalidate = async () => {
-    await queryClient.invalidateQueries({ queryKey: ["admin"] });
-    await queryClient.invalidateQueries({ queryKey: ["testimonials"] });
-  };
-
-  const setStatus = useMutation({
-    mutationFn: (input: { testimonialId: string; status: "pending" | "published" | "hidden" }) =>
-      adminSetTestimonialStatusFn({ data: input }),
-    onSuccess: async (_r, v) => {
-      toast.success(
-        v.status === "published"
-          ? "Published to the homepage."
-          : v.status === "hidden"
-            ? "Hidden from the homepage."
-            : "Moved back to pending.",
-      );
-      await invalidate();
-    },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "Update failed."),
-  });
-
-  const remove = useMutation({
-    mutationFn: (testimonialId: string) => adminDeleteTestimonialFn({ data: { testimonialId } }),
-    onSuccess: async () => {
-      toast.success("Testimonial deleted.");
-      await invalidate();
-    },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "Delete failed."),
-  });
-
-  if (!data) return <TabSkeleton />;
-  if (data.length === 0) {
-    return (
-      <EmptyState
-        icon={MessageSquareQuote}
-        title="No testimonials yet"
-        description="When students share their story after finishing a course, it appears here for approval before going on the homepage."
-      />
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      {data.map((t) => {
-        const badge =
-          t.status === "published"
-            ? { label: "Published", cls: "border-success/40 text-success" }
-            : t.status === "pending"
-              ? { label: "Pending approval", cls: "border-primary/40 text-brand-soft" }
-              : { label: "Hidden", cls: "border-border text-muted-foreground" };
-        return (
-          <div key={t.id} className="bg-card border-border rounded-2xl border p-5 shadow-xl">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-foreground text-sm font-bold">{t.name}</p>
-                <p className="text-muted-foreground text-xs">
-                  {t.role}
-                  {t.courseTitle ? ` · ${t.courseTitle}` : ""}
-                </p>
-              </div>
-              <span
-                className={`shrink-0 rounded-full border px-3 py-1 font-mono text-[10px] font-bold tracking-wider uppercase ${badge.cls}`}
-              >
-                {badge.label}
-              </span>
-            </div>
-            <blockquote className="text-muted-foreground mt-3 text-sm leading-relaxed">
-              “{t.quote}”
-            </blockquote>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {t.status !== "published" && (
-                <Button
-                  size="sm"
-                  className="rounded-lg text-xs font-bold"
-                  disabled={setStatus.isPending}
-                  onClick={() => setStatus.mutate({ testimonialId: t.id, status: "published" })}
-                >
-                  <Eye className="h-3.5 w-3.5" aria-hidden="true" /> Publish to homepage
-                </Button>
-              )}
-              {t.status !== "hidden" && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="rounded-lg text-xs font-bold"
-                  disabled={setStatus.isPending}
-                  onClick={() => setStatus.mutate({ testimonialId: t.id, status: "hidden" })}
-                >
-                  <EyeOff className="h-3.5 w-3.5" aria-hidden="true" /> Hide
-                </Button>
-              )}
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-destructive hover:text-destructive rounded-lg text-xs font-bold"
-                disabled={remove.isPending}
-                onClick={() => remove.mutate(t.id)}
-              >
-                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" /> Delete
-              </Button>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// ───────────────────────────── Messages ─────────────────────────────
-
-function MessagesTab() {
-  const queryClient = useQueryClient();
-  const { data } = useQuery({ queryKey: ["admin", "messages"], queryFn: () => adminMessagesFn() });
-
-  const remove = useMutation({
-    mutationFn: (messageId: string) => adminDeleteMessageFn({ data: { messageId } }),
-    onSuccess: async () => {
-      toast.success("Message deleted.");
-      await queryClient.invalidateQueries({ queryKey: ["admin"] });
-    },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "Delete failed."),
-  });
-
-  if (!data) return <TabSkeleton />;
-  if (data.length === 0) {
-    return (
-      <EmptyState
-        icon={Inbox}
-        title="Inbox zero"
-        description="Messages from the contact page land here."
-      />
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      {data.map((m) => (
-        <div key={m.id} className="bg-card border-border rounded-2xl border p-5 shadow-xl">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="text-foreground text-sm font-bold">{m.name}</p>
-              <a
-                href={`mailto:${m.email}`}
-                className="text-brand-soft text-xs font-bold hover:underline"
-              >
-                {m.email}
-              </a>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground text-xs">{formatDate(m.createdAt)}</span>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-destructive hover:text-destructive h-8 rounded-lg px-2 text-xs font-bold"
-                disabled={remove.isPending}
-                onClick={() => remove.mutate(m.id)}
-              >
-                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-              </Button>
-            </div>
-          </div>
-          <p className="text-muted-foreground mt-3 text-sm leading-relaxed whitespace-pre-line">
-            {m.message}
-          </p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function TabSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="bg-card border-border h-36 animate-pulse rounded-2xl border" />
+        <div key={i} className="bg-card border-border h-28 animate-pulse rounded-2xl border" />
       ))}
     </div>
   );

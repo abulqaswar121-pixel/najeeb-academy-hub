@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { BadgeCheck, SearchX, ShieldCheck } from "lucide-react";
+import { BadgeCheck, Download, SearchX, ShieldCheck } from "lucide-react";
 
 import { CertificateView } from "../components/academy/CertificateView";
 import { EmptyState } from "../components/academy/EmptyState";
@@ -56,7 +56,16 @@ function VerifyResultPage() {
               issuedAt={result.issuedAt}
               code={result.code}
             />
-            <div className="flex flex-wrap justify-center gap-3">
+            <p className="no-print text-muted-foreground text-center text-[11px]">
+              Download opens your browser&apos;s print dialog — choose “Save as PDF” to keep a copy.
+            </p>
+            <div className="no-print flex flex-wrap justify-center gap-3">
+              <Button
+                className="bg-gradient-cta shadow-glow-primary rounded-xl font-extrabold"
+                onClick={() => window.print()}
+              >
+                <Download className="h-4 w-4" aria-hidden="true" /> Download certificate
+              </Button>
               <Button asChild variant="outline" className="rounded-xl font-bold">
                 <Link to="/verify">Verify another certificate</Link>
               </Button>

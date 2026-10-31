@@ -81,7 +81,7 @@ function SignupPage() {
           Create your account
         </h1>
         <p className="text-muted-foreground mt-2 text-center text-sm">
-          Free to join. Pay only for the courses you take.
+          Free to join. Buy a pass when you are ready to unlock courses.
         </p>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="mt-8 space-y-5">

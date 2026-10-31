@@ -1,6 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { SearchX, Search as SearchIcon } from "lucide-react";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+  ArrowRight,
+  Infinity as InfinityIcon,
+  SearchX,
+  Search as SearchIcon,
+  Ticket,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { z } from "zod";
 
@@ -26,7 +32,7 @@ export const Route = createFileRoute("/courses/")({
     seo({
       title: "AI Course Catalog — 60+ Practical Courses",
       description:
-        "Browse the full Najeeb Academy catalog: prompt engineering, AI content, video, design, automation, no-code apps, marketing, data and more. Prices in ₦ NGN, certificates included.",
+        "Browse the full Najeeb Academy catalog: prompt engineering, AI content, video, design, automation, no-code apps, marketing, data and more. Every course is included in the All-Access Pass or costs one course credit — certificates included.",
       path: "/courses",
     }),
   loader: async ({ context }) => {
@@ -138,6 +144,27 @@ function CatalogPage() {
               {cat.shortName}
             </button>
           ))}
+        </div>
+
+        {/* Pass model reminder */}
+        <div className="border-primary/25 bg-brand-subtle/60 flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3">
+          <p className="text-foreground inline-flex items-start gap-2 text-xs font-semibold">
+            <Ticket className="text-brand-soft mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>
+              No per-course prices — every course is{" "}
+              <span className="font-bold">1 pass credit</span>, or unlimited with{" "}
+              <span className="inline-flex items-center gap-1 font-bold">
+                All-Access <InfinityIcon className="h-3 w-3" aria-hidden="true" />
+              </span>
+              .
+            </span>
+          </p>
+          <Link
+            to="/pricing"
+            className="text-brand-soft inline-flex shrink-0 items-center gap-1 text-xs font-bold hover:underline"
+          >
+            See the 4 passes <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Link>
         </div>
 
         {/* Count */}

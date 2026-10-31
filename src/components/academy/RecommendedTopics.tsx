@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 
 import { categories } from "../../data/categories";
 import { courses as catalog, type CourseLevel, type CourseSeed } from "../../data/courses";
-import { formatPrice, useCurrency } from "../../lib/currency";
 import { Button } from "../ui/button";
 import { CategoryIcon } from "./CategoryIcon";
 
@@ -71,7 +70,6 @@ function buildLadder(track: string): Partial<Record<CourseLevel, Pick>> {
 }
 
 export function RecommendedTopics() {
-  const { currency } = useCurrency();
   const [track, setTrack] = useState<string>("business-operations");
   const [level, setLevel] = useState<CourseLevel>("Beginner");
 
@@ -203,10 +201,10 @@ export function RecommendedTopics() {
                 <div className="border-border flex items-center justify-between gap-4 border-t pt-5">
                   <div>
                     <p className="text-muted-foreground text-[11px] font-bold tracking-wider uppercase">
-                      One-time fee
+                      Unlock with
                     </p>
-                    <p className="text-foreground mt-0.5 font-mono text-2xl font-black">
-                      {formatPrice(pick.course.priceNgn, currency)}
+                    <p className="text-brand-soft mt-0.5 text-xs font-bold">
+                      All-Access or 1 course credit
                     </p>
                   </div>
                   <Button

@@ -1,13 +1,27 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { ArrowRight, Award, BookOpen, FileCheck, Hammer, Quote, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  Award,
+  BookOpen,
+  Check,
+  FileCheck,
+  Hammer,
+  Infinity as InfinityIcon,
+  Quote,
+  Sparkles,
+  Ticket,
+} from "lucide-react";
 
 import { CategoryIcon } from "../components/academy/CategoryIcon";
 import { RecommendedTopics } from "../components/academy/RecommendedTopics";
 import { SectionHeading } from "../components/academy/SectionHeading";
 import { Button } from "../components/ui/button";
 import { categories } from "../data/categories";
+import { PASS_TIERS } from "../data/passes";
 import { seo } from "../lib/academy";
+import { formatPrice, useCurrency } from "../lib/currency";
+import { passName } from "../lib/passes-ui";
 import { fetchCourses, fetchTestimonials } from "../lib/server-fns";
 
 const coursesQuery = { queryKey: ["courses"], queryFn: () => fetchCourses() };
@@ -56,6 +70,7 @@ const steps = [
 function HomePage() {
   const { data: courses = [] } = useQuery(coursesQuery);
   const { data: testimonials = [] } = useQuery(testimonialsQuery);
+  const { currency } = useCurrency();
 
   return (
     <div>
@@ -106,7 +121,10 @@ function HomePage() {
           {/* Learn → Assess → Build → Certify, compact */}
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {steps.map((step, i) => (
-              <div key={step.title} className="bg-card/90 border-border flex items-start gap-3 rounded-2xl border p-4 shadow-xl">
+              <div
+                key={step.title}
+                className="bg-card/90 border-border flex items-start gap-3 rounded-2xl border p-4 shadow-xl"
+              >
                 <div className="bg-brand-subtle border-primary/30 text-brand-soft flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border">
                   <step.icon className="h-4 w-4" aria-hidden="true" />
                 </div>
@@ -119,6 +137,83 @@ function HomePage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ───────── Passes — one payment, any courses ───────── */}
+      <section className="mx-auto max-w-7xl space-y-8 px-4 pt-14 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow="Passes, not price tags"
+          title="One pass. Any courses you choose."
+          description="Every course is unlocked with a pass credit — no per-course prices to compare. Start with 3 courses or unlock the whole academy."
+        />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {PASS_TIERS.map((tier) => (
+            <Link
+              key={tier.id}
+              to="/pricing"
+              className={`group bg-card flex flex-col rounded-2xl border p-5 transition-all hover:-translate-y-1 hover:shadow-xl ${
+                tier.highlight
+                  ? "border-primary/50 shadow-xl"
+                  : tier.id === "all"
+                    ? "border-gold/40 shadow-lg"
+                    : "border-border shadow-md"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-foreground text-sm font-black tracking-tight">
+                  {passName(tier.id)}
+                </h3>
+                {tier.highlight && (
+                  <span className="bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase">
+                    Popular
+                  </span>
+                )}
+                {tier.id === "all" && (
+                  <span className="border-gold/40 bg-gold/10 text-gold rounded-full border px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase">
+                    Best value
+                  </span>
+                )}
+              </div>
+              <p className="text-foreground mt-2 font-mono text-2xl font-black tracking-tight">
+                {formatPrice(tier.priceNgn, currency)}
+              </p>
+              <p className="text-brand-soft mt-1 flex items-center gap-1 text-xs font-bold">
+                {tier.courses === null ? (
+                  <InfinityIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                ) : (
+                  <Ticket className="h-3.5 w-3.5" aria-hidden="true" />
+                )}
+                {tier.courses === null ? "All 60+ courses" : `Any ${tier.courses} courses`}
+              </p>
+              <p className="text-muted-foreground mt-2 flex-1 text-[11px] leading-relaxed">
+                {tier.blurb}
+              </p>
+              <span className="text-foreground mt-3 inline-flex items-center gap-1 text-[11px] font-bold group-hover:underline">
+                Choose {passName(tier.id)}
+                <ArrowRight className="h-3 w-3" aria-hidden="true" />
+              </span>
+            </Link>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs">
+          {["One payment — no subscription", "Credits never expire", "Certificates included"].map(
+            (item) => (
+              <span
+                key={item}
+                className="text-muted-foreground inline-flex items-center gap-1.5 font-semibold"
+              >
+                <Check className="text-success h-3.5 w-3.5" aria-hidden="true" />
+                {item}
+              </span>
+            ),
+          )}
+          <Link
+            to="/pricing"
+            className="text-brand-soft inline-flex items-center gap-1 font-bold hover:underline"
+          >
+            Compare all four passes <ArrowRight className="h-3 w-3" aria-hidden="true" />
+          </Link>
         </div>
       </section>
 
@@ -171,8 +266,12 @@ function HomePage() {
             })}
           </div>
           <div className="text-center">
-            <Link to="/courses" className="text-brand-soft inline-flex items-center gap-2 text-sm font-bold hover:underline">
-              See all {categories.length} tracks <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            <Link
+              to="/courses"
+              className="text-brand-soft inline-flex items-center gap-2 text-sm font-bold hover:underline"
+            >
+              See all {categories.length} tracks{" "}
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
         </div>
@@ -230,8 +329,8 @@ function HomePage() {
             Your next skill is <span className="text-gradient-brand">one course away</span>
           </h2>
           <p className="text-muted-foreground text-base leading-relaxed sm:text-lg">
-            Browse the full catalog free. Enroll when you're ready. Certificate when you've earned
-            it.
+            Browse the full catalog free. Pick a pass when you're ready. Certificate when you've
+            earned it.
           </p>
           <Button
             asChild
