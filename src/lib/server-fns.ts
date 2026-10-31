@@ -89,10 +89,20 @@ export const paymentsStatusFn = createServerFn({ method: "GET" }).handler(async 
 });
 
 export const startCheckoutFn = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ slug: z.string().min(1), origin: z.string().url() }))
+  .inputValidator(
+    z.object({
+      tier: z.enum(["starter", "skill", "pro", "all"]),
+      origin: z.string().url(),
+      returnPath: z.string().max(300),
+    }),
+  )
   .handler(async ({ data }) => {
-    return (await api()).startCheckout(data.slug, data.origin);
+    return (await api()).startCheckout(data.tier, data.origin, data.returnPath);
   });
+
+export const fetchWallet = createServerFn({ method: "GET" }).handler(async () => {
+  return (await api()).getWallet();
+});
 
 export const confirmCheckoutFn = createServerFn({ method: "POST" })
   .inputValidator(z.object({ reference: z.string().min(1).max(200) }))
