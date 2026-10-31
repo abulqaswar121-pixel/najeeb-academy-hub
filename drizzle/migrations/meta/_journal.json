@@ -8,6 +8,13 @@
       "when": 1793483261455,
       "tag": "0000_academy_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793483277067,
+      "tag": "0001_academy_seed",
+      "breakpoints": true
     }
   ]
 }
