@@ -70,10 +70,56 @@ export type Database = {
         }
         Relationships: []
       }
+      course_reviews: {
+        Row: {
+          comment: string
+          course_id: string
+          created_at: string
+          id: string
+          rating: number
+          reviewer_name: string
+          user_id: string
+        }
+        Insert: {
+          comment?: string
+          course_id: string
+          created_at?: string
+          id?: string
+          rating: number
+          reviewer_name?: string
+          user_id: string
+        }
+        Update: {
+          comment?: string
+          course_id?: string
+          created_at?: string
+          id?: string
+          rating?: number
+          reviewer_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_reviews_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_reviews_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           category: string
           created_at: string
+          deleted_at: string | null
           description: string
           duration: string
           id: string
@@ -91,6 +137,7 @@ export type Database = {
         Insert: {
           category: string
           created_at?: string
+          deleted_at?: string | null
           description: string
           duration: string
           id?: string
@@ -108,6 +155,7 @@ export type Database = {
         Update: {
           category?: string
           created_at?: string
+          deleted_at?: string | null
           description?: string
           duration?: string
           id?: string
@@ -193,6 +241,10 @@ export type Database = {
           position: number
           slug: string
           title: string
+          video_duration: number | null
+          video_end: number | null
+          video_id: string | null
+          video_start: number
           video_url: string | null
         }
         Insert: {
@@ -202,6 +254,10 @@ export type Database = {
           position: number
           slug: string
           title: string
+          video_duration?: number | null
+          video_end?: number | null
+          video_id?: string | null
+          video_start?: number
           video_url?: string | null
         }
         Update: {
@@ -211,6 +267,10 @@ export type Database = {
           position?: number
           slug?: string
           title?: string
+          video_duration?: number | null
+          video_end?: number | null
+          video_id?: string | null
+          video_start?: number
           video_url?: string | null
         }
         Relationships: [
@@ -226,42 +286,108 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          email: string
           full_name: string
           id: string
+          role: string
         }
         Insert: {
           created_at?: string
+          email?: string
           full_name?: string
           id: string
+          role?: string
         }
         Update: {
           created_at?: string
+          email?: string
           full_name?: string
           id?: string
+          role?: string
         }
         Relationships: []
+      }
+      project_submissions: {
+        Row: {
+          course_id: string
+          feedback: string | null
+          id: string
+          link: string
+          notes: string
+          reviewed_at: string | null
+          status: string
+          submitted_at: string
+          user_id: string
+        }
+        Insert: {
+          course_id: string
+          feedback?: string | null
+          id?: string
+          link: string
+          notes?: string
+          reviewed_at?: string | null
+          status?: string
+          submitted_at?: string
+          user_id: string
+        }
+        Update: {
+          course_id?: string
+          feedback?: string | null
+          id?: string
+          link?: string
+          notes?: string
+          reviewed_at?: string | null
+          status?: string
+          submitted_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_submissions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_submissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       testimonials: {
         Row: {
           course_id: string | null
+          created_at: string
           id: number
           name: string
           quote: string
           role: string
+          status: string
+          user_id: string | null
         }
         Insert: {
           course_id?: string | null
+          created_at?: string
           id?: never
           name: string
           quote: string
           role: string
+          status?: string
+          user_id?: string | null
         }
         Update: {
           course_id?: string | null
+          created_at?: string
           id?: never
           name?: string
           quote?: string
           role?: string
+          status?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -273,11 +399,45 @@ export type Database = {
           },
         ]
       }
+      video_progress: {
+        Row: {
+          completed: boolean
+          lesson_id: string
+          updated_at: string
+          user_id: string
+          watched_seconds: number
+        }
+        Insert: {
+          completed?: boolean
+          lesson_id: string
+          updated_at?: string
+          user_id: string
+          watched_seconds?: number
+        }
+        Update: {
+          completed?: boolean
+          lesson_id?: string
+          updated_at?: string
+          user_id?: string
+          watched_seconds?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_progress_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      admin_delete_user: { Args: { target_user: string }; Returns: undefined }
+      is_admin: { Args: never; Returns: boolean }
       verify_certificate: {
         Args: { lookup_code: string }
         Returns: {

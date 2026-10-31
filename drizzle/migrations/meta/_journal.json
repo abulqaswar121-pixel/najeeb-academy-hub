@@ -15,6 +15,13 @@
       "when": 1793483277067,
       "tag": "0001_academy_seed",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793483293806,
+      "tag": "0002_portals",
+      "breakpoints": true
     }
   ]
 }
