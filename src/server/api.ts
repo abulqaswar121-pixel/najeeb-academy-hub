@@ -6,9 +6,8 @@
 import { deleteCookie, getCookie, setCookie } from "@tanstack/react-start/server";
 
 import { assessments, PASS_MARK } from "../data/assessments";
-import { applyPass, canUnlock, passTier } from "../data/passes";
-import { localBackend } from "./local-backend";
-import { getSupabaseConfig, setRequestAccessToken, supabaseBackend } from "./supabase-backend";
+import { passTier } from "../data/passes";
+import { getSupabaseConfig, supabaseBackend } from "./supabase-backend";
 import type {
   CourseEditInput,
   DataBackend,
@@ -32,18 +31,17 @@ const COOKIE_OPTIONS = {
 };
 
 function backend(): DataBackend {
-  return getSupabaseConfig() ? supabaseBackend : localBackend;
+  if (!getSupabaseConfig()) throw new Error("Academy storage is unavailable. Please try again later.");
+  return supabaseBackend;
 }
 
 async function currentUser(): Promise<UserRecord | null> {
   const token = getCookie(SESSION_COOKIE);
   if (!token) return null;
-  setRequestAccessToken(token);
   const result = await backend().getUser(token);
   if (!result) return null;
   if (result.refreshedToken) {
     setCookie(SESSION_COOKIE, result.refreshedToken, COOKIE_OPTIONS);
-    setRequestAccessToken(result.refreshedToken);
   }
   return result.user;
 }
@@ -109,7 +107,6 @@ export async function signIn(input: { email: string; password: string }) {
 export async function signOut() {
   const token = getCookie(SESSION_COOKIE);
   if (token) {
-    setRequestAccessToken(token);
     await backend().signOut(token);
   }
   deleteCookie(SESSION_COOKIE, { path: "/" });
@@ -127,15 +124,6 @@ export async function enroll(courseId: string) {
   const all = await backend().listCourses();
   const course = all.find((c) => c.id === courseId);
   if (!course) throw new Error("Course not found.");
-  const existing = (await backend().listEnrollments(user.id)).some((e) => e.courseId === courseId);
-  if (existing) return backend().enroll(user.id, courseId);
-  // Until a Paystack key is saved, enrollment stays open (testing mode).
-  if (!paystackKey()) return backend().enroll(user.id, courseId);
-  const wallet = await backend().getWallet(user.id);
-  if (!canUnlock(wallet)) throw new Error("Get a course pass to unlock this course.");
-  if (!wallet.allAccess) {
-    await backend().saveWallet(user.id, { ...wallet, creditsUsed: wallet.creditsUsed + 1 });
-  }
   return backend().enroll(user.id, courseId);
 }
 
@@ -213,13 +201,10 @@ export async function confirmCheckout(reference: string) {
   if (tx.metadata?.userId !== user.id) throw new Error("Payment does not match your account.");
   const tier = passTier(tx.metadata?.tierId ?? "");
   if (!tier) throw new Error("Unknown pass.");
-  if (tx.currency !== "NGN" || tx.amount < tier.priceNgn * 100) {
+  if (tx.reference !== reference || tx.currency !== "NGN" || tx.amount !== tier.priceNgn * 100) {
     throw new Error("Payment amount does not match the pass price.");
   }
-  const wallet = await backend().getWallet(user.id);
-  if (!wallet.references.includes(tx.reference)) {
-    await backend().saveWallet(user.id, applyPass(wallet, tier, tx.reference));
-  }
+  await supabaseBackend.redeemPass(user.id, tier.id, tx.reference);
   return { tier: tier.name };
 }
 

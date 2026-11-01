@@ -283,6 +283,33 @@ export type Database = {
           },
         ]
       }
+      pass_wallets: {
+        Row: {
+          all_access: boolean
+          credits_total: number
+          credits_used: number
+          references: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          all_access?: boolean
+          credits_total?: number
+          credits_used?: number
+          references?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          all_access?: boolean
+          credits_total?: number
+          credits_used?: number
+          references?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -399,6 +426,24 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       video_progress: {
         Row: {
           completed: boolean
@@ -438,6 +483,30 @@ export type Database = {
     Functions: {
       admin_delete_user: { Args: { target_user: string }; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
+      redeem_course_pass: {
+        Args: {
+          payment_reference: string
+          target_user: string
+          tier_id: string
+        }
+        Returns: undefined
+      }
+      unlock_course_with_pass: {
+        Args: { target_course: string }
+        Returns: {
+          course_id: string
+          enrolled_at: string
+          id: string
+          progress: number
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "enrollments"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       verify_certificate: {
         Args: { lookup_code: string }
         Returns: {
@@ -450,7 +519,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "student"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -577,6 +646,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "student"],
+    },
   },
 } as const

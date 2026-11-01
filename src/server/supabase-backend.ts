@@ -8,6 +8,7 @@
  * is_admin() RLS policies (see supabase/migrations/20261001000300_portals.sql).
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { getCookie } from "@tanstack/react-start/server";
 
 import { EMPTY_WALLET } from "../data/passes";
 import type {
@@ -44,9 +45,9 @@ import {
 export function getSupabaseConfig(): { url: string; anonKey: string } | null {
   const env = process.env as Record<string, string | undefined>;
   const viteEnv = (import.meta.env ?? {}) as Record<string, string | undefined>;
-  const url = env["VITE_SUPABASE_URL"] ?? env["SUPABASE_URL"] ?? viteEnv["VITE_SUPABASE_URL"];
+  const url = env["SUPABASE_URL"] ?? env["VITE_SUPABASE_URL"] ?? viteEnv["VITE_SUPABASE_URL"];
   const anonKey =
-    env["VITE_SUPABASE_PUBLISHABLE_KEY"] ??
+    env["SUPABASE_PUBLISHABLE_KEY"] ?? env["VITE_SUPABASE_PUBLISHABLE_KEY"] ??
     env["VITE_SUPABASE_ANON_KEY"] ??
     env["SUPABASE_ANON_KEY"] ??
     viteEnv["VITE_SUPABASE_PUBLISHABLE_KEY"];
@@ -59,6 +60,12 @@ function anonClient(): SupabaseClient {
   if (!cfg) throw new Error("Supabase is not configured.");
   return createClient(cfg.url, cfg.anonKey, {
     auth: { persistSession: false, autoRefreshToken: false },
+    global: { fetch: (input, init) => {
+      const headers = new Headers(init?.headers);
+      if (cfg.anonKey.startsWith("sb_") && headers.get("Authorization") === `Bearer ${cfg.anonKey}`) headers.delete("Authorization");
+      headers.set("apikey", cfg.anonKey);
+      return fetch(input, { ...init, headers });
+    } },
   });
 }
 
@@ -187,14 +194,16 @@ async function fetchUserRecord(
 ): Promise<UserRecord> {
   const { data } = await client
     .from("profiles")
-    .select("full_name, role")
+    .select("full_name")
     .eq("id", userId)
     .maybeSingle();
+  const { data: isAdmin, error } = await client.rpc("is_admin");
+  if (error) throw new Error("Could not check account access.");
   return {
     id: userId,
     name: data?.full_name ?? email.split("@")[0],
     email,
-    role: data?.role === "admin" ? "admin" : "student",
+    role: isAdmin === true ? "admin" : "student",
   };
 }
 
@@ -270,7 +279,7 @@ function watchedFor(
     .reduce((max, l) => Math.max(max, progress.get(l.id)?.watchedSeconds ?? 0), 0);
 }
 
-export const supabaseBackend: DataBackend = {
+export const supabaseBackend: DataBackend & { redeemPass(userId: string, tierId: string, reference: string): Promise<void> } = {
   async listCourses() {
     const { data, error } = await anonClient()
       .from("courses")
@@ -430,28 +439,20 @@ export const supabaseBackend: DataBackend = {
 
   async enroll(userId, courseId) {
     const client = clientForUser();
-    const { data: existing } = await client
-      .from("enrollments")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("course_id", courseId)
-      .maybeSingle();
-    if (existing) return mapEnrollment(existing);
-    const { data, error } = await client
-      .from("enrollments")
-      .insert({ user_id: userId, course_id: courseId, progress: 0 })
-      .select()
-      .single();
+    const { data, error } = await client.rpc("unlock_course_with_pass", { target_course: courseId });
     if (error) throw new Error(error.message);
-    return mapEnrollment(data);
+    const row = data?.[0];
+    if (!row || row.user_id !== userId) throw new Error("Could not unlock this course.");
+    return mapEnrollment(row);
   },
 
   async getWallet(userId) {
-    const { data } = await clientForUser()
+    const { data, error } = await clientForUser()
       .from("pass_wallets")
       .select("*")
       .eq("user_id", userId)
       .maybeSingle();
+    if (error) throw new Error("Could not load your course pass.");
     if (!data) return { ...EMPTY_WALLET, references: [] };
     return {
       allAccess: Boolean(data.all_access),
@@ -461,21 +462,14 @@ export const supabaseBackend: DataBackend = {
     };
   },
 
-  async saveWallet(userId, wallet) {
-    // Only the server may change wallets, so this uses the service key.
-    const cfg = getSupabaseConfig();
-    const key = process.env["SUPABASE_SERVICE_ROLE_KEY"];
-    if (!cfg || !key) throw new Error("Pass storage is not set up yet.");
-    const admin = createClient(cfg.url, key, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-    const { error } = await admin.from("pass_wallets").upsert({
-      user_id: userId,
-      all_access: wallet.allAccess,
-      credits_total: wallet.creditsTotal,
-      credits_used: wallet.creditsUsed,
-      references: wallet.references,
-      updated_at: new Date().toISOString(),
+  async saveWallet() {
+    throw new Error("Pass balances can only change through verified payments.");
+  },
+
+  async redeemPass(userId: string, tierId: string, reference: string) {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.rpc("redeem_course_pass", {
+      target_user: userId, tier_id: tierId, payment_reference: reference,
     });
     if (error) throw new Error(error.message);
   },
@@ -1082,18 +1076,9 @@ function mapCertificate(row: any): CertificateRecord {
  * functions layer stores the current request's token here before invoking
  * backend methods.
  */
-let currentAccessToken: string | null = null;
-
-export function setRequestAccessToken(token: string | null) {
-  if (!token) {
-    currentAccessToken = null;
-    return;
-  }
-  const pair = decodeToken(token);
-  currentAccessToken = pair?.at ?? null;
-}
-
 function clientForUser(): SupabaseClient {
-  if (!currentAccessToken) throw new Error("Not authenticated.");
-  return userClient(currentAccessToken);
+  const token = getCookie("ndh_academy_session");
+  const pair = token ? decodeToken(token) : null;
+  if (!pair) throw new Error("Not authenticated.");
+  return userClient(pair.at);
 }

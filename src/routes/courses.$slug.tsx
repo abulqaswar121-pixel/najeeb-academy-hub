@@ -66,6 +66,7 @@ function CourseDetailPage() {
     mutationFn: (courseId: string) => enrollFn({ data: { courseId } }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      await queryClient.invalidateQueries({ queryKey: ["wallet"] });
       toast.success("You're enrolled! Your course is ready in the dashboard.");
       navigate({ to: "/learn/$slug", params: { slug } });
     },
@@ -81,7 +82,7 @@ function CourseDetailPage() {
   const creditsLeft = wallet ? Math.max(0, wallet.creditsTotal - wallet.creditsUsed) : 0;
   const allAccess = Boolean(wallet?.allAccess);
   const paidMode = Boolean(payments?.enabled);
-  const needsPass = paidMode && !allAccess && creditsLeft === 0;
+  const needsPass = Boolean(me) && !allAccess && creditsLeft === 0;
 
   const handleEnroll = () => {
     if (!me) {
@@ -178,7 +179,7 @@ function CourseDetailPage() {
                     All-Access
                   </p>
                   <CoursePassBadge />
-                  {paidMode && me && !allAccess && (
+                  {me && !allAccess && (
                     <p className="text-brand-soft font-mono text-xs font-bold">
                       {creditsLeft} credit{creditsLeft === 1 ? "" : "s"} in your wallet
                     </p>
@@ -190,7 +191,7 @@ function CourseDetailPage() {
                   )}
                   {!paidMode && (
                     <p className="text-muted-foreground text-xs">
-                      Free to join while checkout is being switched on.
+                      Pass purchases open soon. Browse the curriculum below.
                     </p>
                   )}
                 </div>
@@ -225,9 +226,7 @@ function CourseDetailPage() {
                           ? "Start course — All-Access"
                           : !me
                             ? "Unlock with 1 Credit"
-                            : paidMode
-                              ? "Unlock with 1 Credit"
-                              : "Start this course"}
+                            : "Unlock with 1 Credit"}
                   </Button>
                 )}
                 {!enrollment && (
