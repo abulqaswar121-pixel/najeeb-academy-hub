@@ -4,6 +4,11 @@
 - [x] Shorten homepage (fewer sections, tighter cards)
 - [x] Portals (/learn, /dashboard, /admin): hide big footer + floating AI helper
 - [ ] Paystack checkout with test + live keys (blocked: user adds keys)
-- [ ] Enable Lovable Cloud for permanent data
+- [x] Enable Lovable Cloud and load all 60 courses / 339 lessons
+- [x] Secure admin roles and remove fixed test login
+- [x] Store pass wallets permanently and enforce atomic course unlocks
+- [ ] Save lesson video timings
+- [ ] Test signed-in student journey
+- [ ] Set up owner's admin account (blocked: owner account needed)
 - [x] Fix flicker on lesson + dashboard pages (prefetch me/wallet/overview in loaders)
 - [ ] Connect academy.ndh.com.ng and publish

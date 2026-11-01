@@ -8,8 +8,7 @@
  * .data/academy-local.json (gitignored). In production, the Supabase backend
  * in supabase-backend.ts is used instead.
  *
- * A default admin account is seeded on first run:
- *   email: admin@ndh.com.ng · password: NdhAdmin#2026
+ * This legacy test backend is not used by the academy server.
  */
 import { randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -58,8 +57,6 @@ import {
   sameWindow,
 } from "./types";
 
-const ADMIN_EMAIL = "admin@ndh.com.ng";
-const ADMIN_PASSWORD = "NdhAdmin#2026";
 
 interface LocalUser extends UserRecord {
   passwordHash: string;
@@ -197,20 +194,7 @@ function loadState(): LocalState {
   }
   // Migrate pre-portal records.
   for (const user of state.users) {
-    if (!user.role) user.role = user.email === ADMIN_EMAIL ? "admin" : ("student" as UserRole);
-  }
-  // Seed the default admin account once.
-  if (!state.users.some((u) => u.role === "admin")) {
-    const salt = randomBytes(16).toString("hex");
-    state.users.push({
-      id: randomUUID(),
-      name: "NDH Admin",
-      email: ADMIN_EMAIL,
-      role: "admin",
-      salt,
-      passwordHash: hashPassword(ADMIN_PASSWORD, salt),
-      createdAt: new Date().toISOString(),
-    });
+    if (!user.role) user.role = "student" as UserRole;
   }
   return state;
 }
