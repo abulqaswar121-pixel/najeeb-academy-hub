@@ -131,7 +131,7 @@ export function PassPlans({
       return;
     }
     if (!payments?.enabled) {
-      toast.info("Payments open soon. For now, every course is free to join.");
+      toast.info("Pass purchases open soon. You can browse the courses now.");
       return;
     }
     checkout.mutate(tier);
@@ -275,8 +275,7 @@ export function PassPlans({
       )}
       {payments && !payments.enabled && (
         <p className="text-muted-foreground text-center text-xs">
-          Checkout opens as soon as our Paystack keys go live — until then every course is free to
-          join.
+          Pass purchases open soon. Existing passes can still unlock courses.
         </p>
       )}
       {confirm.isPending && (
