@@ -30,17 +30,13 @@ export function BrandLogo({
     >
       <NdhFamilySymbol SectorIcon={GraduationCap} className={`size-${size}`} />
       <span className="brand-lockup-copy">
+        {showSubtitle && <small>NAJEEB DIGITAL HUB</small>}
         <span className="brand-lockup-line">
           <strong>
-            NAJEEB&nbsp;DIGITAL&nbsp;<em>HUB</em>
+            NDH&nbsp;<em>ACADEMY</em>
           </strong>
           {showBadge && <span className="brand-lockup-badge">Learn AI</span>}
         </span>
-        {showSubtitle && (
-          <small>
-            NDH <em>Academy</em>
-          </small>
-        )}
       </span>
     </Link>
   );

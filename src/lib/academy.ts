@@ -74,22 +74,38 @@ export function useSignOut() {
   });
 }
 
-/** SEO head helper — every route gets unique title/description/og tags. */
-export function seo(opts: { title: string; description: string; path?: string }) {
+/** Live address used for share links and preview images (works before the custom domain). */
+export const SHARE_URL = "https://ndhacademy.lovable.app";
+
+/** SEO head helper — every route gets unique title/description/og tags plus a share image. */
+export function seo(opts: {
+  title: string;
+  description: string;
+  path?: string;
+  image?: string;
+  type?: string;
+}) {
   const title = `${opts.title} | NDH Academy`;
-  const url = `${ACADEMY_URL}${opts.path ?? ""}`;
+  const url = `${SHARE_URL}${opts.path ?? ""}`;
+  const image = `${SHARE_URL}${opts.image ?? "/og/home.jpg"}`;
   return {
     meta: [
       { title },
       { name: "description", content: opts.description },
       { property: "og:title", content: title },
       { property: "og:description", content: opts.description },
-      { property: "og:type", content: "website" },
+      { property: "og:type", content: opts.type ?? "website" },
       { property: "og:url", content: url },
       { property: "og:site_name", content: "NDH Academy" },
+      { property: "og:image", content: image },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:image:alt", content: opts.title },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: title },
       { name: "twitter:description", content: opts.description },
+      { name: "twitter:image", content: image },
     ],
+    links: [{ rel: "canonical", href: url }],
   };
 }
