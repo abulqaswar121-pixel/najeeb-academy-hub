@@ -1082,3 +1082,50 @@ function clientForUser(): SupabaseClient {
   if (!pair) throw new Error("Not authenticated.");
   return userClient(pair.at);
 }
+
+// ───────────────────────────── Voucher PINs ─────────────────────────────
+export interface VoucherRow {
+  code: string;
+  tier: string;
+  retailNgn: number;
+  status: string;
+  createdAt: string;
+  redeemedAt: string | null;
+}
+
+export const voucherOps = {
+  async issue(userId: string, tierId: string, qty: number, reference: string) {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.rpc("issue_vouchers", {
+      target_user: userId, tier_id: tierId, qty, payment_reference: reference,
+    });
+    if (error) throw new Error(error.message);
+  },
+  async redeem(pin: string): Promise<string> {
+    const { data, error } = await clientForUser().rpc("redeem_voucher", { pin });
+    if (error) throw new Error(error.message);
+    return String(data);
+  },
+  async listMine(userId: string): Promise<VoucherRow[]> {
+    const { data, error } = await clientForUser()
+      .from("vouchers")
+      .select("code, tier, retail_ngn, status, created_at, redeemed_at")
+      .eq("buyer_id", userId)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error("Could not load your PINs.");
+    return (data ?? []).map((v) => ({
+      code: v.code, tier: v.tier, retailNgn: v.retail_ngn, status: v.status,
+      createdAt: v.created_at, redeemedAt: v.redeemed_at,
+    }));
+  },
+  async stats() {
+    const { data, error } = await clientForUser().from("vouchers").select("tier, status, wholesale_ngn");
+    if (error) throw new Error("Could not load PINs.");
+    const rows = data ?? [];
+    return {
+      total: rows.length,
+      used: rows.filter((r) => r.status === "used").length,
+      revenueNgn: rows.reduce((s, r) => s + r.wholesale_ngn, 0),
+    };
+  },
+};
