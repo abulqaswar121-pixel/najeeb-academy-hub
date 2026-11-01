@@ -12,3 +12,8 @@
 - [ ] Set up owner's admin account (blocked: owner account needed)
 - [x] Fix flicker on lesson + dashboard pages (prefetch me/wallet/overview in loaders)
 - [ ] Connect academy.ndh.com.ng and publish
+- [ ] Hero background photo clearly visible (mobile too)
+- [ ] Footer logo badge visible on dark background
+- [ ] Shorter homepage (less scrolling)
+- [ ] Install app button/section
+- [ ] Offline use: app opens offline + save course notes inside the app
