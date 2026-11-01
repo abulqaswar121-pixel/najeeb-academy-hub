@@ -20,8 +20,11 @@ export default defineConfig({
         registerType: "autoUpdate",
         devOptions: { enabled: false },
         filename: "sw.js",
+        // TanStack Start/nitro serves static files from dist/client.
+        outDir: "dist/client",
         manifest: false, // hand-written public/manifest.webmanifest
         workbox: {
+          globDirectory: "dist/client",
           globPatterns: ["assets/**/*.{js,css,woff2}", "icons/*.png", "favicon.png"],
           navigateFallback: null,
           cleanupOutdatedCaches: true,
