@@ -2,6 +2,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import {
   BookOpen,
   CloudDownload,
+  Store,
   Ticket,
   GraduationCap,
   LayoutDashboard,
@@ -66,6 +67,10 @@ export function PortalHeader({ area }: { area: "learn" | "dashboard" | "admin" |
           <Link to="/pricing" className={linkIdle} activeProps={{ className: linkActiveClass }}>
             <Ticket className="h-4 w-4" aria-hidden="true" />
             <span className="hidden sm:inline">My passes</span>
+          </Link>
+          <Link to="/agent" className={linkIdle} activeProps={{ className: linkActiveClass }}>
+            <Store className="h-4 w-4" aria-hidden="true" />
+            <span className="hidden sm:inline">Agent</span>
           </Link>
           <Link to="/offline" className={linkIdle} activeProps={{ className: linkActiveClass }}>
             <CloudDownload className="h-4 w-4" aria-hidden="true" />
