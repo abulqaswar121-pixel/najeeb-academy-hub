@@ -8,6 +8,7 @@ interface BrandLogoProps {
   showSubtitle?: boolean;
   showBadge?: boolean;
   className?: string;
+  to?: "/" | "/dashboard";
 }
 
 /**
@@ -21,10 +22,11 @@ export function BrandLogo({
   showSubtitle = true,
   showBadge = true,
   className = "",
+  to = "/",
 }: BrandLogoProps) {
   return (
     <Link
-      to="/"
+      to={to}
       className={`brand-lockup size-${size} ${className}`}
       aria-label="Najeeb Digital Hub — NDH Academy home"
     >

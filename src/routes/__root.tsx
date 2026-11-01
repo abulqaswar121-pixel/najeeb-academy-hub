@@ -12,7 +12,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { meQueryOptions } from "../lib/academy";
+import { meQueryOptions, useMe } from "../lib/academy";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CurrencyProvider } from "../lib/currency";
 import { LanguageProvider } from "../lib/i18n";
@@ -173,7 +173,12 @@ function portalArea(pathname: string): "learn" | "dashboard" | "admin" | null {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useLocation({ select: (l) => l.pathname });
-  const area = portalArea(pathname);
+  const { data: me } = useMe();
+  // Signed-in students stay inside the portal: shared pages (courses, passes,
+  // offline, verify) use portal chrome; reaching the homepage means signing out.
+  const studentShared =
+    !!me && ["/courses", "/pricing", "/offline", "/verify"].some((p) => pathname.startsWith(p));
+  const area = portalArea(pathname) ?? (studentShared ? "student" : null);
   const isAuth = AUTH_PREFIXES.some((p) => pathname.startsWith(p));
   const distractionFree = area !== null || isAuth;
   const showAssistant = !distractionFree;

@@ -1,6 +1,8 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   BookOpen,
+  CloudDownload,
+  Ticket,
   GraduationCap,
   LayoutDashboard,
   LogOut,
@@ -11,16 +13,18 @@ import {
 import { useMe, useSignOut } from "../../lib/academy";
 import { BrandLogo } from "./BrandLogo";
 
-const AREA_LABEL: Record<"learn" | "dashboard" | "admin", string> = {
+const AREA_LABEL: Record<"learn" | "dashboard" | "admin" | "student", string> = {
   learn: "Learning room",
   dashboard: "Student portal",
   admin: "Admin portal",
+  student: "Student portal",
 };
 
 const AREA_ICON = {
   learn: Sparkles,
   dashboard: GraduationCap,
   admin: ShieldCheck,
+  student: GraduationCap,
 } as const;
 
 /**
@@ -28,7 +32,7 @@ const AREA_ICON = {
  * three portal destinations and log out. No promo bar, no marketing nav, no
  * footer and no assistant — those live only on the public site.
  */
-export function PortalHeader({ area }: { area: "learn" | "dashboard" | "admin" }) {
+export function PortalHeader({ area }: { area: "learn" | "dashboard" | "admin" | "student" }) {
   const { data: me } = useMe();
   const signOut = useSignOut();
   const navigate = useNavigate();
@@ -43,7 +47,7 @@ export function PortalHeader({ area }: { area: "learn" | "dashboard" | "admin" }
     <header className="band-dark sticky top-0 z-50 border-b border-border/50">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-3">
-          <BrandLogo size="sm" showBadge={false} className="portal-brand" />
+          <BrandLogo size="sm" showBadge={false} className="portal-brand" to={me ? "/dashboard" : "/"} />
           <span className="bg-brand-subtle text-brand-soft hidden items-center gap-1.5 rounded-full border border-primary/25 px-2.5 py-1 font-mono text-[10px] font-bold tracking-wider uppercase sm:inline-flex">
             <AreaIcon className="h-3 w-3" aria-hidden="true" />
             {AREA_LABEL[area]}
@@ -57,7 +61,15 @@ export function PortalHeader({ area }: { area: "learn" | "dashboard" | "admin" }
           </Link>
           <Link to="/courses" className={linkIdle} activeProps={{ className: linkActiveClass }}>
             <BookOpen className="h-4 w-4" aria-hidden="true" />
-            <span className="hidden sm:inline">Catalog</span>
+            <span className="hidden sm:inline">Courses</span>
+          </Link>
+          <Link to="/pricing" className={linkIdle} activeProps={{ className: linkActiveClass }}>
+            <Ticket className="h-4 w-4" aria-hidden="true" />
+            <span className="hidden sm:inline">My passes</span>
+          </Link>
+          <Link to="/offline" className={linkIdle} activeProps={{ className: linkActiveClass }}>
+            <CloudDownload className="h-4 w-4" aria-hidden="true" />
+            <span className="hidden sm:inline">Offline</span>
           </Link>
           {me?.role === "admin" && (
             <Link to="/admin" className={linkIdle} activeProps={{ className: linkActiveClass }}>

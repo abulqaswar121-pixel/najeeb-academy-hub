@@ -29,6 +29,13 @@
       "when": 1793517206354,
       "tag": "0003_secure_roles_and_pass_wallets",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793534571570,
+      "tag": "0004_grant_owner_admin",
+      "breakpoints": true
     }
   ]
 }
