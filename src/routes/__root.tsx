@@ -21,6 +21,9 @@ import { SiteHeader } from "../components/layout/SiteHeader";
 import { SiteFooter } from "../components/layout/SiteFooter";
 import { AssistantWidget } from "../components/academy/AssistantWidget";
 import { Toaster } from "../components/ui/sonner";
+import { OfflineBanner } from "../components/academy/OfflineBanner";
+import { listenForInstallPrompt, registerAppServiceWorker, warmOfflinePage } from "../lib/pwa";
+import { listOfflineCourses } from "../lib/offline-courses";
 
 function NotFoundComponent() {
   return (
@@ -104,6 +107,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "Short, project-based AI courses — prompt engineering, AI content, automation, no-code apps and more. Finish with a real assessment, a portfolio project and a signed, verifiable certificate.",
       },
       { name: "author", content: "Najeeb Digital Hub" },
+      { name: "theme-color", content: "#071634" },
       {
         property: "og:title",
         content: "NDH Academy | Learn a practical AI skill, then prove it",
@@ -123,7 +127,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.png", type: "image/png" },
-      { rel: "apple-touch-icon", href: "/favicon.png" },
+      { rel: "apple-touch-icon", href: "/icons/apple-touch-icon.png" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
@@ -156,7 +161,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 /* Distraction-free zones: portals and auth screens hide the big footer, the
    promo bar and the floating assistant. The public site keeps them. */
-const AUTH_PREFIXES = ["/login", "/signup", "/verify"] as const;
+const AUTH_PREFIXES = ["/login", "/signup", "/verify", "/offline"] as const;
 
 function portalArea(pathname: string): "learn" | "dashboard" | "admin" | null {
   if (pathname.startsWith("/learn")) return "learn";
@@ -173,11 +178,18 @@ function RootComponent() {
   const distractionFree = area !== null || isAuth;
   const showAssistant = !distractionFree;
 
+  useEffect(() => {
+    listenForInstallPrompt();
+    registerAppServiceWorker();
+    if (listOfflineCourses().length > 0) warmOfflinePage();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <CurrencyProvider>
           <div className="bg-background text-foreground flex min-h-screen flex-col">
+            <OfflineBanner />
             {area ? <PortalHeader area={area} /> : <SiteHeader showPromo={!distractionFree} />}
             <main className="flex-1">
               {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
