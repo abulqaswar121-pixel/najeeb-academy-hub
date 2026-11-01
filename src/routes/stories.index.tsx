@@ -10,7 +10,7 @@ export const Route = createFileRoute("/stories/")({
     seo({
       title: "Graduate stories",
       description:
-        "Real outcomes from Najeeb Academy graduates — the course they took, the project they shipped and the certificate they earned.",
+        "Real outcomes from NDH Academy graduates — the course they took, the project they shipped and the certificate they earned.",
       path: "/stories",
     }),
   component: StoriesPage,

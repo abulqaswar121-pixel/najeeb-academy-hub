@@ -11,7 +11,7 @@ export const Route = createFileRoute("/verify/")({
     seo({
       title: "Verify a Certificate",
       description:
-        "Verify any Najeeb Academy certificate. Enter the certificate code to confirm the graduate's name, course and issue date.",
+        "Verify any NDH Academy certificate. Enter the certificate code to confirm the graduate's name, course and issue date.",
       path: "/verify",
     }),
   component: VerifyPage,
@@ -36,7 +36,7 @@ function VerifyPage() {
           Verify a certificate
         </h1>
         <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
-          Every Najeeb Academy certificate carries a unique code. Enter it below to confirm the
+          Every NDH Academy certificate carries a unique code. Enter it below to confirm the
           graduate's name, the course completed and the issue date.
         </p>
         <form

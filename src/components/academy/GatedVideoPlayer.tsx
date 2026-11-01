@@ -302,7 +302,7 @@ export function GatedVideoPlayer({
           className="text-foreground/25 pointer-events-none absolute right-3 bottom-3 z-10 font-mono text-[10px] tracking-wide"
           aria-hidden="true"
         >
-          {watermark} · Najeeb Academy
+          {watermark} · NDH Academy
         </span>
 
         {/* Big play button while paused */}

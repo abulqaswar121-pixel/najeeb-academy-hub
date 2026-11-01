@@ -76,7 +76,7 @@ export function useSignOut() {
 
 /** SEO head helper — every route gets unique title/description/og tags. */
 export function seo(opts: { title: string; description: string; path?: string }) {
-  const title = `${opts.title} | Najeeb Academy`;
+  const title = `${opts.title} | NDH Academy`;
   const url = `${ACADEMY_URL}${opts.path ?? ""}`;
   return {
     meta: [
@@ -86,7 +86,7 @@ export function seo(opts: { title: string; description: string; path?: string })
       { property: "og:description", content: opts.description },
       { property: "og:type", content: "website" },
       { property: "og:url", content: url },
-      { property: "og:site_name", content: "Najeeb Academy" },
+      { property: "og:site_name", content: "NDH Academy" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: title },
       { name: "twitter:description", content: opts.description },

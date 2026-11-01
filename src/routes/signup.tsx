@@ -28,7 +28,7 @@ export const Route = createFileRoute("/signup")({
     seo({
       title: "Create Your Free Account",
       description:
-        "Sign up for Najeeb Academy to enroll in practical AI courses, track your progress and earn signed, verifiable certificates.",
+        "Sign up for NDH Academy to enroll in practical AI courses, track your progress and earn signed, verifiable certificates.",
       path: "/signup",
     }),
   component: SignupPage,
@@ -57,7 +57,7 @@ function SignupPage() {
       const user = await signUpFn({ data: values });
       queryClient.setQueryData(meQueryOptions.queryKey, user);
       await queryClient.invalidateQueries();
-      toast.success(`Welcome to Najeeb Academy, ${user.name.split(" ")[0]}!`);
+      toast.success(`Welcome to NDH Academy, ${user.name.split(" ")[0]}!`);
       navigate({ to: redirect ?? "/dashboard" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Sign up failed. Please try again.");

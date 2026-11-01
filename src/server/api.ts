@@ -310,7 +310,7 @@ export async function submitReview(input: {
   if (input.asTestimonial && input.comment.trim().length > 0) {
     await backend().submitTestimonial(user.id, {
       name: user.name,
-      role: input.testimonialRole.trim() || "Najeeb Academy student",
+      role: input.testimonialRole.trim() || "NDH Academy student",
       quote: input.comment.trim(),
       courseId: state.course.id,
     });
