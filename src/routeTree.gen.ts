@@ -16,6 +16,7 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as CoursesIndexRouteImport } from './routes/courses.index'
@@ -59,6 +60,11 @@ const FaqRoute = FaqRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OfflineRoute = OfflineRouteImport.update({
+  id: '/offline',
+  path: '/offline',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PricingRoute = PricingRouteImport.update({
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
+  '/offline': typeof OfflineRoute
   '/pricing': typeof PricingRoute
   '/signup': typeof SignupRoute
   '/courses/$slug': typeof CoursesSlugRoute
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
+  '/offline': typeof OfflineRoute
   '/pricing': typeof PricingRoute
   '/signup': typeof SignupRoute
   '/courses/$slug': typeof CoursesSlugRoute
@@ -152,6 +160,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
+  '/offline': typeof OfflineRoute
   '/pricing': typeof PricingRoute
   '/signup': typeof SignupRoute
   '/courses/$slug': typeof CoursesSlugRoute
@@ -172,6 +181,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/faq'
     | '/login'
+    | '/offline'
     | '/pricing'
     | '/signup'
     | '/courses/$slug'
@@ -190,6 +200,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/faq'
     | '/login'
+    | '/offline'
     | '/pricing'
     | '/signup'
     | '/courses/$slug'
@@ -208,6 +219,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/faq'
     | '/login'
+    | '/offline'
     | '/pricing'
     | '/signup'
     | '/courses/$slug'
@@ -227,6 +239,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   FaqRoute: typeof FaqRoute
   LoginRoute: typeof LoginRoute
+  OfflineRoute: typeof OfflineRoute
   PricingRoute: typeof PricingRoute
   SignupRoute: typeof SignupRoute
   CoursesSlugRoute: typeof CoursesSlugRoute
@@ -287,6 +300,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offline': {
+      id: '/offline'
+      path: '/offline'
+      fullPath: '/offline'
+      preLoaderRoute: typeof OfflineRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pricing': {
@@ -363,6 +383,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   FaqRoute: FaqRoute,
   LoginRoute: LoginRoute,
+  OfflineRoute: OfflineRoute,
   PricingRoute: PricingRoute,
   SignupRoute: SignupRoute,
   CoursesSlugRoute: CoursesSlugRoute,

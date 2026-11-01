@@ -34,6 +34,8 @@ import { Label } from "../components/ui/label";
 import { Progress } from "../components/ui/progress";
 import { Textarea } from "../components/ui/textarea";
 import { categoryBySlug } from "../data/categories";
+import { saveOfflineCourse, type OfflineLesson } from "../lib/offline-courses";
+import { warmOfflinePage } from "../lib/pwa";
 import { meQueryOptions, seo } from "../lib/academy";
 import {
   completeLessonFn,
@@ -225,6 +227,14 @@ function LearnPage() {
               <span className="text-brand-soft font-bold">{enrollment.progress}%</span>
             </div>
             <Progress value={enrollment.progress} className="h-2" aria-label="Course progress" />
+            <SaveOfflineButton
+              course={{ slug, title: course.title, level: course.level }}
+              lessons={lessons.map((l) => ({
+                title: l.title,
+                position: l.position,
+                content: stateByLesson.get(l.id)?.videoDone && l.content ? l.content : null,
+              }))}
+            />
           </div>
         </div>
 
@@ -1027,5 +1037,35 @@ function ReviewPanel({
         </Button>
       </div>
     </article>
+  );
+}
+
+function SaveOfflineButton({
+  course,
+  lessons,
+}: {
+  course: { slug: string; title: string; level: string };
+  lessons: OfflineLesson[];
+}) {
+  const ready = lessons.filter((l) => l.content).length;
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        try {
+          saveOfflineCourse({ ...course, savedAt: new Date().toISOString(), lessons });
+          warmOfflinePage();
+          toast.success(
+            `Saved for offline — ${ready}/${lessons.length} lessons' notes. Find it in “My offline courses”.`,
+          );
+        } catch {
+          toast.error("Not enough space on this device to save the course.");
+        }
+      }}
+      className="text-brand-soft mt-3 inline-flex items-center gap-1.5 text-[11px] font-bold hover:underline"
+    >
+      <Download className="h-3.5 w-3.5" aria-hidden="true" /> Save for offline ({ready}/
+      {lessons.length} notes)
+    </button>
   );
 }

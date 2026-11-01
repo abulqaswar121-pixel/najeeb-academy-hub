@@ -142,6 +142,7 @@
 
   /* Extra precision tokens */
   --eco-dark: #071634;
+  --sector-badge-bg: #ffffff;
   --eco-dark-2: #0f2a54;
   --eco-electric: #22d3ee;
   --eco-lilac: #7dd3fc;
@@ -305,7 +306,8 @@ h4 {
   width: 22px;
   height: 22px;
   border-radius: 6px;
-  background: var(--surface);
+  /* Fixed white chip so the badge stays visible on light AND dark bands */
+  background: var(--sector-badge-bg);
   color: var(--eco-dark);
   border: 2px solid var(--eco-dark);
 }
