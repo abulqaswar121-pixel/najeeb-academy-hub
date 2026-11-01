@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { CategoryIcon } from "../components/academy/CategoryIcon";
+import { InstallAppSection } from "../components/academy/InstallApp";
 import { RecommendedTopics } from "../components/academy/RecommendedTopics";
 import { SectionHeading } from "../components/academy/SectionHeading";
 import { Button } from "../components/ui/button";
@@ -82,14 +83,14 @@ function HomePage() {
           width={1920}
           height={1088}
           fetchPriority="high"
-          className="absolute inset-0 h-full w-full object-cover opacity-70"
+          className="absolute inset-0 h-full w-full object-cover object-[22%_center] sm:object-center"
           aria-hidden="true"
         />
         <div
-          className="from-background/40 via-background/60 to-background absolute inset-0 bg-gradient-to-b"
+          className="from-background/55 via-background/70 to-background absolute inset-0 bg-gradient-to-b"
           aria-hidden="true"
         />
-        <div className="bg-grid-pattern absolute inset-0 opacity-40" aria-hidden="true" />
+        <div className="bg-grid-pattern absolute inset-0 opacity-25" aria-hidden="true" />
         <div
           className="hero-glow top-0 left-1/2 h-[350px] w-[700px] -translate-x-1/2"
           aria-hidden="true"
@@ -160,12 +161,12 @@ function HomePage() {
           title="One pass. Any courses you choose."
           description="Every course is unlocked with a pass credit — no per-course prices to compare. Start with 3 courses or unlock the whole academy."
         />
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 xl:grid-cols-4">
           {PASS_TIERS.map((tier) => (
             <Link
               key={tier.id}
               to="/pricing"
-              className={`group bg-card flex flex-col rounded-2xl border p-5 transition-all hover:-translate-y-1 hover:shadow-xl ${
+              className={`group bg-card flex min-w-[78%] snap-start flex-col rounded-2xl border p-5 transition-all sm:min-w-0 hover:-translate-y-1 hover:shadow-xl ${
                 tier.highlight
                   ? "border-primary/50 shadow-xl"
                   : tier.id === "all"
@@ -240,53 +241,27 @@ function HomePage() {
         <RecommendedTopics />
       </section>
 
-      {/* ───────── Category showcase — pure-white strip ───────── */}
-      <section className="bg-surface border-border border-y py-14">
-        <div className="mx-auto max-w-7xl space-y-10 px-4 sm:px-6 lg:px-8">
-          <SectionHeading
-            eyebrow={`${categories.length} skill tracks`}
-            title="Pick your track"
-            description="From prompt engineering to AI agents — practical skills employers and clients pay for right now."
-          />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {categories.slice(0, 6).map((cat) => {
-              const count = courses.filter((c) => c.category === cat.slug).length;
-              return (
-                <Link
-                  key={cat.slug}
-                  to="/courses"
-                  search={{ category: cat.slug }}
-                  className="group bg-card border-border hover:border-primary/50 flex items-start gap-4 rounded-2xl border p-5 shadow-lg transition-all duration-300 hover:-translate-y-0.5"
-                >
-                  <div className="bg-brand-subtle border-primary/30 text-brand-soft flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-transform group-hover:scale-110">
-                    <CategoryIcon name={cat.icon} className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-foreground group-hover:text-brand-soft truncate text-sm font-bold transition-colors">
-                        {cat.name}
-                      </h3>
-                    </div>
-                    <p className="text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed">
-                      {cat.blurb}
-                    </p>
-                    <span className="text-brand-soft mt-2 inline-block font-mono text-[10px] font-bold tracking-wider uppercase">
-                      {count} course{count === 1 ? "" : "s"} →
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-          <div className="text-center">
-            <Link
-              to="/courses"
-              className="text-brand-soft inline-flex items-center gap-2 text-sm font-bold hover:underline"
-            >
-              See all {categories.length} tracks{" "}
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
-          </div>
+      {/* ───────── Tracks — one swipeable row of chips ───────── */}
+      <section className="mx-auto max-w-7xl space-y-4 px-4 pb-12 sm:px-6 lg:px-8">
+        <h2 className="text-foreground text-center text-lg font-black tracking-tight">
+          Or browse by track
+        </h2>
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:flex-wrap sm:justify-center sm:px-0">
+          {categories.map((cat) => {
+            const count = courses.filter((c) => c.category === cat.slug).length;
+            return (
+              <Link
+                key={cat.slug}
+                to="/courses"
+                search={{ category: cat.slug }}
+                className="bg-card border-border hover:border-primary/50 text-foreground inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-xs font-bold shadow-sm transition-colors"
+              >
+                <CategoryIcon name={cat.icon} className="text-brand-soft h-4 w-4" />
+                {cat.shortName ?? cat.name}
+                <span className="text-muted-foreground font-mono text-[10px]">{count}</span>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
@@ -298,14 +273,14 @@ function HomePage() {
             title="Real people, real proof"
             description="Graduates who took a course, shipped the project and put the certificate to work."
           />
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0">
             {testimonials.slice(0, 3).map((t) => (
               <figure
                 key={t.id}
-                className="bg-card border-border flex flex-col rounded-2xl border p-6 shadow-xl"
+                className="bg-card border-border flex min-w-[82%] snap-start flex-col rounded-2xl border p-6 shadow-xl md:min-w-0"
               >
                 <Quote className="text-brand-soft h-5 w-5" aria-hidden="true" />
-                <blockquote className="text-muted-foreground mt-3 flex-1 text-sm leading-relaxed">
+                <blockquote className="text-muted-foreground mt-3 line-clamp-5 flex-1 text-sm leading-relaxed">
                   "{t.quote}"
                 </blockquote>
                 <figcaption className="border-border/60 mt-4 border-t pt-4">
@@ -337,14 +312,10 @@ function HomePage() {
           className="hero-glow -top-24 left-1/2 h-[300px] w-[640px] -translate-x-1/2"
           aria-hidden="true"
         />
-        <div className="relative z-10 mx-auto max-w-3xl space-y-6 px-4 text-center sm:px-6">
+        <div className="relative z-10 mx-auto max-w-7xl space-y-8 px-4 text-center sm:px-6 lg:px-8">
           <h2 className="text-foreground text-3xl font-black tracking-tight sm:text-5xl">
             Your next skill is <span className="text-gradient-brand">one course away</span>
           </h2>
-          <p className="text-muted-foreground text-base leading-relaxed sm:text-lg">
-            Browse the full catalog free. Pick a pass when you're ready. Certificate when you've
-            earned it.
-          </p>
           <Button
             asChild
             size="lg"
@@ -354,6 +325,7 @@ function HomePage() {
               Explore the catalog <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </Button>
+          <InstallAppSection />
         </div>
       </section>
     </div>
