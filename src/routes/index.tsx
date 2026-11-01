@@ -77,15 +77,18 @@ function HomePage() {
     <div>
       {/* ───────── Hero — the deep navy gateway band ───────── */}
       <section className="band-dark relative overflow-hidden pt-16 pb-20">
-        <img
-          src="/images/hero-academy.jpg"
-          alt=""
-          width={1920}
-          height={1088}
-          fetchPriority="high"
-          className="absolute inset-0 h-full w-full object-cover object-[12%_center] brightness-125 saturate-125 sm:object-center"
-          aria-hidden="true"
-        />
+        <picture>
+          <source media="(max-width: 639px)" srcSet="/images/hero-academy-mobile.jpg" />
+          <img
+            src="/images/hero-academy.jpg"
+            alt=""
+            width={1920}
+            height={1088}
+            fetchPriority="high"
+            className="absolute inset-0 h-full w-full object-cover object-[center_70%] brightness-110 sm:object-center sm:brightness-125 sm:saturate-125"
+            aria-hidden="true"
+          />
+        </picture>
         <div
           className="from-background/25 via-background/55 to-background/95 absolute inset-0 bg-gradient-to-b"
           aria-hidden="true"
