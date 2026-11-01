@@ -33,7 +33,7 @@ export const Route = createFileRoute("/dashboard")({
     seo({
       title: "Student Dashboard — Credits, Courses & Certificates",
       description:
-        "Your Najeeb Academy dashboard — credit wallet, enrolled courses, lesson progress and earned certificates.",
+        "Your NDH Academy dashboard — credit wallet, enrolled courses, lesson progress and earned certificates.",
       path: "/dashboard",
     }),
   loader: async ({ context }) => {

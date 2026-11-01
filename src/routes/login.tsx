@@ -28,7 +28,7 @@ export const Route = createFileRoute("/login")({
     seo({
       title: "Log In",
       description:
-        "Log in to your Najeeb Academy account to continue your courses, track progress and access your certificates.",
+        "Log in to your NDH Academy account to continue your courses, track progress and access your certificates.",
       path: "/login",
     }),
   component: LoginPage,

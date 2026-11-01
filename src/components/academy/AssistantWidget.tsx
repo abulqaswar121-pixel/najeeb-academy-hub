@@ -68,7 +68,7 @@ export function AssistantWidget() {
     () => ({
       id: WELCOME_ID,
       sender: "assistant",
-      text: "Hi! I'm NDH Scholar, the Najeeb Academy study advisor. Tell me what you want to learn — or what you do for work — and I'll point you to the right course. You can also ask about certificates, pricing, refunds or how the academy works.",
+      text: "Hi! I'm NDH Scholar, the NDH Academy study advisor. Tell me what you want to learn — or what you do for work — and I'll point you to the right course. You can also ask about certificates, pricing, refunds or how the academy works.",
       quickActions: QUICK_ACTIONS,
     }),
     [],
@@ -543,7 +543,7 @@ function buildReply(query: string, courses: CourseRecord[]): Omit<ChatMessage, "
   if (/(agency|build it for me|hire|client work)/.test(q)) {
     return {
       sender: "assistant",
-      text: "Najeeb Academy is purely a learning platform — we teach the skills through project-based courses and assessments rather than take on client builds. Want to talk it through with a human? The team is one WhatsApp message away.",
+      text: "NDH Academy is purely a learning platform — we teach the skills through project-based courses and assessments rather than take on client builds. Want to talk it through with a human? The team is one WhatsApp message away.",
       links: [
         { label: "Chat on WhatsApp", href: NDH_WHATSAPP_URL },
         { label: "Contact the team", to: "/contact" },

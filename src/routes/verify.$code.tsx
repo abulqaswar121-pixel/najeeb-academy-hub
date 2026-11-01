@@ -17,7 +17,7 @@ export const Route = createFileRoute("/verify/$code")({
   head: ({ params }) =>
     seo({
       title: `Certificate ${params.code}`,
-      description: `Verification result for Najeeb Academy certificate ${params.code} — confirm the graduate, course and issue date.`,
+      description: `Verification result for NDH Academy certificate ${params.code} — confirm the graduate, course and issue date.`,
       path: `/verify/${params.code}`,
     }),
   loader: async ({ context, params }) => {
@@ -45,7 +45,7 @@ function VerifyResultPage() {
                   Certificate verified ✓
                 </h1>
                 <p className="text-muted-foreground text-xs">
-                  This is an authentic Najeeb Academy certificate, signed and issued by Najeeb
+                  This is an authentic NDH Academy certificate, signed and issued by Najeeb
                   Digital Hub.
                 </p>
               </div>

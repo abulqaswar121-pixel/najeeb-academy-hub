@@ -28,7 +28,7 @@ export function CertificateView({
         </div>
         <div>
           <p className="text-muted-foreground font-mono text-[10px] tracking-[0.3em] uppercase">
-            Najeeb Academy
+            NDH Academy
           </p>
           <p className="text-gold mt-1 font-mono text-[10px] tracking-[0.2em] uppercase">
             Certificate of Completion

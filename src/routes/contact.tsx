@@ -43,7 +43,7 @@ export const Route = createFileRoute("/contact")({
     seo({
       title: "Contact Us",
       description:
-        "Questions about courses, certificates or group enrollments? Contact the Najeeb Academy team — we reply within one business day.",
+        "Questions about courses, certificates or group enrollments? Contact the NDH Academy team — we reply within one business day.",
       path: "/contact",
     }),
   component: ContactPage,

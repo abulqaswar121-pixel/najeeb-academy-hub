@@ -19,9 +19,9 @@ import { seo } from "../lib/academy";
 export const Route = createFileRoute("/about")({
   head: () =>
     seo({
-      title: "About Najeeb Academy",
+      title: "About NDH Academy",
       description:
-        "Najeeb Academy is the learning arm of Najeeb Digital Hub — short, practical AI courses taught from real agency work, ending in assessments, projects and signed certificates.",
+        "NDH Academy is the learning arm of Najeeb Digital Hub — short, practical AI courses taught from real agency work, ending in assessments, projects and signed certificates.",
       path: "/about",
     }),
   component: AboutPage,
@@ -68,7 +68,7 @@ function AboutPage() {
           </h1>
           <p className="text-muted-foreground text-base leading-relaxed sm:text-lg">
             Most online courses optimise for hours watched. We optimise for what you can do
-            afterwards. Najeeb Academy exists to help African professionals, freelancers and
+            afterwards. NDH Academy exists to help African professionals, freelancers and
             founders learn the AI skills the market pays for — fast, hands-on, and with proof at the
             end.
           </p>

@@ -32,7 +32,7 @@ export const Route = createFileRoute("/courses/")({
     seo({
       title: "AI Course Catalog — 60+ Practical Courses",
       description:
-        "Browse the full Najeeb Academy catalog: prompt engineering, AI content, video, design, automation, no-code apps, marketing, data and more. Every course is included in the All-Access Pass or costs one course credit — certificates included.",
+        "Browse the full NDH Academy catalog: prompt engineering, AI content, video, design, automation, no-code apps, marketing, data and more. Every course is included in the All-Access Pass or costs one course credit — certificates included.",
       path: "/courses",
     }),
   loader: async ({ context }) => {

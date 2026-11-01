@@ -21,7 +21,7 @@ export function buildDescription(course: CourseSeed): string {
       course.tools,
     )} — every lesson pairs the walkthrough with notes, a practical activity and a reflection check, so you're building from day one rather than just watching.`,
     `Who it's for: ${course.whoFor.map(lowerFirst).join("; ")}.`,
-    `The course finishes with a final assessment and a practical capstone — ${course.projectTitle}. ${course.project} Submit it, pass the assessment, and you'll earn a signed, verifiable Najeeb Academy certificate you can share with employers and clients.`,
+    `The course finishes with a final assessment and a practical capstone — ${course.projectTitle}. ${course.project} Submit it, pass the assessment, and you'll earn a signed, verifiable NDH Academy certificate you can share with employers and clients.`,
     `Level: ${course.level}. ${course.prerequisites} Lifetime access, learn at your own pace, and all future updates to the course are included in the one-time ${naira(
       course.priceNgn,
     )} fee.`,

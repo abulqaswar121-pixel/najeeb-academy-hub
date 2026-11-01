@@ -54,7 +54,7 @@ export const Route = createFileRoute("/learn/$slug")({
     seo({
       title: "Course Player",
       description:
-        "Work through your Najeeb Academy course lessons, submit your capstone project, pass the final assessment and earn your certificate.",
+        "Work through your NDH Academy course lessons, submit your capstone project, pass the final assessment and earn your certificate.",
       path: `/learn/${params.slug}`,
     }),
   loader: async ({ context, params }) => {

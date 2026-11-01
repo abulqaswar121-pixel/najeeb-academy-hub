@@ -45,10 +45,12 @@ export const Route = createFileRoute("/courses/$slug")({
     loaderData
       ? seo({
           title: loaderData.title,
-          description: loaderData.summary,
+          description: `${loaderData.summary} Assessment, project & verifiable certificate included.`,
           path: `/courses/${loaderData.slug}`,
+          image: `/og/courses/${loaderData.slug}.jpg`,
+          type: "article",
         })
-      : seo({ title: "Course", description: "Najeeb Academy course details.", path: "/courses" }),
+      : seo({ title: "Course", description: "NDH Academy course details.", path: "/courses" }),
   component: CourseDetailPage,
 });
 

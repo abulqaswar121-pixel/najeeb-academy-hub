@@ -53,7 +53,7 @@ export function SiteFooter({ variant = "compact" }: { variant?: "full" | "compac
     return (
       <footer className="band-dark border-border/60 border-t py-6 text-xs">
         <div className="text-muted-foreground mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 sm:flex-row sm:px-6 lg:px-8">
-          <p>© {year} Najeeb Academy</p>
+          <p>© {year} NDH Academy</p>
           <nav className="flex flex-wrap justify-center gap-x-5 gap-y-2" aria-label="Footer">
             {academyLinks.slice(0, 6).map((l) => (
               <Link key={l.to} to={l.to} className="hover:text-foreground transition-colors">
@@ -148,7 +148,7 @@ export function SiteFooter({ variant = "compact" }: { variant?: "full" | "compac
         </div>
 
         <div className="border-border/60 text-muted-foreground border-t pt-6 text-center">
-          © {year} Najeeb Academy. All rights reserved.
+          © {year} NDH Academy. All rights reserved.
         </div>
       </div>
     </footer>

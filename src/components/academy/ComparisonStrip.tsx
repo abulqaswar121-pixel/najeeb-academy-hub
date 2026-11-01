@@ -1,7 +1,7 @@
 import { Check, X } from "lucide-react";
 
 /**
- * "Typical video courses vs Najeeb Academy" — the problem/solution comparison
+ * "Typical video courses vs NDH Academy" — the problem/solution comparison
  * the agency uses on its About page (managed bureau vs freelancer chaos),
  * adapted to unverifiable video courses vs the academy's proof-based method.
  */
@@ -45,7 +45,7 @@ export function ComparisonStrip() {
       <div className="band-dark relative overflow-hidden rounded-3xl p-8 sm:p-10">
         <div className="hero-glow -top-16 -right-16 h-[220px] w-[320px]" aria-hidden="true" />
         <p className="text-brand-soft relative text-xs font-bold tracking-wider uppercase">
-          Najeeb Academy
+          NDH Academy
         </p>
         <h3 className="text-foreground relative mt-2 text-xl font-black">The answer</h3>
         <ul className="relative mt-6 space-y-4">

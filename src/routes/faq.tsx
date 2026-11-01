@@ -16,7 +16,7 @@ export const Route = createFileRoute("/faq")({
     seo({
       title: "Frequently Asked Questions",
       description:
-        "Answers about Najeeb Academy certificates, refunds, pacing, prerequisites, pricing and how courses work.",
+        "Answers about NDH Academy certificates, refunds, pacing, prerequisites, pricing and how courses work.",
       path: "/faq",
     }),
   component: FaqPage,
@@ -28,7 +28,7 @@ const faqs = [
     items: [
       {
         q: "How do certificates work?",
-        a: "Every course ends with a final assessment (70% pass mark, unlimited retakes) and a capstone project. When you pass, a signed Najeeb Academy certificate is issued instantly with a unique code like NDH-XXXX-XXXX. Anyone can verify it at academy.ndh.com.ng/verify — no account needed.",
+        a: "Every course ends with a final assessment (70% pass mark, unlimited retakes) and a capstone project. When you pass, a signed NDH Academy certificate is issued instantly with a unique code like NDH-XXXX-XXXX. Anyone can verify it at academy.ndh.com.ng/verify — no account needed.",
       },
       {
         q: "Are the certificates recognised?",

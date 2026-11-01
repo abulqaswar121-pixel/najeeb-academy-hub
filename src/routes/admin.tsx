@@ -61,7 +61,7 @@ export const Route = createFileRoute("/admin")({
     seo({
       title: "Admin Portal",
       description:
-        "Najeeb Academy admin portal — grade capstone projects, approve student reviews and stories, read contact messages and manage the academy.",
+        "NDH Academy admin portal — grade capstone projects, approve student reviews and stories, read contact messages and manage the academy.",
       path: "/admin",
     }),
   loader: async ({ context }) => {
@@ -143,7 +143,7 @@ function AdminPage() {
         <EmptyState
           icon={ShieldCheck}
           title="Admin access required"
-          description="This is the Najeeb Academy admin portal. Log in with an administrator account to grade projects, approve reviews and manage courses."
+          description="This is the NDH Academy admin portal. Log in with an administrator account to grade projects, approve reviews and manage courses."
           action={
             <Button asChild>
               <Link to="/login" search={{ redirect: "/admin" }}>

@@ -97,7 +97,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Najeeb Academy | Learn a practical AI skill, then prove it" },
+      { title: "NDH Academy | Learn a practical AI skill, then prove it" },
       {
         name: "description",
         content:
@@ -106,7 +106,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "author", content: "Najeeb Digital Hub" },
       {
         property: "og:title",
-        content: "Najeeb Academy | Learn a practical AI skill, then prove it",
+        content: "NDH Academy | Learn a practical AI skill, then prove it",
       },
       {
         property: "og:description",
@@ -114,7 +114,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "60+ practical AI courses with final assessments, portfolio projects and signed, verifiable certificates. Part of Najeeb Digital Hub.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:site_name", content: "Najeeb Academy" },
+      { property: "og:site_name", content: "NDH Academy" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [

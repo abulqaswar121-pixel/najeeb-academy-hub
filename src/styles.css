@@ -362,9 +362,9 @@ h4 {
 }
 .brand-lockup strong {
   font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  font-size: 15px;
+  font-size: 20px;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.02em;
   line-height: 1;
   white-space: nowrap;
   color: var(--foreground);
@@ -372,17 +372,17 @@ h4 {
 }
 .brand-lockup strong em {
   font-style: normal;
-  font-weight: 400;
+  font-weight: 800;
   color: var(--brand-soft);
 }
 .brand-lockup:hover strong {
   color: var(--brand-soft);
 }
 .brand-lockup.size-sm strong {
-  font-size: 13px;
+  font-size: 17px;
 }
 .brand-lockup.size-lg strong {
-  font-size: 18px;
+  font-size: 24px;
 }
 .brand-lockup-badge {
   border-radius: 999px;
@@ -398,16 +398,14 @@ h4 {
   white-space: nowrap;
 }
 .brand-lockup small {
-  margin-top: 3px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  margin-bottom: 4px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  line-height: 1;
   text-transform: uppercase;
+  white-space: nowrap;
   color: var(--muted-foreground);
-}
-.brand-lockup small em {
-  font-style: normal;
-  color: var(--brand-soft);
 }
 
 /* ============================================================
