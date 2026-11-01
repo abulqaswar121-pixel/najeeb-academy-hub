@@ -3,7 +3,7 @@
 - [x] Remove ecosystem switcher; keep NDH links only in homepage footer
 - [x] Shorten homepage (fewer sections, tighter cards)
 - [x] Portals (/learn, /dashboard, /admin): hide big footer + floating AI helper
-- [ ] Paystack checkout with test + live keys (blocked: user adds keys)
+- [x] Paystack test key added (live key later)
 - [x] Enable Lovable Cloud and load all 60 courses / 339 lessons
 - [x] Secure admin roles and remove fixed test login
 - [x] Store pass wallets permanently and enforce atomic course unlocks
