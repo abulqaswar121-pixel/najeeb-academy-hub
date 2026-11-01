@@ -9,7 +9,8 @@
 - [x] Store pass wallets permanently and enforce atomic course unlocks
 - [x] Save lesson video timings (339 lessons); remove invalid LinkedIn time windows
 - [ ] Test signed-in student journey (blocked: no signed-up account; email confirmation required)
-- [ ] Set up owner's admin account (blocked: owner account needed)
+- [x] Set up owner's admin account
+- [x] Keep signed-in users inside the portal (portal menu, homepage only after sign out)
 - [x] Fix flicker on lesson + dashboard pages (prefetch me/wallet/overview in loaders)
 - [ ] Connect academy.ndh.com.ng and publish
 - [x] Hero background photo clearly visible (mobile too)

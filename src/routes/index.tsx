@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import {
   ArrowRight,
   Award,
@@ -20,7 +21,7 @@ import { SectionHeading } from "../components/academy/SectionHeading";
 import { Button } from "../components/ui/button";
 import { categories } from "../data/categories";
 import { PASS_TIERS } from "../data/passes";
-import { seo } from "../lib/academy";
+import { seo, useMe } from "../lib/academy";
 import { formatPrice, useCurrency } from "../lib/currency";
 import { passName } from "../lib/passes-ui";
 import { fetchCourses, fetchTestimonials } from "../lib/server-fns";
@@ -69,6 +70,13 @@ const steps = [
 ];
 
 function HomePage() {
+  // Signed-in students live in the portal; the homepage is for visitors.
+  const { data: me } = useMe();
+  const navigateHome = useNavigate();
+  useEffect(() => {
+    if (me) navigateHome({ to: "/dashboard", replace: true });
+  }, [me, navigateHome]);
+
   const { data: courses = [] } = useQuery(coursesQuery);
   const { data: testimonials = [] } = useQuery(testimonialsQuery);
   const { currency } = useCurrency();
