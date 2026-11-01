@@ -83,11 +83,11 @@ function HomePage() {
           width={1920}
           height={1088}
           fetchPriority="high"
-          className="absolute inset-0 h-full w-full object-cover object-[22%_center] sm:object-center"
+          className="absolute inset-0 h-full w-full object-cover object-[12%_center] brightness-125 saturate-125 sm:object-center"
           aria-hidden="true"
         />
         <div
-          className="from-background/55 via-background/70 to-background absolute inset-0 bg-gradient-to-b"
+          className="from-background/25 via-background/55 to-background/95 absolute inset-0 bg-gradient-to-b"
           aria-hidden="true"
         />
         <div className="bg-grid-pattern absolute inset-0 opacity-25" aria-hidden="true" />
