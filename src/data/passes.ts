@@ -47,3 +47,13 @@ export function applyPass(wallet: PassWallet, tier: PassTier, reference: string)
 export function canUnlock(wallet: PassWallet): boolean {
   return wallet.allAccess || wallet.creditsUsed < wallet.creditsTotal;
 }
+
+/** Agent (reseller) wholesale price per PIN. Agents sell at the official price at most. */
+export const WHOLESALE_NGN: Record<PassTierId, number> = {
+  starter: 1500,
+  skill: 3500,
+  pro: 6500,
+  all: 15000,
+};
+
+export const MAX_PINS_PER_ORDER = 50;

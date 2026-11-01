@@ -476,6 +476,63 @@ export type Database = {
           },
         ]
       }
+      voucher_attempts: {
+        Row: {
+          attempted_at: string
+          user_id: string
+        }
+        Insert: {
+          attempted_at?: string
+          user_id: string
+        }
+        Update: {
+          attempted_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      vouchers: {
+        Row: {
+          buyer_id: string
+          code: string
+          created_at: string
+          id: string
+          payment_reference: string
+          redeemed_at: string | null
+          redeemed_by: string | null
+          retail_ngn: number
+          status: string
+          tier: string
+          wholesale_ngn: number
+        }
+        Insert: {
+          buyer_id: string
+          code: string
+          created_at?: string
+          id?: string
+          payment_reference: string
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          retail_ngn: number
+          status?: string
+          tier: string
+          wholesale_ngn: number
+        }
+        Update: {
+          buyer_id?: string
+          code?: string
+          created_at?: string
+          id?: string
+          payment_reference?: string
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          retail_ngn?: number
+          status?: string
+          tier?: string
+          wholesale_ngn?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -483,6 +540,15 @@ export type Database = {
     Functions: {
       admin_delete_user: { Args: { target_user: string }; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
+      issue_vouchers: {
+        Args: {
+          payment_reference: string
+          qty: number
+          target_user: string
+          tier_id: string
+        }
+        Returns: number
+      }
       redeem_course_pass: {
         Args: {
           payment_reference: string
@@ -491,6 +557,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      redeem_voucher: { Args: { pin: string }; Returns: string }
       unlock_course_with_pass: {
         Args: { target_course: string }
         Returns: {

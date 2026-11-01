@@ -177,7 +177,7 @@ function RootComponent() {
   // Signed-in students stay inside the portal: shared pages (courses, passes,
   // offline, verify) use portal chrome; reaching the homepage means signing out.
   const studentShared =
-    !!me && ["/courses", "/pricing", "/offline", "/verify"].some((p) => pathname.startsWith(p));
+    !!me && ["/courses", "/pricing", "/offline", "/verify", "/agent"].some((p) => pathname.startsWith(p));
   const area = portalArea(pathname) ?? (studentShared ? "student" : null);
   const isAuth = AUTH_PREFIXES.some((p) => pathname.startsWith(p));
   const distractionFree = area !== null || isAuth;

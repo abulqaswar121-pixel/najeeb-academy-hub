@@ -6,8 +6,8 @@
 import { deleteCookie, getCookie, setCookie } from "@tanstack/react-start/server";
 
 import { assessments, PASS_MARK } from "../data/assessments";
-import { passTier } from "../data/passes";
-import { getSupabaseConfig, supabaseBackend } from "./supabase-backend";
+import { MAX_PINS_PER_ORDER, passTier, WHOLESALE_NGN } from "../data/passes";
+import { getSupabaseConfig, supabaseBackend, voucherOps } from "./supabase-backend";
 import type {
   CourseEditInput,
   DataBackend,
@@ -191,7 +191,7 @@ export async function confirmCheckout(reference: string) {
       amount: number;
       currency: string;
       reference: string;
-      metadata?: { userId?: string; tierId?: string };
+      metadata?: { userId?: string; tierId?: string; kind?: string; qty?: number | string };
     };
   };
   const tx = body.data;
@@ -201,11 +201,20 @@ export async function confirmCheckout(reference: string) {
   if (tx.metadata?.userId !== user.id) throw new Error("Payment does not match your account.");
   const tier = passTier(tx.metadata?.tierId ?? "");
   if (!tier) throw new Error("Unknown pass.");
+  if (tx.metadata?.kind === "vouchers") {
+    const qty = Number(tx.metadata.qty);
+    if (!Number.isInteger(qty) || qty < 1 || qty > MAX_PINS_PER_ORDER) throw new Error("Invalid PIN order.");
+    if (tx.reference !== reference || tx.currency !== "NGN" || tx.amount !== WHOLESALE_NGN[tier.id] * qty * 100) {
+      throw new Error("Payment amount does not match the PIN order.");
+    }
+    await voucherOps.issue(user.id, tier.id, qty, tx.reference);
+    return { tier: tier.name, kind: "vouchers" as const, qty };
+  }
   if (tx.reference !== reference || tx.currency !== "NGN" || tx.amount !== tier.priceNgn * 100) {
     throw new Error("Payment amount does not match the pass price.");
   }
   await supabaseBackend.redeemPass(user.id, tier.id, tx.reference);
-  return { tier: tier.name };
+  return { tier: tier.name, kind: "pass" as const, qty: 1 };
 }
 
 export async function getDashboard() {
@@ -402,4 +411,46 @@ export async function adminDeleteMessage(messageId: string) {
   await requireAdmin();
   await backend().adminDeleteMessage(messageId);
   return { ok: true };
+}
+
+// ───────────────────────────── Voucher PINs ─────────────────────────────
+
+/** Starts a Paystack payment for a batch of reseller PINs (wholesale price). */
+export async function startVoucherCheckout(tierId: string, qty: number, origin: string) {
+  const user = await requireUser();
+  const key = paystackKey();
+  if (!key) throw new Error("Payments are not set up yet.");
+  const tier = passTier(tierId);
+  if (!tier) throw new Error("Unknown pass.");
+  if (!Number.isInteger(qty) || qty < 1 || qty > MAX_PINS_PER_ORDER) throw new Error("Pick 1 to 50 PINs.");
+  const res = await fetch("https://api.paystack.co/transaction/initialize", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: user.email,
+      amount: WHOLESALE_NGN[tier.id] * qty * 100,
+      currency: "NGN",
+      callback_url: `${origin}/agent`,
+      metadata: { userId: user.id, tierId: tier.id, kind: "vouchers", qty },
+    }),
+  });
+  const body = (await res.json()) as { status: boolean; message?: string; data?: { authorization_url: string } };
+  if (!res.ok || !body.status || !body.data) throw new Error(body.message || "Could not start payment.");
+  return { url: body.data.authorization_url };
+}
+
+export async function redeemVoucher(pin: string) {
+  await requireUser();
+  const tierId = await voucherOps.redeem(pin);
+  return { tier: passTier(tierId)?.name ?? "pass" };
+}
+
+export async function myVouchers() {
+  const user = await requireUser();
+  return voucherOps.listMine(user.id);
+}
+
+export async function adminVoucherStats() {
+  await requireAdmin();
+  return voucherOps.stats();
 }

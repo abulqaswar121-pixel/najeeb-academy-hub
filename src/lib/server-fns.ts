@@ -273,3 +273,25 @@ export const submitAssessmentFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     return (await api()).submitAssessment(data);
   });
+
+// ─────────────────────────── Voucher PINs ───────────────────────────
+
+export const startVoucherCheckoutFn = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      tier: z.enum(["starter", "skill", "pro", "all"]),
+      qty: z.number().int().min(1).max(50),
+      origin: z.string().url(),
+    }),
+  )
+  .handler(async ({ data }) => (await api()).startVoucherCheckout(data.tier, data.qty, data.origin));
+
+export const redeemVoucherFn = createServerFn({ method: "POST" })
+  .inputValidator(z.object({ pin: z.string().min(4).max(40) }))
+  .handler(async ({ data }) => (await api()).redeemVoucher(data.pin));
+
+export const myVouchersFn = createServerFn({ method: "GET" }).handler(async () => (await api()).myVouchers());
+
+export const adminVoucherStatsFn = createServerFn({ method: "GET" }).handler(async () =>
+  (await api()).adminVoucherStats(),
+);
