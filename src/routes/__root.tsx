@@ -1,4 +1,3 @@
-import { useMe } from "../lib/academy";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -13,7 +12,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { meQueryOptions } from "../lib/academy";
+import { meQueryOptions, useMe } from "../lib/academy";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CurrencyProvider } from "../lib/currency";
 import { LanguageProvider } from "../lib/i18n";
