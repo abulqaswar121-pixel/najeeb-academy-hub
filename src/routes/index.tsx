@@ -47,21 +47,6 @@ export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
-const agentSteps = [
-  {
-    title: "Buy PINs at wholesale",
-    text: "Pay with Paystack at agent prices starting from ₦1,500.",
-  },
-  {
-    title: "Sell to students",
-    text: "Hand over the PIN or send the official branded card image on WhatsApp.",
-  },
-  {
-    title: "Keep 100% profit",
-    text: "Your buyer redeems the PIN on the website instantly; you pocket the cash profit.",
-  },
-];
-
 const steps = [
   {
     icon: BookOpen,
@@ -258,72 +243,6 @@ function HomePage() {
         </div>
       </section>
 
-      {/* ───────── Agent reseller program — turn PINs into profit ───────── */}
-      <section className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
-        <div className="band-dark border-border/60 relative overflow-hidden rounded-3xl border p-5 shadow-xl sm:p-7">
-          <div className="hero-glow -top-28 -right-20 h-[260px] w-[420px]" aria-hidden="true" />
-          <div className="relative grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center">
-            <div>
-              <p className="text-brand-soft inline-flex items-center gap-1.5 text-[10px] font-bold tracking-wider uppercase">
-                <Store className="h-3.5 w-3.5" aria-hidden="true" />
-                Agent reseller program
-              </p>
-              <h2 className="text-foreground mt-2 text-2xl font-black tracking-tight sm:text-3xl">
-                Earn as an NDH Academy Agent
-              </h2>
-              <p className="text-muted-foreground mt-2 max-w-xl text-sm leading-relaxed">
-                Buy course voucher PINs at wholesale discount and sell them at the official card
-                price. Keep up to ₦10,000 profit on every sale.
-              </p>
-              <Button
-                asChild
-                className="bg-gradient-cta shadow-glow-primary mt-4 rounded-xl font-bold"
-              >
-                <Link to="/agent">Open Agent Corner →</Link>
-              </Button>
-            </div>
-
-            <div className="space-y-3">
-              <ol className="grid gap-2 sm:grid-cols-3">
-                {agentSteps.map((step, index) => (
-                  <li key={step.title} className="bg-card/80 border-border rounded-xl border p-3">
-                    <span className="bg-brand-subtle text-brand-soft border-primary/25 flex h-6 w-6 items-center justify-center rounded-full border font-mono text-[10px] font-bold">
-                      {index + 1}
-                    </span>
-                    <h3 className="text-foreground mt-2 text-xs font-bold">{step.title}</h3>
-                    <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
-                      {step.text}
-                    </p>
-                  </li>
-                ))}
-              </ol>
-
-              <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-                {PASS_TIERS.map((tier) => {
-                  const wholesale = WHOLESALE_NGN[tier.id];
-                  return (
-                    <div
-                      key={tier.id}
-                      className="bg-surface/70 border-border rounded-xl border px-2.5 py-2"
-                    >
-                      <p className="text-muted-foreground text-[9px] font-bold tracking-wider uppercase">
-                        {passName(tier.id)}
-                      </p>
-                      <p className="text-foreground mt-1 text-[10px] font-semibold">
-                        Pay {formatNaira(wholesale)} → Sell at {formatNaira(tier.priceNgn)}
-                      </p>
-                      <p className="text-success mt-0.5 text-[11px] font-black">
-                        {formatNaira(tier.priceNgn - wholesale)} profit
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ───────── Recommended topics — one deliberate pick per level ───────── */}
       <section className="mx-auto max-w-7xl space-y-10 px-4 py-14 sm:px-6 lg:px-8">
         <SectionHeading
@@ -395,6 +314,70 @@ function HomePage() {
             >
               Read all graduate stories <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ───────── Agent reseller program — compact banner before the app CTA ───────── */}
+      <section className="mx-auto max-w-7xl px-4 pt-8 pb-2 sm:px-6 lg:px-8">
+        <div className="band-dark border-border/60 relative overflow-hidden rounded-2xl border p-4 shadow-xl sm:p-5">
+          <div className="hero-glow -top-24 -right-16 h-[180px] w-[320px]" aria-hidden="true" />
+          <div className="relative flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-brand-soft inline-flex items-center gap-1.5 text-[10px] font-bold tracking-wider uppercase">
+                <Store className="h-3.5 w-3.5" aria-hidden="true" />
+                Agent reseller program
+              </p>
+              <h2 className="text-foreground mt-1.5 text-lg font-black tracking-tight sm:text-xl">
+                Earn as an NDH Academy Agent
+              </h2>
+              <p className="text-muted-foreground mt-1 max-w-2xl text-xs leading-relaxed sm:text-sm">
+                Buy course voucher PINs at wholesale discount and sell them at the official card
+                price. Keep up to ₦10,000 profit on every sale.
+              </p>
+              <div className="text-muted-foreground mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-semibold">
+                {["Buy wholesale from ₦1,500", "Sell at card price", "Keep 100% profit"].map(
+                  (step, index) => (
+                    <span key={step} className="inline-flex items-center gap-1.5">
+                      {index > 0 && (
+                        <span className="text-muted-foreground/50" aria-hidden="true">
+                          →
+                        </span>
+                      )}
+                      <span className="bg-brand-subtle text-brand-soft inline-flex h-4 w-4 items-center justify-center rounded-full font-mono text-[9px] font-bold">
+                        {index + 1}
+                      </span>
+                      {step}
+                    </span>
+                  ),
+                )}
+              </div>
+            </div>
+            <Button
+              asChild
+              size="sm"
+              className="bg-gradient-cta shadow-glow-primary w-full shrink-0 rounded-xl font-bold sm:w-auto"
+            >
+              <Link to="/agent">Open Agent Corner →</Link>
+            </Button>
+          </div>
+
+          <div className="border-border/50 relative mt-3 flex flex-wrap gap-1.5 border-t pt-3">
+            {PASS_TIERS.map((tier) => {
+              const wholesale = WHOLESALE_NGN[tier.id];
+              const profit = tier.priceNgn - wholesale;
+              return (
+                <span
+                  key={tier.id}
+                  title={`${passName(tier.id)}: Pay ${formatNaira(wholesale)} → Sell at ${formatNaira(tier.priceNgn)} → ${formatNaira(profit)} profit`}
+                  className="bg-card/70 border-border inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-semibold"
+                >
+                  <span className="text-muted-foreground">{passName(tier.id)}</span>
+                  <span className="text-success font-black">+{formatNaira(profit)}</span>
+                  <span className="text-muted-foreground text-[9px] font-medium">profit</span>
+                </span>
+              );
+            })}
           </div>
         </div>
       </section>
