@@ -19,6 +19,8 @@ import { seo } from "../lib/academy";
 import { formatPrice, useCurrency } from "../lib/currency";
 import { passName } from "../lib/passes-ui";
 import { fetchCourses } from "../lib/server-fns";
+import { RedeemPin } from "../components/academy/RedeemPin";
+import { Link as AgentLink } from "@tanstack/react-router";
 
 const coursesQuery = { queryKey: ["courses"], queryFn: () => fetchCourses() };
 
@@ -115,6 +117,16 @@ function PricingPage() {
           description="Not sure which to pick? Most learners start with the Starter Pass and top up later — credits never expire."
         />
         <PassPlans />
+        <div className="mx-auto grid max-w-4xl gap-4 md:grid-cols-2">
+          <RedeemPin />
+          <div className="bg-card border-border flex flex-col justify-center rounded-3xl border p-5 shadow-lg sm:p-6">
+            <h3 className="font-display text-lg font-bold">Want to earn?</h3>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Become an agent: buy PINs at a lower price, sell at the card price and keep up to ₦10,000 per PIN.
+            </p>
+            <AgentLink to="/agent" className="text-brand-soft mt-3 text-sm font-semibold underline">Open the agent corner →</AgentLink>
+          </div>
+        </div>
       </section>
 
       {/* ───────── Comparison ───────── */}
