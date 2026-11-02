@@ -21,6 +21,7 @@ const STORAGE_KEY = "ndh-academy-language";
 const en = {
   "nav.courses": "Courses",
   "nav.pricing": "Pricing",
+  "nav.agent": "Agent corner",
   "nav.about": "About",
   "nav.faq": "FAQ",
   "nav.contact": "Contact",
@@ -48,6 +49,7 @@ export type ChromeKey = keyof typeof en;
 const fr: Record<ChromeKey, string> = {
   "nav.courses": "Cours",
   "nav.pricing": "Tarifs",
+  "nav.agent": "Espace agent",
   "nav.about": "À propos",
   "nav.faq": "FAQ",
   "nav.contact": "Contact",
@@ -73,6 +75,7 @@ const fr: Record<ChromeKey, string> = {
 const ar: Record<ChromeKey, string> = {
   "nav.courses": "الدورات",
   "nav.pricing": "الأسعار",
+  "nav.agent": "ركن الوكلاء",
   "nav.about": "حول",
   "nav.faq": "الأسئلة الشائعة",
   "nav.contact": "اتصل بنا",

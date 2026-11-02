@@ -84,8 +84,10 @@ export function seo(opts: {
   path?: string;
   image?: string;
   type?: string;
+  /** Use the supplied title verbatim instead of appending the site name. */
+  exactTitle?: boolean;
 }) {
-  const title = `${opts.title} | NDH Academy`;
+  const title = opts.exactTitle ? opts.title : `${opts.title} | NDH Academy`;
   const url = `${SHARE_URL}${opts.path ?? ""}`;
   const image = `${SHARE_URL}${opts.image ?? "/og/home.jpg"}`;
   return {

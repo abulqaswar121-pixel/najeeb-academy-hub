@@ -27,6 +27,7 @@ import { Button } from "../ui/button";
 const SITE_LINKS: { to: string; labelKey: ChromeKey }[] = [
   { to: "/courses", labelKey: "nav.courses" },
   { to: "/pricing", labelKey: "nav.pricing" },
+  { to: "/agent", labelKey: "nav.agent" },
   { to: "/about", labelKey: "nav.about" },
   { to: "/faq", labelKey: "nav.faq" },
   { to: "/contact", labelKey: "nav.contact" },
