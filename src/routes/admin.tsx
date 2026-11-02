@@ -5,6 +5,8 @@ import {
   Award,
   BookOpen,
   CheckCircle2,
+  ChevronRight,
+  CreditCard,
   Eye,
   EyeOff,
   FolderGit2,
@@ -36,9 +38,10 @@ import {
 } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import { Progress } from "../components/ui/progress";
 import { Textarea } from "../components/ui/textarea";
 import { formatDate, meQueryOptions, seo, useMe } from "../lib/academy";
-import type { AdminOverview } from "../server/types";
+import type { AdminOverview, AdminPassSummary, AdminStudentRecord } from "../server/types";
 import {
   adminCoursesFn,
   adminDeleteMessageFn,
@@ -880,10 +883,42 @@ function MessagesTab() {
 
 // ───────────────────────────── Students ─────────────────────────────
 
+function passLabel(pass: AdminPassSummary): string {
+  if (pass.allAccess) return "All-Access Pass";
+  if (pass.creditsTotal > 0) return `${pass.creditsUsed} of ${pass.creditsTotal} credits used`;
+  return "No pass yet";
+}
+
+function passTone(pass: AdminPassSummary): string {
+  if (pass.allAccess) return "border-primary/35 bg-primary/10 text-brand-soft";
+  if (pass.creditsTotal > 0) return "border-border bg-muted/60 text-foreground";
+  return "border-border text-muted-foreground";
+}
+
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+function PassStatusBadge({ pass }: { pass: AdminPassSummary }) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold whitespace-nowrap ${passTone(pass)}`}
+    >
+      {passLabel(pass)}
+    </span>
+  );
+}
+
 function StudentsTab() {
   const queryClient = useQueryClient();
   const { data } = useQuery({ queryKey: ["admin", "students"], queryFn: () => adminStudentsFn() });
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
+  const [selected, setSelected] = useState<AdminStudentRecord | null>(null);
   const [search, setSearch] = useState("");
 
   const deleteStudent = useMutation({
@@ -891,6 +926,7 @@ function StudentsTab() {
     onSuccess: async () => {
       toast.success("Student account deleted.");
       setConfirmDelete(null);
+      setSelected(null);
       await queryClient.invalidateQueries({ queryKey: ["admin"] });
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "Delete failed."),
@@ -906,16 +942,30 @@ function StudentsTab() {
     );
   }, [data, search]);
 
+  const askDelete = (student: AdminStudentRecord) => {
+    setSelected(null);
+    setConfirmDelete({ id: student.user.id, name: student.user.name });
+  };
+
   if (!data) return <TabSkeleton />;
   if (data.length === 0) {
     return (
       <EmptyState
         icon={Users}
         title="No students yet"
-        description="Every account created on the signup page will appear here with enrollments, certificates and project activity."
+        description="Every account created on the signup page will appear here with pass balance, enrollments, certificates and project activity."
       />
     );
   }
+
+  const detailPass = selected?.pass;
+  const detailRemaining = detailPass
+    ? Math.max(0, detailPass.creditsTotal - detailPass.creditsUsed)
+    : 0;
+  const passUsedPct =
+    detailPass && detailPass.creditsTotal > 0
+      ? Math.min(100, Math.round((detailPass.creditsUsed / detailPass.creditsTotal) * 100))
+      : 0;
 
   return (
     <>
@@ -935,58 +985,339 @@ function StudentsTab() {
             className="h-9 w-full max-w-xs rounded-lg text-xs"
           />
         </div>
-        <div className="bg-card border-border overflow-x-auto rounded-2xl border shadow-sm">
-          <table className="w-full min-w-[640px] text-left text-sm">
-            <thead>
-              <tr className="border-border text-muted-foreground border-b font-mono text-[10px] tracking-wider uppercase">
-                <th className="px-4 py-3 font-medium">Student</th>
-                <th className="px-4 py-3 font-medium">Joined</th>
-                <th className="px-4 py-3 font-medium">Courses</th>
-                <th className="px-4 py-3 font-medium">Certs</th>
-                <th className="px-4 py-3 font-medium">Projects</th>
-                <th className="px-4 py-3 text-right font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((row) => (
-                <tr key={row.user.id} className="border-border/60 border-b last:border-0">
-                  <td className="px-4 py-3">
-                    <p className="text-foreground text-xs font-bold">{row.user.name}</p>
-                    <p className="text-muted-foreground text-[11px]">{row.user.email}</p>
-                  </td>
-                  <td className="text-muted-foreground px-4 py-3 text-[11px]">
-                    {row.joinedAt ? formatDate(row.joinedAt) : "—"}
-                  </td>
-                  <td className="text-foreground px-4 py-3 font-mono text-xs font-bold">
-                    {row.enrollmentCount}
-                  </td>
-                  <td className="text-foreground px-4 py-3 font-mono text-xs font-bold">
-                    {row.certificateCount}
-                  </td>
-                  <td className="text-foreground px-4 py-3 font-mono text-xs font-bold">
-                    {row.projectCount}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-destructive hover:text-destructive h-8 rounded-lg px-2 text-[11px] font-bold"
-                      onClick={() => setConfirmDelete({ id: row.user.id, name: row.user.name })}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" /> Delete
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {filtered.length === 0 && (
-            <p className="text-muted-foreground p-6 text-center text-xs">
+
+        {filtered.length === 0 ? (
+          <div className="bg-card border-border rounded-2xl border p-6">
+            <p className="text-muted-foreground text-center text-xs">
               No students match “{search}”.
             </p>
-          )}
-        </div>
+          </div>
+        ) : (
+          <>
+            {/* Desktop table */}
+            <div className="bg-card border-border hidden overflow-x-auto rounded-2xl border shadow-sm md:block">
+              <table className="w-full min-w-[820px] text-left text-sm">
+                <thead>
+                  <tr className="border-border text-muted-foreground border-b font-mono text-[10px] tracking-wider uppercase">
+                    <th className="px-4 py-3 font-medium">Student</th>
+                    <th className="px-4 py-3 font-medium">Pass</th>
+                    <th className="px-4 py-3 font-medium">Joined</th>
+                    <th className="px-4 py-3 font-medium">Courses</th>
+                    <th className="px-4 py-3 font-medium">Certs</th>
+                    <th className="px-4 py-3 font-medium">Projects</th>
+                    <th className="px-4 py-3 text-right font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((row) => (
+                    <tr
+                      key={row.user.id}
+                      tabIndex={0}
+                      aria-label={`View ${row.user.name}’s details`}
+                      onClick={() => setSelected(row)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          setSelected(row);
+                        }
+                      }}
+                      className="border-border/60 hover:bg-accent/40 focus-visible:bg-accent/40 cursor-pointer border-b transition-colors last:border-0 focus-visible:outline-none"
+                    >
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2.5">
+                          <span className="bg-primary/10 text-brand-soft flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-mono text-[10px] font-black">
+                            {initials(row.user.name) || "ST"}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-foreground text-xs font-bold">{row.user.name}</p>
+                            <p className="text-muted-foreground text-[11px]">{row.user.email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <PassStatusBadge pass={row.pass} />
+                      </td>
+                      <td className="text-muted-foreground px-4 py-3 text-[11px]">
+                        {row.joinedAt ? formatDate(row.joinedAt) : "—"}
+                      </td>
+                      <td className="text-foreground px-4 py-3 font-mono text-xs font-bold">
+                        {row.enrollmentCount}
+                      </td>
+                      <td className="text-foreground px-4 py-3 font-mono text-xs font-bold">
+                        {row.certificateCount}
+                      </td>
+                      <td className="text-foreground px-4 py-3 font-mono text-xs font-bold">
+                        {row.projectCount}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            aria-label={`Open ${row.user.name}’s details`}
+                            className="text-muted-foreground hover:text-foreground h-8 rounded-lg px-2"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setSelected(row);
+                            }}
+                            onKeyDown={(event) => event.stopPropagation()}
+                          >
+                            <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-destructive hover:text-destructive h-8 rounded-lg px-2 text-[11px] font-bold"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setConfirmDelete({ id: row.user.id, name: row.user.name });
+                            }}
+                            onKeyDown={(event) => event.stopPropagation()}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" /> Delete
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="grid gap-2 md:hidden">
+              {filtered.map((row) => (
+                <button
+                  key={row.user.id}
+                  type="button"
+                  onClick={() => setSelected(row)}
+                  className="bg-card border-border hover:border-primary/40 w-full rounded-2xl border p-4 text-left shadow-sm transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <span className="bg-primary/10 text-brand-soft flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-mono text-[10px] font-black">
+                        {initials(row.user.name) || "ST"}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-foreground truncate text-xs font-bold">
+                          {row.user.name}
+                        </p>
+                        <p className="text-muted-foreground truncate text-[11px]">
+                          {row.user.email}
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronRight
+                      className="text-muted-foreground h-4 w-4 shrink-0"
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                    <PassStatusBadge pass={row.pass} />
+                  </div>
+                  <div className="text-muted-foreground mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] uppercase">
+                    <span>{row.enrollmentCount} courses</span>
+                    <span>{row.certificateCount} certs</span>
+                    <span>{row.projectCount} projects</span>
+                    <span className="ml-auto normal-case">
+                      {row.joinedAt ? `Joined ${formatDate(row.joinedAt)}` : ""}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
+
+      {/* Student detail drawer */}
+      <Dialog open={selected !== null} onOpenChange={(open) => !open && setSelected(null)}>
+        <DialogContent className="flex max-h-[92dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+          {selected && (
+            <>
+              <DialogHeader className="border-border from-primary/10 via-card to-card border-b bg-gradient-to-br p-5 pr-14 text-left sm:p-6 sm:pr-16">
+                <div className="flex items-start gap-3">
+                  <span className="bg-primary/10 text-brand-soft flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl font-mono text-sm font-black">
+                    {initials(selected.user.name) || "ST"}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <DialogTitle className="text-foreground text-xl font-black tracking-tight">
+                      {selected.user.name}
+                    </DialogTitle>
+                    <DialogDescription className="text-muted-foreground mt-1 truncate text-xs">
+                      {selected.user.email}
+                    </DialogDescription>
+                    <p className="text-muted-foreground mt-1 font-mono text-[10px] tracking-wider uppercase">
+                      Joined {selected.joinedAt ? formatDate(selected.joinedAt) : "—"}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive mr-3 h-8 shrink-0 rounded-lg px-2 text-[11px] font-bold sm:mr-4"
+                    onClick={() => askDelete(selected)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                    <span className="hidden sm:inline">Delete</span>
+                  </Button>
+                </div>
+                <dl className="mt-4 grid grid-cols-3 gap-2">
+                  {[
+                    { label: "Courses", value: selected.enrollmentCount },
+                    { label: "Certificates", value: selected.certificateCount },
+                    { label: "Projects", value: selected.projectCount },
+                  ].map((stat) => (
+                    <div
+                      key={stat.label}
+                      className="border-border/70 bg-background/60 rounded-xl border px-2 py-2.5 text-center"
+                    >
+                      <dd className="text-foreground font-mono text-sm font-black">{stat.value}</dd>
+                      <dt className="text-muted-foreground mt-0.5 font-mono text-[9px] tracking-wider uppercase">
+                        {stat.label}
+                      </dt>
+                    </div>
+                  ))}
+                </dl>
+              </DialogHeader>
+
+              <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5 sm:p-6">
+                {/* Pass balance */}
+                <section
+                  aria-label="Pass balance"
+                  className="border-primary/20 from-primary/10 rounded-2xl border bg-gradient-to-br to-transparent p-4"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <span className="bg-primary/10 text-brand-soft flex h-8 w-8 items-center justify-center rounded-lg">
+                        <CreditCard className="h-4 w-4" aria-hidden="true" />
+                      </span>
+                      <div>
+                        <p className="text-foreground text-xs font-bold">Pass balance</p>
+                        <p className="text-muted-foreground text-[10px]">
+                          {selected.pass.allAccess
+                            ? "All-Access is active on this account"
+                            : selected.pass.creditsTotal > 0
+                              ? "Course credits available"
+                              : "No pass purchased yet"}
+                        </p>
+                      </div>
+                    </div>
+                    {selected.pass.allAccess && (
+                      <span className="border-primary/35 bg-primary/15 text-brand-soft inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold whitespace-nowrap">
+                        All-Access
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="mt-4 flex items-end gap-2">
+                    <span className="text-foreground text-2xl font-black tracking-tight">
+                      {selected.pass.allAccess ? "Unlimited" : detailRemaining}
+                    </span>
+                    <span className="text-muted-foreground pb-1 text-[11px] font-bold">
+                      {selected.pass.allAccess
+                        ? "course access"
+                        : detailRemaining === 1
+                          ? "credit remaining"
+                          : "credits remaining"}
+                    </span>
+                  </div>
+
+                  {!selected.pass.allAccess && selected.pass.creditsTotal > 0 && (
+                    <>
+                      <Progress value={passUsedPct} className="bg-primary/15 mt-3 h-2" />
+                      <div className="text-muted-foreground mt-1.5 flex items-center justify-between font-mono text-[10px]">
+                        <span>{selected.pass.creditsUsed} used</span>
+                        <span>{selected.pass.creditsTotal} total</span>
+                      </div>
+                    </>
+                  )}
+
+                  {!selected.pass.allAccess && selected.pass.creditsTotal === 0 && (
+                    <p className="text-muted-foreground mt-3 border-border/70 border-t pt-3 text-[11px] leading-relaxed">
+                      This student needs a course pass before any course can be unlocked.
+                    </p>
+                  )}
+                </section>
+
+                {/* Enrolled courses */}
+                <section aria-label="Enrolled courses">
+                  <div className="mb-2.5 flex items-end justify-between gap-2">
+                    <h3 className="text-foreground text-sm font-black tracking-tight">
+                      Enrolled courses{" "}
+                      <span className="text-muted-foreground font-mono text-[10px] font-bold">
+                        ({selected.courses.length})
+                      </span>
+                    </h3>
+                    <span className="text-muted-foreground font-mono text-[9px] tracking-wider uppercase">
+                      Live progress
+                    </span>
+                  </div>
+
+                  {selected.courses.length === 0 ? (
+                    <div className="border-border bg-muted/20 rounded-2xl border border-dashed p-8 text-center">
+                      <BookOpen
+                        className="text-muted-foreground mx-auto h-6 w-6"
+                        aria-hidden="true"
+                      />
+                      <p className="text-foreground mt-2 text-xs font-bold">
+                        No courses enrolled yet
+                      </p>
+                      <p className="text-muted-foreground mx-auto mt-1 max-w-xs text-[11px] leading-relaxed">
+                        Courses unlocked with a pass will appear here with lesson-by-lesson
+                        progress.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {selected.courses.map((course) => (
+                        <article
+                          key={course.courseId}
+                          className="border-border bg-card flex gap-3 rounded-xl border p-3"
+                        >
+                          <div className="bg-muted relative h-16 w-24 shrink-0 overflow-hidden rounded-lg">
+                            {course.image ? (
+                              <img
+                                src={course.image}
+                                alt=""
+                                loading="lazy"
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-muted-foreground flex h-full w-full items-center justify-center">
+                                <BookOpen className="h-5 w-5" aria-hidden="true" />
+                              </span>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-foreground line-clamp-2 text-xs leading-snug font-bold">
+                              {course.title}
+                            </p>
+                            <p className="text-muted-foreground mt-0.5 font-mono text-[10px]">
+                              {course.enrolledAt
+                                ? `Enrolled ${formatDate(course.enrolledAt)}`
+                                : "Enrolled"}
+                            </p>
+                            <p className="text-muted-foreground mt-2 text-[10px] leading-tight">
+                              <span className="text-foreground font-bold">
+                                {course.progress}% completed
+                              </span>{" "}
+                              • {course.completedLessons} of {course.lessonCount} lessons
+                            </p>
+                            <Progress
+                              value={course.progress}
+                              className="bg-primary/15 mt-1.5 h-1.5"
+                            />
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={confirmDelete !== null}
