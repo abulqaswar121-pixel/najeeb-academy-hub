@@ -162,12 +162,33 @@ export interface ContactMessageRecord {
   createdAt: string;
 }
 
+export interface AdminPassSummary {
+  allAccess: boolean;
+  creditsTotal: number;
+  creditsUsed: number;
+}
+
+export interface AdminStudentCourse {
+  courseId: string;
+  title: string;
+  slug: string;
+  image: string | null;
+  enrolledAt: string | null;
+  progress: number;
+  completedLessons: number;
+  lessonCount: number;
+}
+
 export interface AdminStudentRecord {
   user: UserRecord;
   joinedAt: string | null;
   enrollmentCount: number;
   certificateCount: number;
   projectCount: number;
+  /** Course-pass balance shown in the admin student list and detail drawer. */
+  pass: AdminPassSummary;
+  /** Every course this student has unlocked, newest enrollment first. */
+  courses: AdminStudentCourse[];
 }
 
 export interface AdminOverview {

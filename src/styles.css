@@ -1400,6 +1400,14 @@ h4 {
     color 0.15s ease;
 }
 
+/* Crop YouTube's iframe chrome: the over-scaled iframe pushes the top
+   title/channel bar and the bottom-right logo outside the rounded stage. */
+.player-crop {
+  transform: scale(1.15);
+  transform-origin: center center;
+  will-change: transform;
+}
+
 /* Fullscreen / expanded player — centre the 16:9 stage plus its control bar as
    one group, so portrait phones never pin the video to the top with a huge
    empty gap underneath. Rewind, mute and exit controls stay within reach. */

@@ -28,6 +28,7 @@ import type {
   AdminCourseRecord,
   AdminOverview,
   AdminProjectSubmission,
+  AdminStudentCourse,
   AdminStudentRecord,
   CertificateRecord,
   CertificateWithDetails,
@@ -56,7 +57,6 @@ import {
   requiredWindowSeconds,
   sameWindow,
 } from "./types";
-
 
 interface LocalUser extends UserRecord {
   passwordHash: string;
@@ -736,13 +736,43 @@ export const localBackend: DataBackend = {
   async adminListStudents(): Promise<AdminStudentRecord[]> {
     return state.users
       .filter((u) => u.role === "student")
-      .map((u) => ({
-        user: toPublicUser(u),
-        joinedAt: u.createdAt ?? null,
-        enrollmentCount: state.enrollments.filter((e) => e.userId === u.id).length,
-        certificateCount: state.certificates.filter((c) => c.userId === u.id).length,
-        projectCount: state.projects.filter((p) => p.userId === u.id).length,
-      }))
+      .map((u) => {
+        const wallet = state.wallets?.[u.id] ?? EMPTY_WALLET;
+        const courses = state.enrollments
+          .filter((e) => e.userId === u.id)
+          .flatMap((e) => {
+            const base = baseCourses.find((course) => course.id === e.courseId);
+            if (!base) return [];
+            const course = applyOverride(base);
+            const { completed, progress } = computeProgress(u.id, e.courseId);
+            return [
+              {
+                courseId: course.id,
+                title: course.title,
+                slug: course.slug,
+                image: course.image || null,
+                enrolledAt: e.enrolledAt ?? null,
+                progress,
+                completedLessons: completed,
+                lessonCount: lessonsByCourse.get(e.courseId)?.length ?? 0,
+              },
+            ];
+          })
+          .sort((a, b) => ((a.enrolledAt ?? "") < (b.enrolledAt ?? "") ? 1 : -1));
+        return {
+          user: toPublicUser(u),
+          joinedAt: u.createdAt ?? null,
+          enrollmentCount: courses.length,
+          certificateCount: state.certificates.filter((c) => c.userId === u.id).length,
+          projectCount: state.projects.filter((p) => p.userId === u.id).length,
+          pass: {
+            allAccess: wallet.allAccess,
+            creditsTotal: wallet.creditsTotal,
+            creditsUsed: wallet.creditsUsed,
+          },
+          courses,
+        };
+      })
       .sort((a, b) => ((a.joinedAt ?? "") < (b.joinedAt ?? "") ? 1 : -1));
   },
 

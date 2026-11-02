@@ -14,7 +14,9 @@ import { EMPTY_WALLET } from "../data/passes";
 import type {
   AdminCourseRecord,
   AdminOverview,
+  AdminPassSummary,
   AdminProjectSubmission,
+  AdminStudentCourse,
   AdminStudentRecord,
   CertificateRecord,
   CertificateWithDetails,
@@ -47,7 +49,8 @@ export function getSupabaseConfig(): { url: string; anonKey: string } | null {
   const viteEnv = (import.meta.env ?? {}) as Record<string, string | undefined>;
   const url = env["SUPABASE_URL"] ?? env["VITE_SUPABASE_URL"] ?? viteEnv["VITE_SUPABASE_URL"];
   const anonKey =
-    env["SUPABASE_PUBLISHABLE_KEY"] ?? env["VITE_SUPABASE_PUBLISHABLE_KEY"] ??
+    env["SUPABASE_PUBLISHABLE_KEY"] ??
+    env["VITE_SUPABASE_PUBLISHABLE_KEY"] ??
     env["VITE_SUPABASE_ANON_KEY"] ??
     env["SUPABASE_ANON_KEY"] ??
     viteEnv["VITE_SUPABASE_PUBLISHABLE_KEY"];
@@ -60,12 +63,18 @@ function anonClient(): SupabaseClient {
   if (!cfg) throw new Error("Supabase is not configured.");
   return createClient(cfg.url, cfg.anonKey, {
     auth: { persistSession: false, autoRefreshToken: false },
-    global: { fetch: (input, init) => {
-      const headers = new Headers(init?.headers);
-      if (cfg.anonKey.startsWith("sb_") && headers.get("Authorization") === `Bearer ${cfg.anonKey}`) headers.delete("Authorization");
-      headers.set("apikey", cfg.anonKey);
-      return fetch(input, { ...init, headers });
-    } },
+    global: {
+      fetch: (input, init) => {
+        const headers = new Headers(init?.headers);
+        if (
+          cfg.anonKey.startsWith("sb_") &&
+          headers.get("Authorization") === `Bearer ${cfg.anonKey}`
+        )
+          headers.delete("Authorization");
+        headers.set("apikey", cfg.anonKey);
+        return fetch(input, { ...init, headers });
+      },
+    },
   });
 }
 
@@ -192,11 +201,7 @@ async function fetchUserRecord(
   userId: string,
   email: string,
 ): Promise<UserRecord> {
-  const { data } = await client
-    .from("profiles")
-    .select("full_name")
-    .eq("id", userId)
-    .maybeSingle();
+  const { data } = await client.from("profiles").select("full_name").eq("id", userId).maybeSingle();
   const { data: isAdmin, error } = await client.rpc("is_admin");
   if (error) throw new Error("Could not check account access.");
   return {
@@ -279,7 +284,9 @@ function watchedFor(
     .reduce((max, l) => Math.max(max, progress.get(l.id)?.watchedSeconds ?? 0), 0);
 }
 
-export const supabaseBackend: DataBackend & { redeemPass(userId: string, tierId: string, reference: string): Promise<void> } = {
+export const supabaseBackend: DataBackend & {
+  redeemPass(userId: string, tierId: string, reference: string): Promise<void>;
+} = {
   async listCourses() {
     const { data, error } = await anonClient()
       .from("courses")
@@ -439,7 +446,9 @@ export const supabaseBackend: DataBackend & { redeemPass(userId: string, tierId:
 
   async enroll(userId, courseId) {
     const client = clientForUser();
-    const { data, error } = await client.rpc("unlock_course_with_pass", { target_course: courseId });
+    const { data, error } = await client.rpc("unlock_course_with_pass", {
+      target_course: courseId,
+    });
     if (error) throw new Error(error.message);
     const row = data?.[0];
     if (!row || row.user_id !== userId) throw new Error("Could not unlock this course.");
@@ -469,7 +478,9 @@ export const supabaseBackend: DataBackend & { redeemPass(userId: string, tierId:
   async redeemPass(userId: string, tierId: string, reference: string) {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.rpc("redeem_course_pass", {
-      target_user: userId, tier_id: tierId, payment_reference: reference,
+      target_user: userId,
+      tier_id: tierId,
+      payment_reference: reference,
     });
     if (error) throw new Error(error.message);
   },
@@ -869,17 +880,33 @@ export const supabaseBackend: DataBackend & { redeemPass(userId: string, tierId:
 
   async adminListStudents(): Promise<AdminStudentRecord[]> {
     const client = clientForUser();
-    const [{ data: profiles }, { data: enrollments }, { data: certs }, { data: projects }] =
-      await Promise.all([
-        client
-          .from("profiles")
-          .select("id, full_name, email, role, created_at")
-          .eq("role", "student")
-          .order("created_at", { ascending: false }),
-        client.from("enrollments").select("user_id"),
-        client.from("certificates").select("user_id"),
-        client.from("project_submissions").select("user_id"),
-      ]);
+    const [
+      { data: profiles, error: profilesError },
+      { data: enrollments, error: enrollmentsError },
+      { data: certs },
+      { data: projects },
+      { data: wallets, error: walletsError },
+      { data: progress },
+    ] = await Promise.all([
+      client
+        .from("profiles")
+        .select("id, full_name, email, role, created_at")
+        .eq("role", "student")
+        .order("created_at", { ascending: false }),
+      client
+        .from("enrollments")
+        .select(
+          "user_id, course_id, enrolled_at, progress, courses(id, title, slug, image, lessons(id))",
+        ),
+      client.from("certificates").select("user_id"),
+      client.from("project_submissions").select("user_id"),
+      client.from("pass_wallets").select("user_id, all_access, credits_total, credits_used"),
+      client.from("lesson_progress").select("user_id, lesson_id"),
+    ]);
+    if (profilesError) throw new Error(profilesError.message);
+    if (enrollmentsError) throw new Error(enrollmentsError.message);
+    if (walletsError) throw new Error("Could not load student pass balances.");
+
     const countBy = (rows: any[] | null) => {
       const m = new Map<string, number>();
       for (const row of rows ?? []) m.set(row.user_id, (m.get(row.user_id) ?? 0) + 1);
@@ -888,6 +915,53 @@ export const supabaseBackend: DataBackend & { redeemPass(userId: string, tierId:
     const e = countBy(enrollments);
     const c = countBy(certs);
     const p = countBy(projects);
+
+    const doneByUser = new Map<string, Set<string>>();
+    for (const row of progress ?? []) {
+      const done = doneByUser.get(row.user_id) ?? new Set<string>();
+      done.add(row.lesson_id);
+      doneByUser.set(row.user_id, done);
+    }
+
+    const coursesByUser = new Map<string, AdminStudentCourse[]>();
+    for (const row of enrollments ?? []) {
+      const course = Array.isArray(row.courses) ? row.courses[0] : row.courses;
+      if (!course) continue;
+      const lessons = Array.isArray(course.lessons) ? course.lessons : [];
+      const done = doneByUser.get(row.user_id) ?? new Set<string>();
+      const completedLessons = lessons.filter((lesson: any) => done.has(lesson.id)).length;
+      const lessonCount = lessons.length;
+      const fallbackProgress = Number(row.progress ?? 0);
+      const progress =
+        lessonCount > 0
+          ? Math.round((completedLessons / lessonCount) * 100)
+          : Math.max(0, Math.min(100, Math.round(fallbackProgress)));
+      const list = coursesByUser.get(row.user_id) ?? [];
+      list.push({
+        courseId: course.id,
+        title: course.title ?? "Untitled course",
+        slug: course.slug ?? "",
+        image: course.image ?? null,
+        enrolledAt: row.enrolled_at ?? null,
+        progress,
+        completedLessons,
+        lessonCount,
+      });
+      coursesByUser.set(row.user_id, list);
+    }
+    for (const list of coursesByUser.values()) {
+      list.sort((a, b) => ((a.enrolledAt ?? "") < (b.enrolledAt ?? "") ? 1 : -1));
+    }
+
+    const passesByUser = new Map<string, AdminPassSummary>();
+    for (const row of wallets ?? []) {
+      passesByUser.set(row.user_id, {
+        allAccess: Boolean(row.all_access),
+        creditsTotal: Number(row.credits_total ?? 0),
+        creditsUsed: Number(row.credits_used ?? 0),
+      });
+    }
+
     return (profiles ?? []).map((row: any) => ({
       user: {
         id: row.id,
@@ -899,6 +973,12 @@ export const supabaseBackend: DataBackend & { redeemPass(userId: string, tierId:
       enrollmentCount: e.get(row.id) ?? 0,
       certificateCount: c.get(row.id) ?? 0,
       projectCount: p.get(row.id) ?? 0,
+      pass: passesByUser.get(row.id) ?? {
+        allAccess: false,
+        creditsTotal: 0,
+        creditsUsed: 0,
+      },
+      courses: coursesByUser.get(row.id) ?? [],
     }));
   },
 
@@ -1097,7 +1177,10 @@ export const voucherOps = {
   async issue(userId: string, tierId: string, qty: number, reference: string) {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.rpc("issue_vouchers", {
-      target_user: userId, tier_id: tierId, qty, payment_reference: reference,
+      target_user: userId,
+      tier_id: tierId,
+      qty,
+      payment_reference: reference,
     });
     if (error) throw new Error(error.message);
   },
@@ -1114,12 +1197,18 @@ export const voucherOps = {
       .order("created_at", { ascending: false });
     if (error) throw new Error("Could not load your PINs.");
     return (data ?? []).map((v) => ({
-      code: v.code, tier: v.tier, retailNgn: v.retail_ngn, status: v.status,
-      createdAt: v.created_at, redeemedAt: v.redeemed_at,
+      code: v.code,
+      tier: v.tier,
+      retailNgn: v.retail_ngn,
+      status: v.status,
+      createdAt: v.created_at,
+      redeemedAt: v.redeemed_at,
     }));
   },
   async stats() {
-    const { data, error } = await clientForUser().from("vouchers").select("tier, status, wholesale_ngn");
+    const { data, error } = await clientForUser()
+      .from("vouchers")
+      .select("tier, status, wholesale_ngn");
     if (error) throw new Error("Could not load PINs.");
     const rows = data ?? [];
     return {

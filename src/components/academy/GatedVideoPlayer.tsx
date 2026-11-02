@@ -5,8 +5,12 @@
  * - Privacy-enhanced youtube-nocookie embed with ALL native controls removed
  *   (controls=0, disablekb=1, fs=0, rel=0) so there is no "Watch on YouTube",
  *   no share button and no clickable title/logo.
+ * - The iframe is slightly over-scaled inside an overflow-hidden stage so
+ *   YouTube's top title/channel bar and bottom-right logo sit outside the crop.
  * - A transparent shield sits over the iframe: clicks only play/pause, and
  *   right-click (copy video URL) is blocked.
+ * - A full dark pause cover (lesson title + play button) hides YouTube's
+ *   related-video shelf and end cards, especially on mobile.
  * - First watch: forward seeking is disabled. Students can rewind freely but
  *   can never jump past the furthest point they have actually watched — a
  *   watchdog also snaps playback back if anything tries to skip ahead.
@@ -292,7 +296,11 @@ export function GatedVideoPlayer({
     >
       <div className="player-shell w-full">
         <div className="player-stage relative aspect-video w-full overflow-hidden bg-black">
-          <div ref={hostRef} className="pointer-events-none h-full w-full" aria-hidden="true" />
+          <div
+            ref={hostRef}
+            className="player-crop pointer-events-none h-full w-full"
+            aria-hidden="true"
+          />
 
           {/* Interaction shield — blocks every direct touch on the YouTube iframe. */}
           <button
@@ -305,31 +313,42 @@ export function GatedVideoPlayer({
 
           {/* Watermark */}
           <span
-            className="text-foreground/25 pointer-events-none absolute right-3 bottom-3 z-10 font-mono text-[10px] tracking-wide"
+            className="pointer-events-none absolute right-3 bottom-3 z-30 font-mono text-[10px] tracking-wide text-white/35 drop-shadow"
             aria-hidden="true"
           >
             {watermark} · NDH Academy
           </span>
 
-          {/* Big play button while paused */}
+          {/* Full pause cover — blocks YouTube title, related videos and end cards. */}
           {ready && !playing && (
-            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+            <button
+              type="button"
+              onClick={togglePlay}
+              aria-label={`Play — ${title}`}
+              className="absolute inset-0 z-20 flex h-full w-full cursor-pointer flex-col items-center justify-center gap-3 bg-gradient-to-b from-black/80 via-black/55 to-black/80 px-5 text-center"
+            >
               <span className="bg-gradient-cta shadow-glow-primary flex h-16 w-16 items-center justify-center rounded-2xl">
                 <Play className="text-primary-foreground ml-0.5 h-7 w-7" aria-hidden="true" />
               </span>
-            </div>
+              <span className="line-clamp-2 max-w-md text-sm leading-snug font-bold text-white">
+                {title}
+              </span>
+              <span className="font-mono text-[10px] tracking-[0.18em] text-white/55 uppercase">
+                Tap to play · NDH Academy
+              </span>
+            </button>
           )}
 
           {!ready && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center">
-              <span className="text-muted-foreground animate-pulse font-mono text-xs">
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/60">
+              <span className="animate-pulse font-mono text-xs text-white/60">
                 Loading secure player…
               </span>
             </div>
           )}
 
           {blockedHint && (
-            <div className="absolute inset-x-0 top-3 z-20 flex justify-center px-4">
+            <div className="absolute inset-x-0 top-3 z-30 flex justify-center px-4">
               <p className="bg-card/95 border-primary/40 text-foreground rounded-full border px-4 py-1.5 text-xs font-bold shadow-xl">
                 Fast-forward unlocks after your first full watch — rewinding is always allowed.
               </p>
