@@ -20,7 +20,6 @@ import { formatPrice, useCurrency } from "../lib/currency";
 import { passName } from "../lib/passes-ui";
 import { fetchCourses } from "../lib/server-fns";
 import { RedeemPin } from "../components/academy/RedeemPin";
-import { Link as AgentLink } from "@tanstack/react-router";
 
 const coursesQuery = { queryKey: ["courses"], queryFn: () => fetchCourses() };
 
@@ -124,7 +123,7 @@ function PricingPage() {
             <p className="text-muted-foreground mt-1 text-sm">
               Become an agent: buy PINs at a lower price, sell at the card price and keep up to ₦10,000 per PIN.
             </p>
-            <AgentLink to="/agent" className="text-brand-soft mt-3 text-sm font-semibold underline">Open the agent corner →</AgentLink>
+            <Link to="/agent" className="text-brand-soft mt-3 text-sm font-semibold underline">Open the agent corner →</Link>
           </div>
         </div>
       </section>
