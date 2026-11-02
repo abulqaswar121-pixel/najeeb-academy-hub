@@ -6,21 +6,22 @@ import {
   Award,
   BookOpen,
   CheckCircle2,
-  ChevronDown,
-  Circle,
   Download,
   ExternalLink,
   FileCheck,
   FolderGit2,
   GraduationCap,
   ListChecks,
+  Loader2,
   Lock,
   PartyPopper,
   PlayCircle,
   Star,
   Target,
+  Unlock,
+  Video,
 } from "lucide-react";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { CertificateView } from "../components/academy/CertificateView";
@@ -56,7 +57,7 @@ export const Route = createFileRoute("/learn/$slug")({
     seo({
       title: "Course Player",
       description:
-        "Work through your NDH Academy course lessons, submit your capstone project, pass the final assessment and earn your certificate.",
+        "Watch the full NDH Academy course video, then unlock every chapter note, exercise, capstone project and the final assessment.",
       path: `/learn/${params.slug}`,
     }),
   loader: async ({ context, params }) => {
@@ -68,19 +69,23 @@ export const Route = createFileRoute("/learn/$slug")({
   component: LearnPage,
 });
 
-type View = { kind: "lesson"; index: number } | { kind: "project" } | { kind: "assessment" };
+type Panel = "project" | "assessment" | null;
 
 function LearnPage() {
   const { slug } = Route.useParams();
   const { data } = useQuery(learnQuery(slug));
   const queryClient = useQueryClient();
-  const [view, setView] = useState<View | null>(null);
-  const [curriculumOpen, setCurriculumOpen] = useState(true);
+  const [activeChapter, setActiveChapter] = useState<number | null>(null);
+  const [panel, setPanel] = useState<Panel>(null);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [result, setResult] = useState<{ passed: boolean; correct: number; total: number } | null>(
     null,
   );
+  const [liveWatched, setLiveWatched] = useState(0);
+  const [masterDuration, setMasterDuration] = useState(0);
+  const [masterEnded, setMasterEnded] = useState(false);
 
+  const lessons = useMemo(() => (data?.status === "ok" ? data.lessons : []), [data]);
   const completedIds = useMemo(
     () => new Set(data?.status === "ok" ? data.completedLessonIds : []),
     [data],
@@ -91,14 +96,148 @@ function LearnPage() {
     [data],
   );
 
-  const completeLesson = useMutation({
-    mutationFn: (lessonId: string) => completeLessonFn({ data: { lessonId } }),
+  const certificate = data?.status === "ok" ? data.certificate : null;
+  const projectSubmission = data?.status === "ok" ? data.projectSubmission : null;
+  const allLessonsDone = lessons.length > 0 && lessons.every((l) => completedIds.has(l.id));
+
+  /** Furthest point already watched in the master timeline, rebuilt from the
+   *  chapter progress the server persists. */
+  const initialWatched = useMemo(() => {
+    return lessons.reduce((max, lesson) => {
+      const state = stateByLesson.get(lesson.id);
+      if (!state || state.watchedSeconds <= 0) return max;
+      const point =
+        state.videoDone && lesson.videoEnd !== null
+          ? lesson.videoEnd
+          : lesson.videoStart + state.watchedSeconds;
+      return Math.max(max, point);
+    }, 0);
+  }, [lessons, stateByLesson]);
+
+  /** Fallback duration before the player reports its own (e.g. on first paint). */
+  const estimatedDuration = useMemo(() => {
+    const ends = lessons.map((l) => l.videoEnd).filter((v): v is number => v !== null);
+    return ends.length > 0 ? Math.max(...ends) : 0;
+  }, [lessons]);
+  const effectiveDuration = masterDuration > 0 ? masterDuration : estimatedDuration;
+
+  const masterComplete =
+    lessons.length === 0 ||
+    allLessonsDone ||
+    masterEnded ||
+    certificate !== null ||
+    (effectiveDuration > 0 && initialWatched >= effectiveDuration - 2);
+  const masterVideoId = lessons.find((lesson) => lesson.videoId)?.videoId ?? null;
+
+  const masterPct = masterComplete
+    ? 100
+    : effectiveDuration > 0
+      ? Math.min(99, Math.round((Math.max(liveWatched, initialWatched) / effectiveDuration) * 100))
+      : 0;
+
+  const completeStore = useRef(new Set<string>());
+  useEffect(() => {
+    completeStore.current = new Set(completedIds);
+  }, [completedIds]);
+
+  /**
+   * Master-video progress is stored in the existing per-chapter lesson state:
+   * as the playhead passes through a chapter window, that chapter's watched
+   * seconds are saved. Rewinding and returning later resumes from the furthest
+   * point the server has seen.
+   */
+  const handleMasterProgress = useCallback(
+    (watchedSeconds: number, duration: number, ended: boolean) => {
+      setMasterDuration(duration > 0 ? duration : 0);
+      setLiveWatched(watchedSeconds);
+      if (ended) setMasterEnded(true);
+      if (!lessons.length || masterComplete) return;
+
+      const index = lessons.findIndex((lesson, i) => {
+        const end = lesson.videoEnd ?? duration;
+        const inside = watchedSeconds >= lesson.videoStart && watchedSeconds < end;
+        const atLastEnd =
+          i === lessons.length - 1 && duration > 0 && watchedSeconds >= duration - 2;
+        return inside || atLastEnd;
+      });
+      if (index < 0) return;
+
+      const lesson = lessons[index]!;
+      const start = lesson.videoStart;
+      const end = lesson.videoEnd ?? duration;
+      const windowLength = Math.max(1, end - start);
+      const relativeWatched = Math.max(0, Math.min(watchedSeconds - start, windowLength));
+      const chapterEnded =
+        ended || (duration > 0 && watchedSeconds >= duration - 2) || watchedSeconds >= end - 2;
+
+      void saveVideoProgressFn({
+        data: {
+          lessonId: lesson.id,
+          watchedSeconds: relativeWatched,
+          playerDuration: windowLength,
+          ended: chapterEnded,
+        },
+      })
+        .then((res) => {
+          if (res.videoDone && !completeStore.current.has(lesson.id)) {
+            completeStore.current.add(lesson.id);
+            void queryClient.invalidateQueries({ queryKey: ["learn", slug] });
+          }
+        })
+        .catch(() => {
+          /* the player keeps reporting — a retry follows on the next tick */
+        });
+    },
+    [lessons, masterComplete, queryClient, slug],
+  );
+
+  /**
+   * Once the master video is complete, permanently unlock every chapter on the
+   * server by marking each chapter window watched and each lesson complete —
+   * all through the existing server functions, in curriculum order.
+   */
+  const unlockStarted = useRef(false);
+  const unlockChapters = useMutation({
+    mutationFn: async () => {
+      const done = new Set(completedIds);
+      for (const lesson of lessons) {
+        if (done.has(lesson.id)) continue;
+        const state = stateByLesson.get(lesson.id);
+        if (!state?.videoDone) {
+          const windowLength =
+            lesson.videoEnd !== null
+              ? lesson.videoEnd - lesson.videoStart
+              : Math.max(1, masterDuration || 1);
+          await saveVideoProgressFn({
+            data: {
+              lessonId: lesson.id,
+              watchedSeconds: windowLength,
+              playerDuration: Math.max(1, windowLength),
+              ended: true,
+            },
+          });
+        }
+        await completeLessonFn({ data: { lessonId: lesson.id } });
+        done.add(lesson.id);
+      }
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["learn", slug] });
       await queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      toast.success("Full video complete — every chapter, note and exercise is now unlocked.");
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "Could not save progress."),
+    onError: (err) => {
+      unlockStarted.current = false;
+      toast.error(err instanceof Error ? err.message : "Could not unlock the chapters yet.");
+    },
   });
+
+  useEffect(() => {
+    if (!masterComplete || allLessonsDone || unlockStarted.current || !lessons.length) return;
+    unlockStarted.current = true;
+    unlockChapters.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [masterComplete, allLessonsDone, lessons.length]);
 
   const submitAssessment = useMutation({
     mutationFn: (payload: number[]) =>
@@ -161,31 +300,31 @@ function LearnPage() {
     );
   }
 
-  const { course, lessons, enrollment, certificate, assessment, projectSubmission } = data;
+  const { course, enrollment, assessment } = data;
   const category = categoryBySlug(course.category);
-  const allLessonsDone = lessons.every((l) => completedIds.has(l.id));
+  const projectUnlocked = allLessonsDone;
   const assessmentUnlocked = allLessonsDone && projectSubmission !== null;
+  const chapter = activeChapter !== null && masterComplete ? lessons[activeChapter] : null;
+  const chapterState = chapter ? stateByLesson.get(chapter.id) : undefined;
 
-  // Deterministic default panel — no mount effect, so SSR and hydration agree.
-  const autoView: View =
-    lessons.findIndex((l) => !completedIds.has(l.id)) !== -1
-      ? { kind: "lesson", index: lessons.findIndex((l) => !completedIds.has(l.id)) }
-      : projectSubmission
-        ? { kind: "assessment" }
-        : { kind: "project" };
-  const activeView = view ?? autoView;
-  const currentLesson = activeView.kind === "lesson" ? lessons[activeView.index] : null;
-
-  const go = (next: View) => {
-    setView(next);
-    setResult(null);
+  const openPanel = (next: Exclude<Panel, null>) => {
+    setPanel(next);
+    setActiveChapter(null);
+    requestAnimationFrame(() => {
+      document
+        .getElementById("course-panel")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   };
 
-  /* On phones the curriculum sits above the lesson, so fold it away once a
-     selection is made — desktop keeps its sidebar open. */
-  const selectFromCurriculum = (next: View) => {
-    go(next);
-    if (window.matchMedia("(max-width: 1023px)").matches) setCurriculumOpen(false);
+  const openChapter = (index: number) => {
+    setPanel(null);
+    setActiveChapter(index);
+    requestAnimationFrame(() => {
+      document
+        .getElementById("chapter-notes")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   };
 
   return (
@@ -212,7 +351,7 @@ function LearnPage() {
               </Badge>
               <span className="text-muted-foreground inline-flex items-center gap-1 text-[11px] font-semibold">
                 <BookOpen className="h-3 w-3" aria-hidden="true" />
-                {lessons.length} lessons
+                {lessons.length} chapters
               </span>
               {certificate && (
                 <Badge variant="secondary" className="text-gold border-gold/40 text-[10px]">
@@ -223,542 +362,607 @@ function LearnPage() {
           </div>
           <div className="w-full shrink-0 lg:w-72">
             <div className="text-muted-foreground mb-1.5 flex justify-between font-mono text-[10px] tracking-wider uppercase">
-              <span>Course progress</span>
-              <span className="text-brand-soft font-bold">{enrollment.progress}%</span>
+              <span>Full video watched</span>
+              <span className="text-brand-soft font-bold">{masterPct}%</span>
             </div>
-            <Progress value={enrollment.progress} className="h-2" aria-label="Course progress" />
-            <SaveOfflineButton
-              course={{ slug, title: course.title, level: course.level }}
-              lessons={lessons.map((l) => ({
-                title: l.title,
-                position: l.position,
-                content: stateByLesson.get(l.id)?.videoDone && l.content ? l.content : null,
-              }))}
-            />
+            <Progress value={masterPct} className="h-2" aria-label="Full course video watched" />
+            <div className="text-muted-foreground mt-2 flex items-center justify-between text-[10px] font-semibold">
+              <span>
+                {completedIds.size} of {lessons.length} chapters complete
+              </span>
+              <span>{enrollment.progress}% course</span>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 pb-16 lg:grid-cols-[336px_minmax(0,1fr)]">
-          {/* ── Curriculum sidebar ── */}
-          <aside className="no-print min-w-0 lg:sticky lg:top-20 lg:self-start">
-            <nav
-              className="border-border overflow-hidden rounded-2xl border bg-card/80 shadow-xl backdrop-blur"
-              aria-label="Course curriculum"
-            >
-              <button
-                type="button"
-                onClick={() => setCurriculumOpen((v) => !v)}
-                aria-expanded={curriculumOpen}
-                aria-controls="curriculum-list"
-                className="hover:bg-accent/50 flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors"
-              >
-                <span className="min-w-0">
-                  <span className="text-muted-foreground block font-mono text-[10px] tracking-wider uppercase">
-                    Curriculum
-                  </span>
-                  <span className="text-foreground block truncate text-sm font-bold">
-                    {completedIds.size}/{lessons.length} lessons complete
-                  </span>
-                </span>
-                <ChevronDown
-                  className={`text-muted-foreground h-4 w-4 shrink-0 transition-transform ${
-                    curriculumOpen ? "rotate-180" : ""
-                  }`}
-                  aria-hidden="true"
-                />
-              </button>
-
-              {curriculumOpen && (
-                <div id="curriculum-list" className="border-border border-t p-2">
-                  <ol className="max-h-[40vh] space-y-0.5 overflow-y-auto pr-0.5 lg:max-h-[58vh]">
-                    {lessons.map((lesson, i) => {
-                      const s = stateByLesson.get(lesson.id);
-                      const isDone = completedIds.has(lesson.id);
-                      const isUnlocked = s?.unlocked ?? i === 0;
-                      const isActive = activeView.kind === "lesson" && activeView.index === i;
-                      return (
-                        <li key={lesson.id}>
-                          <button
-                            type="button"
-                            disabled={!isUnlocked}
-                            onClick={() => selectFromCurriculum({ kind: "lesson", index: i })}
-                            aria-current={isActive ? "true" : undefined}
-                            className={`curriculum-item flex w-full items-start gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs ${
-                              isActive
-                                ? "bg-brand-subtle text-foreground border-primary/40 border"
-                                : isUnlocked
-                                  ? "text-muted-foreground hover:bg-accent/60 hover:text-foreground border border-transparent"
-                                  : "text-muted-foreground/50 cursor-not-allowed border border-transparent"
-                            }`}
-                          >
-                            {isDone ? (
-                              <CheckCircle2
-                                className="text-success mt-0.5 h-4 w-4 shrink-0"
-                                aria-hidden="true"
-                              />
-                            ) : isUnlocked ? (
-                              <Circle
-                                className="text-muted-foreground/50 mt-0.5 h-4 w-4 shrink-0"
-                                aria-hidden="true"
-                              />
-                            ) : (
-                              <Lock
-                                className="text-muted-foreground/50 mt-0.5 h-3.5 w-3.5 shrink-0"
-                                aria-hidden="true"
-                              />
-                            )}
-                            <span className="min-w-0 flex-1 leading-snug font-medium">
-                              <span className="text-muted-foreground/70 mr-1 font-mono text-[10px]">
-                                {String(lesson.position).padStart(2, "0")}
-                              </span>
-                              {lesson.title}
-                            </span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ol>
-
-                  <div className="border-border mt-2 space-y-0.5 border-t pt-2">
-                    <button
-                      type="button"
-                      onClick={() => selectFromCurriculum({ kind: "project" })}
-                      disabled={!allLessonsDone}
-                      className={`curriculum-item flex w-full items-start gap-2.5 rounded-xl px-2.5 py-2.5 text-left text-xs font-bold ${
-                        activeView.kind === "project"
-                          ? "bg-brand-subtle text-foreground border-primary/40 border"
-                          : allLessonsDone
-                            ? "text-brand-soft hover:bg-accent/60 border border-transparent"
-                            : "text-muted-foreground/50 cursor-not-allowed border border-transparent"
-                      }`}
-                    >
-                      {projectSubmission ? (
-                        <CheckCircle2
-                          className="text-success mt-0.5 h-4 w-4 shrink-0"
-                          aria-hidden="true"
-                        />
-                      ) : allLessonsDone ? (
-                        <FolderGit2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                      ) : (
-                        <Lock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                      )}
-                      <span className="leading-snug">Capstone project</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => selectFromCurriculum({ kind: "assessment" })}
-                      disabled={!assessmentUnlocked}
-                      className={`curriculum-item flex w-full items-start gap-2.5 rounded-xl px-2.5 py-2.5 text-left text-xs font-bold ${
-                        activeView.kind === "assessment"
-                          ? "bg-brand-subtle text-foreground border-primary/40 border"
-                          : assessmentUnlocked
-                            ? "text-brand-soft hover:bg-accent/60 border border-transparent"
-                            : "text-muted-foreground/50 cursor-not-allowed border border-transparent"
-                      }`}
-                    >
-                      {certificate ? (
-                        <Award className="text-gold mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                      ) : assessmentUnlocked ? (
-                        <FileCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                      ) : (
-                        <Lock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                      )}
-                      <span className="leading-snug">Final assessment</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </nav>
-            <p className="text-muted-foreground mt-3 px-2 text-[11px] leading-relaxed">
-              Lessons unlock in order. Notes open after each video is fully watched — completed
-              lessons stay open for revision with free seeking.
-            </p>
-          </aside>
-
-          {/* ── Main panel ── */}
+        <div className="grid grid-cols-1 gap-5 pb-16 lg:grid-cols-[minmax(0,1fr)_320px]">
+          {/* ── Main column: master video, chapters, notes, capstone, assessment ── */}
           <div className="min-w-0 space-y-5">
-            {currentLesson && activeView.kind === "lesson" && (
-              <LessonPanel
-                key={currentLesson.id}
-                slug={slug}
-                lesson={currentLesson}
-                lessonCount={lessons.length}
-                index={activeView.index}
-                state={stateByLesson.get(currentLesson.id)}
-                userEmail={data.user.email}
-                isCompleted={completedIds.has(currentLesson.id)}
-                completePending={completeLesson.isPending}
-                onPrev={() => go({ kind: "lesson", index: activeView.index - 1 })}
-                onNext={() =>
-                  activeView.index + 1 < lessons.length
-                    ? go({ kind: "lesson", index: activeView.index + 1 })
-                    : go({ kind: "project" })
-                }
-                onComplete={() =>
-                  completeLesson.mutate(currentLesson.id, {
-                    onSuccess: () => {
-                      if (activeView.index + 1 < lessons.length) {
-                        go({ kind: "lesson", index: activeView.index + 1 });
-                      } else {
-                        go({ kind: "project" });
-                      }
-                    },
-                  })
-                }
-              />
-            )}
+            <article
+              id="master-video"
+              className="border-border bg-card overflow-hidden rounded-2xl border shadow-xl"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3 p-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="min-w-0">
+                  <p className="text-brand-soft font-mono text-[10px] tracking-wider uppercase">
+                    Master course video
+                  </p>
+                  <h2 className="text-foreground mt-1 text-xl font-black tracking-tight sm:text-2xl">
+                    Watch the full course once
+                  </h2>
+                  <p className="text-muted-foreground mt-1.5 max-w-2xl text-xs leading-relaxed">
+                    One video, 0:00 to the very end. Rewind any time to review — but you can never
+                    skip ahead of your furthest watched point. Watching to the end permanently
+                    unlocks every chapter below.
+                  </p>
+                </div>
+                <span
+                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 font-mono text-[10px] font-bold tracking-wider uppercase ${
+                    masterComplete
+                      ? "border-success/40 bg-success/10 text-success"
+                      : "border-primary/40 bg-brand-subtle text-brand-soft"
+                  }`}
+                >
+                  {masterComplete ? (
+                    <Unlock className="h-3.5 w-3.5" aria-hidden="true" />
+                  ) : (
+                    <Lock className="h-3.5 w-3.5" aria-hidden="true" />
+                  )}
+                  {masterComplete ? "Chapters unlocked" : `${masterPct}% watched`}
+                </span>
+              </div>
 
-            {activeView.kind === "project" && (
-              <ProjectPanel
-                slug={slug}
-                projectBrief={course.project}
-                submission={projectSubmission}
-                onSubmitted={() => go({ kind: "assessment" })}
-              />
-            )}
-
-            {activeView.kind === "assessment" && (
-              <div className="space-y-5">
-                {certificate ? (
-                  <div className="space-y-5">
-                    <div className="border-success/30 bg-success/10 flex items-center gap-3 rounded-2xl border p-5">
-                      <PartyPopper className="text-success h-6 w-6 shrink-0" aria-hidden="true" />
-                      <div>
-                        <p className="text-foreground text-sm font-bold">
-                          Course complete — congratulations!
-                        </p>
-                        <p className="text-muted-foreground text-xs">
-                          Your signed certificate is below. Download it, share the verification link
-                          anywhere.
-                        </p>
-                      </div>
-                    </div>
-                    <CertificateView
-                      studentName={data.user.name}
-                      courseTitle={course.title}
-                      issuedAt={certificate.issuedAt}
-                      code={certificate.code}
-                    />
-                    <div className="flex flex-wrap gap-3">
-                      <Button
-                        className="bg-gradient-cta shadow-glow-primary rounded-xl font-bold"
-                        onClick={() => window.print()}
-                      >
-                        <Download className="h-4 w-4" aria-hidden="true" /> Download certificate
-                      </Button>
-                      <Button asChild variant="outline" className="rounded-xl font-bold">
-                        <Link to="/verify/$code" params={{ code: certificate.code }}>
-                          Open public verification page
-                        </Link>
-                      </Button>
-                      <Button asChild variant="outline" className="rounded-xl font-bold">
-                        <Link to="/courses">Find your next course</Link>
-                      </Button>
-                    </div>
-                    <ReviewPanel slug={slug} existing={data.myReview} />
-                  </div>
+              <div className="px-3 pb-3 sm:px-4 sm:pb-4">
+                {masterVideoId ? (
+                  <GatedVideoPlayer
+                    key={`master-${slug}`}
+                    videoId={masterVideoId}
+                    start={0}
+                    end={null}
+                    initialWatched={masterComplete ? 0 : initialWatched}
+                    revisionMode={masterComplete}
+                    title={`${course.title} — full course`}
+                    watermark={data.user.email}
+                    onProgress={handleMasterProgress}
+                  />
                 ) : (
-                  <article className="border-border bg-card rounded-2xl border p-5 shadow-xl sm:p-7">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <p className="text-brand-soft font-mono text-[10px] tracking-wider uppercase">
-                          Final assessment
-                        </p>
-                        <h2 className="text-foreground mt-1 text-2xl font-black tracking-tight">
-                          Prove what you've learned
-                        </h2>
-                      </div>
-                      <span className="border-highlight/40 bg-highlight/10 text-highlight inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-mono text-[10px] font-bold tracking-wider uppercase">
-                        <Target className="h-3.5 w-3.5" aria-hidden="true" /> 70% to pass
-                      </span>
-                    </div>
-                    <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-                      {assessment.length} questions · unlimited retakes. Passing issues your signed
-                      certificate instantly.
+                  <div className="border-border bg-background/50 rounded-2xl border border-dashed p-6 text-center">
+                    <Video className="text-muted-foreground mx-auto h-6 w-6" aria-hidden="true" />
+                    <p className="text-foreground mt-3 text-sm font-bold">
+                      This course is text-first
                     </p>
-
-                    <div className="mt-5 space-y-1.5">
-                      <div className="text-muted-foreground flex justify-between font-mono text-[10px] tracking-wider uppercase">
-                        <span>Answered</span>
-                        <span>
-                          {Object.keys(answers).length}/{assessment.length}
-                        </span>
-                      </div>
-                      <Progress
-                        value={(Object.keys(answers).length / Math.max(1, assessment.length)) * 100}
-                        className="h-1.5"
-                      />
-                    </div>
-
-                    {result && (
-                      <div
-                        className={`mt-5 rounded-2xl border p-4 ${
-                          result.passed
-                            ? "border-success/30 bg-success/10"
-                            : "border-destructive/30 bg-destructive/10"
-                        }`}
-                        role="status"
-                      >
-                        <p className="text-foreground text-sm font-bold">
-                          {result.passed
-                            ? `Passed — ${result.correct}/${result.total} correct!`
-                            : `Not quite — ${result.correct}/${result.total} correct. You need ${Math.ceil(result.total * 0.7)} to pass.`}
-                        </p>
-                        {!result.passed && (
-                          <div className="mt-2 flex flex-wrap items-center gap-3">
-                            <p className="text-muted-foreground text-xs">
-                              Review the lessons and try again — your answers are kept so you can
-                              adjust them.
-                            </p>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="rounded-lg text-xs font-bold"
-                              onClick={() =>
-                                go({
-                                  kind: "lesson",
-                                  index: Math.max(0, lessons.length - 1),
-                                })
-                              }
-                            >
-                              Review the last lesson
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="mt-6 space-y-5">
-                      {assessment.map((q) => (
-                        <fieldset
-                          key={q.index}
-                          className="border-border bg-background/40 rounded-2xl border p-4 sm:p-5"
-                        >
-                          <legend className="text-foreground px-1 text-sm font-bold">
-                            {q.index + 1}. {q.question}
-                          </legend>
-                          <div className="mt-3 space-y-2">
-                            {q.options.map((option, oi) => {
-                              const selected = answers[q.index] === oi;
-                              return (
-                                <label
-                                  key={oi}
-                                  className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm transition-colors ${
-                                    selected
-                                      ? "border-primary/50 bg-brand-subtle text-foreground"
-                                      : "border-border text-muted-foreground hover:border-primary/30"
-                                  }`}
-                                >
-                                  <input
-                                    type="radio"
-                                    name={`q-${q.index}`}
-                                    className="accent-primary mt-0.5"
-                                    checked={selected}
-                                    onChange={() =>
-                                      setAnswers((prev) => ({ ...prev, [q.index]: oi }))
-                                    }
-                                  />
-                                  <span className="leading-snug">{option}</span>
-                                </label>
-                              );
-                            })}
-                          </div>
-                        </fieldset>
-                      ))}
-                    </div>
-
-                    <div className="border-border mt-7 flex flex-col gap-2 border-t pt-5 sm:flex-row sm:items-center sm:justify-between">
-                      <p className="text-muted-foreground text-xs">
-                        {Object.keys(answers).length < assessment.length
-                          ? `Answer all ${assessment.length} questions to submit.`
-                          : "All questions answered — good luck!"}
-                      </p>
-                      <Button
-                        size="lg"
-                        className="bg-gradient-cta shadow-glow-primary w-full rounded-xl font-extrabold sm:w-auto"
-                        disabled={
-                          Object.keys(answers).length < assessment.length ||
-                          submitAssessment.isPending
-                        }
-                        onClick={() =>
-                          submitAssessment.mutate(assessment.map((q) => answers[q.index] ?? -1))
-                        }
-                      >
-                        <ListChecks className="h-5 w-5" aria-hidden="true" />
-                        {submitAssessment.isPending
-                          ? "Grading…"
-                          : Object.keys(answers).length < assessment.length
-                            ? `Answer all ${assessment.length} questions`
-                            : "Submit assessment"}
-                      </Button>
-                    </div>
-                  </article>
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      There is no master video — every chapter and its notes are open below.
+                    </p>
+                  </div>
                 )}
               </div>
+
+              <div className="border-border border-t px-5 py-4 sm:px-6">
+                <div className="text-muted-foreground flex justify-between font-mono text-[10px] tracking-wider uppercase">
+                  <span>Watch progress</span>
+                  <span>{masterPct}%</span>
+                </div>
+                <Progress value={masterPct} className="mt-1.5 h-1.5" aria-label="Watch progress" />
+                {masterComplete ? (
+                  <p className="text-success mt-3 flex items-start gap-2 text-xs font-semibold">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                    Full video complete. Every chapter, written note and exercise is unlocked for
+                    revision — rewatch any section as often as you like.
+                  </p>
+                ) : (
+                  <p className="text-muted-foreground mt-3 flex items-start gap-2 text-xs leading-relaxed">
+                    <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    Watch the full course video to unlock individual chapter notes and exercises.
+                  </p>
+                )}
+                {unlockChapters.isPending && (
+                  <p className="text-brand-soft mt-3 flex items-center gap-2 text-xs font-bold">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                    Unlocking every chapter and exercise…
+                  </p>
+                )}
+              </div>
+            </article>
+
+            {/* ── Chapters below the master player ── */}
+            <section
+              id="course-chapters"
+              aria-label="Course chapters"
+              className="border-border bg-card overflow-hidden rounded-2xl border shadow-xl"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-4 sm:px-6">
+                <div>
+                  <p className="text-brand-soft font-mono text-[10px] tracking-wider uppercase">
+                    Chapters &amp; exercises
+                  </p>
+                  <h2 className="text-foreground mt-0.5 text-lg font-black tracking-tight">
+                    Chapter notes &amp; quizzes
+                  </h2>
+                </div>
+                <span className="text-muted-foreground font-mono text-[10px] font-bold tracking-wider uppercase">
+                  {completedIds.size}/{lessons.length} complete
+                </span>
+              </div>
+
+              <ol className="border-border divide-border divide-y border-t">
+                {lessons.map((lesson, index) => {
+                  const state = stateByLesson.get(lesson.id);
+                  const done = completedIds.has(lesson.id);
+                  const active = activeChapter === index;
+                  const minutes =
+                    lesson.videoEnd !== null
+                      ? Math.max(1, Math.round((lesson.videoEnd - lesson.videoStart) / 60))
+                      : null;
+                  return (
+                    <li key={lesson.id}>
+                      <button
+                        type="button"
+                        disabled={!masterComplete || unlockChapters.isPending}
+                        onClick={() => openChapter(index)}
+                        aria-current={active ? "true" : undefined}
+                        className={`flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors sm:px-6 ${
+                          active
+                            ? "bg-brand-subtle"
+                            : masterComplete
+                              ? "hover:bg-accent/60"
+                              : "cursor-not-allowed"
+                        }`}
+                      >
+                        <span className="text-muted-foreground/70 w-6 shrink-0 font-mono text-[11px]">
+                          {String(lesson.position).padStart(2, "0")}
+                        </span>
+                        {!masterComplete ? (
+                          <Lock
+                            className="text-muted-foreground/60 h-4 w-4 shrink-0"
+                            aria-hidden="true"
+                          />
+                        ) : done ? (
+                          <CheckCircle2
+                            className="text-success h-4 w-4 shrink-0"
+                            aria-hidden="true"
+                          />
+                        ) : (
+                          <PlayCircle
+                            className="text-brand-soft h-4 w-4 shrink-0"
+                            aria-hidden="true"
+                          />
+                        )}
+                        <span
+                          className={`min-w-0 flex-1 truncate text-sm font-semibold ${
+                            masterComplete ? "text-foreground" : "text-muted-foreground/70"
+                          }`}
+                        >
+                          {lesson.title}
+                        </span>
+                        {minutes !== null && (
+                          <span className="text-muted-foreground hidden shrink-0 font-mono text-[10px] sm:inline">
+                            {minutes} min
+                          </span>
+                        )}
+                        {masterComplete && (
+                          <span className="text-brand-soft shrink-0 font-mono text-[10px] font-bold uppercase">
+                            {done ? "Notes" : "Open"}
+                          </span>
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+
+              <div className="border-border border-t">
+                <button
+                  type="button"
+                  disabled={!assessmentUnlocked}
+                  onClick={() => openPanel("assessment")}
+                  className={`flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors sm:px-6 ${
+                    assessmentUnlocked ? "hover:bg-accent/60" : "cursor-not-allowed"
+                  }`}
+                >
+                  <span className="text-muted-foreground/70 w-6 shrink-0 text-center font-mono text-[11px]">
+                    <FileCheck className="mx-auto h-4 w-4" aria-hidden="true" />
+                  </span>
+                  {assessmentUnlocked ? (
+                    <Unlock className="text-brand-soft h-4 w-4 shrink-0" aria-hidden="true" />
+                  ) : (
+                    <Lock
+                      className="text-muted-foreground/60 h-4 w-4 shrink-0"
+                      aria-hidden="true"
+                    />
+                  )}
+                  <span
+                    className={`min-w-0 flex-1 text-sm font-semibold ${
+                      assessmentUnlocked ? "text-foreground" : "text-muted-foreground/70"
+                    }`}
+                  >
+                    Final assessment quiz
+                  </span>
+                  <span className="text-muted-foreground shrink-0 font-mono text-[10px]">
+                    70% pass mark
+                  </span>
+                </button>
+              </div>
+
+              {!masterComplete && (
+                <p className="border-border text-muted-foreground flex items-start gap-2 border-t px-5 py-4 text-xs leading-relaxed sm:px-6">
+                  <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  Watch the full course video to unlock individual chapter notes and exercises.
+                </p>
+              )}
+            </section>
+
+            {/* ── Selected chapter notes ── */}
+            {chapter && (
+              <article
+                id="chapter-notes"
+                className="border-border bg-card rounded-2xl border p-5 shadow-xl sm:p-7"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-brand-soft font-mono text-[10px] tracking-wider uppercase">
+                    Chapter {chapter.position} of {lessons.length}
+                  </p>
+                  {completedIds.has(chapter.id) && (
+                    <Badge variant="secondary" className="text-success text-[10px]">
+                      <CheckCircle2 className="mr-1 h-3 w-3" aria-hidden="true" /> Complete —
+                      revision mode
+                    </Badge>
+                  )}
+                  {chapterState?.videoDone && (
+                    <Badge variant="outline" className="text-brand-soft text-[10px]">
+                      Video section watched
+                    </Badge>
+                  )}
+                </div>
+                <h2 className="text-foreground mt-2 text-xl font-black tracking-tight sm:text-2xl">
+                  {chapter.title}
+                </h2>
+
+                {chapter.content ? (
+                  <div
+                    className="lesson-prose mt-5 text-sm sm:text-base"
+                    dangerouslySetInnerHTML={{ __html: chapter.content }}
+                  />
+                ) : (
+                  <div className="border-border bg-background/50 mt-5 rounded-2xl border border-dashed p-6 text-center">
+                    <Lock className="text-muted-foreground mx-auto h-5 w-5" aria-hidden="true" />
+                    <p className="text-foreground mt-2 text-sm font-bold">
+                      Written notes unlock after the full video
+                    </p>
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      Finish the master video above and this chapter&apos;s notes, activity and
+                      reflection will open here permanently.
+                    </p>
+                  </div>
+                )}
+
+                <div className="border-border mt-6 flex flex-wrap gap-3 border-t pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-xl font-bold"
+                    disabled={activeChapter === 0}
+                    onClick={() => openChapter((activeChapter ?? 0) - 1)}
+                  >
+                    <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Previous chapter
+                  </Button>
+                  <Button
+                    type="button"
+                    className="rounded-xl font-bold"
+                    disabled={activeChapter === lessons.length - 1}
+                    onClick={() => openChapter((activeChapter ?? 0) + 1)}
+                  >
+                    Next chapter <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                </div>
+              </article>
             )}
+
+            {/* ── Capstone project / final assessment panels ── */}
+            <div id="course-panel">
+              {panel === "project" && (
+                <ProjectPanel
+                  slug={slug}
+                  projectBrief={course.project}
+                  submission={projectSubmission}
+                  onSubmitted={() => openPanel("assessment")}
+                />
+              )}
+
+              {panel === "assessment" && (
+                <div className="space-y-5">
+                  {certificate ? (
+                    <div className="space-y-5">
+                      <div className="border-success/30 bg-success/10 flex items-center gap-3 rounded-2xl border p-5">
+                        <PartyPopper className="text-success h-6 w-6 shrink-0" aria-hidden="true" />
+                        <div>
+                          <p className="text-foreground text-sm font-bold">
+                            Course complete — congratulations!
+                          </p>
+                          <p className="text-muted-foreground text-xs">
+                            Your signed certificate is below. Download it, share the verification
+                            link anywhere.
+                          </p>
+                        </div>
+                      </div>
+                      <CertificateView
+                        studentName={data.user.name}
+                        courseTitle={course.title}
+                        issuedAt={certificate.issuedAt}
+                        code={certificate.code}
+                      />
+                      <div className="flex flex-wrap gap-3">
+                        <Button
+                          className="bg-gradient-cta shadow-glow-primary rounded-xl font-bold"
+                          onClick={() => window.print()}
+                        >
+                          <Download className="h-4 w-4" aria-hidden="true" /> Download certificate
+                        </Button>
+                        <Button asChild variant="outline" className="rounded-xl font-bold">
+                          <Link to="/verify/$code" params={{ code: certificate.code }}>
+                            Open public verification page
+                          </Link>
+                        </Button>
+                        <Button asChild variant="outline" className="rounded-xl font-bold">
+                          <Link to="/courses">Find your next course</Link>
+                        </Button>
+                      </div>
+                      <ReviewPanel slug={slug} existing={data.myReview} />
+                    </div>
+                  ) : (
+                    <article className="border-border bg-card rounded-2xl border p-5 shadow-xl sm:p-7">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="text-brand-soft font-mono text-[10px] tracking-wider uppercase">
+                            Final assessment
+                          </p>
+                          <h2 className="text-foreground mt-1 text-2xl font-black tracking-tight">
+                            Prove what you&apos;ve learned
+                          </h2>
+                        </div>
+                        <span className="border-highlight/40 bg-highlight/10 text-highlight inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-mono text-[10px] font-bold tracking-wider uppercase">
+                          <Target className="h-3.5 w-3.5" aria-hidden="true" /> 70% to pass
+                        </span>
+                      </div>
+                      <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                        {assessment.length} questions · unlimited retakes. Passing issues your
+                        signed certificate instantly.
+                      </p>
+
+                      <div className="mt-5 space-y-1.5">
+                        <div className="text-muted-foreground flex justify-between font-mono text-[10px] tracking-wider uppercase">
+                          <span>Answered</span>
+                          <span>
+                            {Object.keys(answers).length}/{assessment.length}
+                          </span>
+                        </div>
+                        <Progress
+                          value={
+                            (Object.keys(answers).length / Math.max(1, assessment.length)) * 100
+                          }
+                          className="h-1.5"
+                        />
+                      </div>
+
+                      {result && (
+                        <div
+                          className={`mt-5 rounded-2xl border p-4 ${
+                            result.passed
+                              ? "border-success/30 bg-success/10"
+                              : "border-destructive/30 bg-destructive/10"
+                          }`}
+                          role="status"
+                        >
+                          <p className="text-foreground text-sm font-bold">
+                            {result.passed
+                              ? `Passed — ${result.correct}/${result.total} correct!`
+                              : `Not quite — ${result.correct}/${result.total} correct. You need ${Math.ceil(result.total * 0.7)} to pass.`}
+                          </p>
+                          {!result.passed && (
+                            <div className="mt-2 flex flex-wrap items-center gap-3">
+                              <p className="text-muted-foreground text-xs">
+                                Review the chapters and try again — your answers are kept so you can
+                                adjust them.
+                              </p>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="rounded-lg text-xs font-bold"
+                                onClick={() => openChapter(Math.max(0, lessons.length - 1))}
+                              >
+                                Review the last chapter
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="mt-6 space-y-5">
+                        {assessment.map((q) => (
+                          <fieldset
+                            key={q.index}
+                            className="border-border bg-background/40 rounded-2xl border p-4 sm:p-5"
+                          >
+                            <legend className="text-foreground px-1 text-sm font-bold">
+                              {q.index + 1}. {q.question}
+                            </legend>
+                            <div className="mt-3 space-y-2">
+                              {q.options.map((option, oi) => {
+                                const selected = answers[q.index] === oi;
+                                return (
+                                  <label
+                                    key={oi}
+                                    className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm transition-colors ${
+                                      selected
+                                        ? "border-primary/50 bg-brand-subtle text-foreground"
+                                        : "border-border text-muted-foreground hover:border-primary/30"
+                                    }`}
+                                  >
+                                    <input
+                                      type="radio"
+                                      name={`q-${q.index}`}
+                                      className="accent-primary mt-0.5"
+                                      checked={selected}
+                                      onChange={() =>
+                                        setAnswers((prev) => ({ ...prev, [q.index]: oi }))
+                                      }
+                                    />
+                                    <span className="leading-snug">{option}</span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </fieldset>
+                        ))}
+                      </div>
+
+                      <div className="border-border mt-7 flex flex-col gap-2 border-t pt-5 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-muted-foreground text-xs">
+                          {Object.keys(answers).length < assessment.length
+                            ? `Answer all ${assessment.length} questions to submit.`
+                            : "All questions answered — good luck!"}
+                        </p>
+                        <Button
+                          size="lg"
+                          className="bg-gradient-cta shadow-glow-primary w-full rounded-xl font-extrabold sm:w-auto"
+                          disabled={
+                            Object.keys(answers).length < assessment.length ||
+                            submitAssessment.isPending
+                          }
+                          onClick={() =>
+                            submitAssessment.mutate(assessment.map((q) => answers[q.index] ?? -1))
+                          }
+                        >
+                          <ListChecks className="h-5 w-5" aria-hidden="true" />
+                          {submitAssessment.isPending
+                            ? "Grading…"
+                            : Object.keys(answers).length < assessment.length
+                              ? `Answer all ${assessment.length} questions`
+                              : "Submit assessment"}
+                        </Button>
+                      </div>
+                    </article>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* ── Sidebar: course steps, offline ── */}
+          <aside className="min-w-0 space-y-4 lg:sticky lg:top-20 lg:self-start">
+            <nav
+              aria-label="Course steps"
+              className="border-border bg-card/80 overflow-hidden rounded-2xl border shadow-xl backdrop-blur"
+            >
+              <div className="border-border border-b px-4 py-3.5">
+                <p className="text-muted-foreground font-mono text-[10px] tracking-wider uppercase">
+                  Course steps
+                </p>
+                <p className="text-foreground text-sm font-bold">
+                  {completedIds.size}/{lessons.length} chapters · {masterPct}% video
+                </p>
+              </div>
+              <div className="space-y-1 p-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPanel(null);
+                    requestAnimationFrame(() =>
+                      document
+                        .getElementById("master-video")
+                        ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+                    );
+                  }}
+                  className="text-brand-soft hover:bg-accent/60 flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-xs font-bold transition-colors"
+                >
+                  <Video className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  Master video
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPanel(null);
+                    requestAnimationFrame(() =>
+                      document
+                        .getElementById("course-chapters")
+                        ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+                    );
+                  }}
+                  className="text-foreground hover:bg-accent/60 flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-xs font-bold transition-colors"
+                >
+                  <BookOpen className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  Chapters &amp; notes
+                </button>
+                <button
+                  type="button"
+                  disabled={!projectUnlocked}
+                  onClick={() => openPanel("project")}
+                  className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-xs font-bold transition-colors ${
+                    projectUnlocked
+                      ? panel === "project"
+                        ? "bg-brand-subtle text-foreground"
+                        : "text-foreground hover:bg-accent/60"
+                      : "text-muted-foreground/50 cursor-not-allowed"
+                  }`}
+                >
+                  {projectSubmission ? (
+                    <CheckCircle2 className="text-success h-4 w-4 shrink-0" aria-hidden="true" />
+                  ) : projectUnlocked ? (
+                    <FolderGit2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  ) : (
+                    <Lock
+                      className="text-muted-foreground/50 h-4 w-4 shrink-0"
+                      aria-hidden="true"
+                    />
+                  )}
+                  Capstone project
+                </button>
+                <button
+                  type="button"
+                  disabled={!assessmentUnlocked}
+                  onClick={() => openPanel("assessment")}
+                  className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-xs font-bold transition-colors ${
+                    assessmentUnlocked
+                      ? panel === "assessment"
+                        ? "bg-brand-subtle text-foreground"
+                        : "text-foreground hover:bg-accent/60"
+                      : "text-muted-foreground/50 cursor-not-allowed"
+                  }`}
+                >
+                  {certificate ? (
+                    <Award className="text-gold h-4 w-4 shrink-0" aria-hidden="true" />
+                  ) : assessmentUnlocked ? (
+                    <FileCheck className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  ) : (
+                    <Lock
+                      className="text-muted-foreground/50 h-4 w-4 shrink-0"
+                      aria-hidden="true"
+                    />
+                  )}
+                  Final assessment
+                </button>
+              </div>
+            </nav>
+
+            <div className="border-border bg-card/80 rounded-2xl border p-4 shadow-lg">
+              <p className="text-muted-foreground flex items-start gap-2 text-[11px] leading-relaxed">
+                <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                Chapters, notes and quizzes stay locked until the master video reaches 100%. After
+                that they unlock permanently for revision.
+              </p>
+              <SaveOfflineButton
+                course={{ slug, title: course.title, level: course.level }}
+                lessons={lessons.map((l) => ({
+                  title: l.title,
+                  position: l.position,
+                  content: stateByLesson.get(l.id)?.videoDone && l.content ? l.content : null,
+                }))}
+              />
+            </div>
+          </aside>
         </div>
       </div>
     </div>
-  );
-}
-
-// ───────────────────────────── Lesson panel ─────────────────────────────
-
-interface LessonPanelProps {
-  slug: string;
-  lesson: {
-    id: string;
-    title: string;
-    position: number;
-    content: string;
-    videoId: string | null;
-    videoStart: number;
-    videoEnd: number | null;
-  };
-  lessonCount: number;
-  index: number;
-  state:
-    | { unlocked: boolean; videoDone: boolean; watchedSeconds: number; completed: boolean }
-    | undefined;
-  userEmail: string;
-  isCompleted: boolean;
-  completePending: boolean;
-  onPrev: () => void;
-  onNext: () => void;
-  onComplete: () => void;
-}
-
-function LessonPanel({
-  slug,
-  lesson,
-  lessonCount,
-  index,
-  state,
-  userEmail,
-  isCompleted,
-  completePending,
-  onPrev,
-  onNext,
-  onComplete,
-}: LessonPanelProps) {
-  const queryClient = useQueryClient();
-  const videoDoneRef = useRef(state?.videoDone ?? false);
-  const [videoDone, setVideoDone] = useState(state?.videoDone ?? false);
-
-  const saveProgress = useMutation({
-    mutationFn: (input: { watchedSeconds: number; playerDuration: number; ended: boolean }) =>
-      saveVideoProgressFn({ data: { lessonId: lesson.id, ...input } }),
-    onSuccess: async (res) => {
-      if (res.videoDone && !videoDoneRef.current) {
-        videoDoneRef.current = true;
-        setVideoDone(true);
-        toast.success("Video complete — lesson notes unlocked!");
-        await queryClient.invalidateQueries({ queryKey: ["learn", slug] });
-      }
-    },
-  });
-  const saveRef = useRef(saveProgress.mutate);
-  saveRef.current = saveProgress.mutate;
-
-  const handleProgress = useCallback(
-    (watchedSeconds: number, windowDuration: number, ended: boolean) => {
-      if (videoDoneRef.current) return; // revision mode — nothing left to track
-      saveRef.current({
-        watchedSeconds,
-        playerDuration: lesson.videoStart + windowDuration,
-        ended,
-      });
-    },
-    [lesson.videoStart],
-  );
-
-  const notesUnlocked = videoDone && lesson.content.length > 0;
-
-  return (
-    <article className="border-border bg-card rounded-2xl border p-5 shadow-xl sm:p-7">
-      <div className="flex flex-wrap items-center gap-2">
-        <p className="text-brand-soft font-mono text-[10px] tracking-wider uppercase">
-          Lesson {lesson.position} of {lessonCount}
-        </p>
-        {isCompleted && (
-          <Badge variant="secondary" className="text-success text-[10px]">
-            <CheckCircle2 className="mr-1 h-3 w-3" aria-hidden="true" /> Completed — revision mode
-          </Badge>
-        )}
-      </div>
-      <h2 className="text-foreground mt-2 text-xl font-black tracking-tight sm:text-2xl">
-        {lesson.title}
-      </h2>
-
-      {lesson.videoId && (
-        <div className="mt-5">
-          <GatedVideoPlayer
-            key={lesson.id}
-            videoId={lesson.videoId}
-            start={lesson.videoStart}
-            end={lesson.videoEnd}
-            initialWatched={state?.watchedSeconds ?? 0}
-            revisionMode={videoDone}
-            title={lesson.title}
-            watermark={userEmail}
-            onProgress={handleProgress}
-          />
-        </div>
-      )}
-
-      {notesUnlocked ? (
-        <div
-          className="lesson-prose mt-6 text-sm sm:text-base"
-          dangerouslySetInnerHTML={{ __html: lesson.content }}
-        />
-      ) : (
-        <div className="border-border bg-background/50 mt-6 rounded-2xl border border-dashed p-6 text-center">
-          <Lock className="text-muted-foreground mx-auto h-6 w-6" aria-hidden="true" />
-          <p className="text-foreground mt-3 text-sm font-bold">
-            Lesson notes are locked until you finish the video
-          </p>
-          <p className="text-muted-foreground mx-auto mt-1 max-w-md text-xs leading-relaxed">
-            Watch the lesson video above to the end — the written notes, activity and reflection
-            then unlock for reference anytime. Rewinding is allowed; skipping ahead is not.
-          </p>
-        </div>
-      )}
-
-      <div className="border-border mt-7 flex flex-col gap-3 border-t pt-5 sm:flex-row sm:items-center sm:justify-between">
-        <Button
-          variant="outline"
-          className="rounded-xl font-bold"
-          disabled={index === 0}
-          onClick={onPrev}
-        >
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Previous
-        </Button>
-        {isCompleted ? (
-          <Button className="rounded-xl font-bold" onClick={onNext}>
-            {index + 1 < lessonCount ? "Next lesson" : "Go to capstone project"}
-            <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </Button>
-        ) : (
-          <Button
-            className="bg-gradient-cta shadow-glow-primary rounded-xl font-extrabold"
-            disabled={completePending || !videoDone}
-            onClick={onComplete}
-          >
-            {videoDone ? (
-              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-            ) : (
-              <PlayCircle className="h-4 w-4" aria-hidden="true" />
-            )}
-            {completePending
-              ? "Saving…"
-              : videoDone
-                ? "Mark complete & continue"
-                : "Finish the video to continue"}
-          </Button>
-        )}
-      </div>
-    </article>
   );
 }
 
@@ -1056,7 +1260,7 @@ function SaveOfflineButton({
           saveOfflineCourse({ ...course, savedAt: new Date().toISOString(), lessons });
           warmOfflinePage();
           toast.success(
-            `Saved for offline — ${ready}/${lessons.length} lessons' notes. Find it in “My offline courses”.`,
+            `Saved for offline — ${ready}/${lessons.length} chapters' notes. Find it in “My offline courses”.`,
           );
         } catch {
           toast.error("Not enough space on this device to save the course.");

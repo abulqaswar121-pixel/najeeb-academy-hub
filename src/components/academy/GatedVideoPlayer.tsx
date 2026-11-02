@@ -160,7 +160,12 @@ export function GatedVideoPlayer({
             readyRef.current = true;
             setReady(true);
             const d = end !== null ? end - start : playerRef.current.getDuration() - start;
-            if (d > 0) setDuration(d);
+            if (d > 0) {
+              setDuration(d);
+              // Publish the real duration immediately so the page can show the
+              // resume point before the student presses play.
+              onProgressRef.current(Math.min(maxWatchedRef.current, d), d, false);
+            }
           },
           onStateChange: (e: any) => {
             if (cancelled) return;
@@ -282,133 +287,135 @@ export function GatedVideoPlayer({
   return (
     <div
       ref={frameRef}
-      className="border-border bg-background/80 group/player relative flex flex-col overflow-hidden rounded-2xl border select-none"
+      className="player-frame border-border bg-background/80 group/player relative flex flex-col overflow-hidden rounded-2xl border select-none"
       onContextMenu={(e) => e.preventDefault()}
     >
-      <div className="relative aspect-video w-full overflow-hidden bg-black">
-        <div ref={hostRef} className="pointer-events-none h-full w-full" aria-hidden="true" />
+      <div className="player-shell w-full">
+        <div className="player-stage relative aspect-video w-full overflow-hidden bg-black">
+          <div ref={hostRef} className="pointer-events-none h-full w-full" aria-hidden="true" />
 
-        {/* Interaction shield — blocks every direct touch on the YouTube iframe. */}
-        <button
-          type="button"
-          aria-label={playing ? `Pause — ${title}` : `Play — ${title}`}
-          onClick={togglePlay}
-          onDoubleClick={(e) => e.preventDefault()}
-          className="absolute inset-0 z-10 block h-full w-full cursor-pointer bg-transparent"
-        />
-
-        {/* Watermark */}
-        <span
-          className="text-foreground/25 pointer-events-none absolute right-3 bottom-3 z-10 font-mono text-[10px] tracking-wide"
-          aria-hidden="true"
-        >
-          {watermark} · NDH Academy
-        </span>
-
-        {/* Big play button while paused */}
-        {ready && !playing && (
-          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-            <span className="bg-gradient-cta shadow-glow-primary flex h-16 w-16 items-center justify-center rounded-2xl">
-              <Play className="text-primary-foreground ml-0.5 h-7 w-7" aria-hidden="true" />
-            </span>
-          </div>
-        )}
-
-        {!ready && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center">
-            <span className="text-muted-foreground animate-pulse font-mono text-xs">
-              Loading secure player…
-            </span>
-          </div>
-        )}
-
-        {blockedHint && (
-          <div className="absolute inset-x-0 top-3 z-20 flex justify-center px-4">
-            <p className="bg-card/95 border-primary/40 text-foreground rounded-full border px-4 py-1.5 text-xs font-bold shadow-xl">
-              Fast-forward unlocks after your first full watch — rewinding is always allowed.
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Custom control bar */}
-      <div className="bg-card/95 border-border z-10 border-t px-3 py-2.5 sm:px-4">
-        {/* Seek bar */}
-        <div className="relative">
-          <input
-            type="range"
-            min={0}
-            max={Math.max(1, Math.floor(duration))}
-            step={1}
-            value={Math.floor(current)}
-            onChange={(e) => seekTo(Number(e.target.value))}
-            aria-label="Seek within lesson video"
-            className="accent-primary relative z-10 h-1.5 w-full cursor-pointer appearance-none rounded-full bg-transparent"
-            style={{
-              background: `linear-gradient(to right, var(--primary) 0%, var(--primary) ${progressPct}%, color-mix(in oklab, var(--primary) 28%, transparent) ${progressPct}%, color-mix(in oklab, var(--primary) 28%, transparent) ${watchedPct}%, var(--border) ${watchedPct}%, var(--border) 100%)`,
-            }}
+          {/* Interaction shield — blocks every direct touch on the YouTube iframe. */}
+          <button
+            type="button"
+            aria-label={playing ? `Pause — ${title}` : `Play — ${title}`}
+            onClick={togglePlay}
+            onDoubleClick={(e) => e.preventDefault()}
+            className="absolute inset-0 z-10 block h-full w-full cursor-pointer bg-transparent"
           />
+
+          {/* Watermark */}
+          <span
+            className="text-foreground/25 pointer-events-none absolute right-3 bottom-3 z-10 font-mono text-[10px] tracking-wide"
+            aria-hidden="true"
+          >
+            {watermark} · NDH Academy
+          </span>
+
+          {/* Big play button while paused */}
+          {ready && !playing && (
+            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+              <span className="bg-gradient-cta shadow-glow-primary flex h-16 w-16 items-center justify-center rounded-2xl">
+                <Play className="text-primary-foreground ml-0.5 h-7 w-7" aria-hidden="true" />
+              </span>
+            </div>
+          )}
+
+          {!ready && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center">
+              <span className="text-muted-foreground animate-pulse font-mono text-xs">
+                Loading secure player…
+              </span>
+            </div>
+          )}
+
+          {blockedHint && (
+            <div className="absolute inset-x-0 top-3 z-20 flex justify-center px-4">
+              <p className="bg-card/95 border-primary/40 text-foreground rounded-full border px-4 py-1.5 text-xs font-bold shadow-xl">
+                Fast-forward unlocks after your first full watch — rewinding is always allowed.
+              </p>
+            </div>
+          )}
         </div>
-        <div className="mt-2 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={togglePlay}
-              aria-label={playing ? "Pause" : "Play"}
-              className="bg-gradient-cta text-primary-foreground flex h-9 w-9 items-center justify-center rounded-lg transition-transform hover:scale-105"
-            >
-              {playing ? (
-                <Pause className="h-4 w-4" aria-hidden="true" />
-              ) : (
-                <Play className="ml-0.5 h-4 w-4" aria-hidden="true" />
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => seekTo(current - 10)}
-              aria-label="Rewind 10 seconds"
-              className="text-muted-foreground hover:text-foreground hover:bg-accent/60 flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
-            >
-              <RotateCcw className="h-4 w-4" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              onClick={toggleMute}
-              aria-label={muted ? "Unmute" : "Mute"}
-              className="text-muted-foreground hover:text-foreground hover:bg-accent/60 flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
-            >
-              {muted ? (
-                <VolumeX className="h-4 w-4" aria-hidden="true" />
-              ) : (
-                <Volume2 className="h-4 w-4" aria-hidden="true" />
-              )}
-            </button>
-            <span className="text-muted-foreground ml-1 font-mono text-[11px] tabular-nums">
-              {fmt(current)} / {duration > 0 ? fmt(duration) : "--:--"}
-            </span>
+
+        {/* Custom control bar */}
+        <div className="player-controls bg-card/95 border-border z-10 border-t px-3 py-2.5 sm:px-4">
+          {/* Seek bar */}
+          <div className="relative">
+            <input
+              type="range"
+              min={0}
+              max={Math.max(1, Math.floor(duration))}
+              step={1}
+              value={Math.floor(current)}
+              onChange={(e) => seekTo(Number(e.target.value))}
+              aria-label="Seek within lesson video"
+              className="accent-primary relative z-10 h-1.5 w-full cursor-pointer appearance-none rounded-full bg-transparent"
+              style={{
+                background: `linear-gradient(to right, var(--primary) 0%, var(--primary) ${progressPct}%, color-mix(in oklab, var(--primary) 28%, transparent) ${progressPct}%, color-mix(in oklab, var(--primary) 28%, transparent) ${watchedPct}%, var(--border) ${watchedPct}%, var(--border) 100%)`,
+              }}
+            />
           </div>
-          <div className="flex items-center gap-2">
-            <span
-              className={`hidden rounded-full border px-2.5 py-1 font-mono text-[10px] font-bold tracking-wider uppercase sm:inline ${
-                revisionMode
-                  ? "border-success/40 text-success"
-                  : "border-primary/40 text-brand-soft"
-              }`}
-            >
-              {revisionMode ? "Revision mode — free seeking" : "First watch — no skipping"}
-            </span>
-            <button
-              type="button"
-              onClick={toggleFullscreen}
-              aria-label={fullscreen ? "Exit fullscreen" : "Fullscreen"}
-              className="text-muted-foreground hover:text-foreground hover:bg-accent/60 flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
-            >
-              {fullscreen ? (
-                <Minimize className="h-4 w-4" aria-hidden="true" />
-              ) : (
-                <Maximize className="h-4 w-4" aria-hidden="true" />
-              )}
-            </button>
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={togglePlay}
+                aria-label={playing ? "Pause" : "Play"}
+                className="bg-gradient-cta text-primary-foreground flex h-9 w-9 items-center justify-center rounded-lg transition-transform hover:scale-105"
+              >
+                {playing ? (
+                  <Pause className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <Play className="ml-0.5 h-4 w-4" aria-hidden="true" />
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => seekTo(current - 10)}
+                aria-label="Rewind 10 seconds"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent/60 flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
+              >
+                <RotateCcw className="h-4 w-4" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={toggleMute}
+                aria-label={muted ? "Unmute" : "Mute"}
+                className="text-muted-foreground hover:text-foreground hover:bg-accent/60 flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
+              >
+                {muted ? (
+                  <VolumeX className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <Volume2 className="h-4 w-4" aria-hidden="true" />
+                )}
+              </button>
+              <span className="text-muted-foreground ml-1 font-mono text-[11px] tabular-nums">
+                {fmt(current)} / {duration > 0 ? fmt(duration) : "--:--"}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                className={`hidden rounded-full border px-2.5 py-1 font-mono text-[10px] font-bold tracking-wider uppercase sm:inline ${
+                  revisionMode
+                    ? "border-success/40 text-success"
+                    : "border-primary/40 text-brand-soft"
+                }`}
+              >
+                {revisionMode ? "Revision mode — free seeking" : "First watch — no skipping"}
+              </span>
+              <button
+                type="button"
+                onClick={toggleFullscreen}
+                aria-label={fullscreen ? "Exit fullscreen" : "Fullscreen"}
+                className="text-muted-foreground hover:text-foreground hover:bg-accent/60 flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
+              >
+                {fullscreen ? (
+                  <Minimize className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <Maximize className="h-4 w-4" aria-hidden="true" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
