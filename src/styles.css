@@ -1545,188 +1545,275 @@ h4 {
 }
 
 /* ============================================================
-   Voucher card — deep-navy metal, micro-grid security print,
-   gold chip and a high-contrast embossed PIN panel.
+   Voucher card — violet aurora stock drawn from the NDH logo,
+   frosted-glass panels and an embossed PIN strip.
    Sized to CR80 (85.6 × 54 mm) proportions.
    ============================================================ */
 
 .voucher-card {
   container-type: inline-size;
-  background:
-    radial-gradient(120% 90% at 8% 0%, rgba(56, 189, 248, 0.26) 0%, transparent 55%),
-    radial-gradient(110% 85% at 100% 100%, rgba(212, 175, 55, 0.24) 0%, transparent 58%),
-    linear-gradient(135deg, #0a1b3a 0%, #112f5c 46%, #050f26 100%);
-  color: #f8fafc;
+  background: #1a0a3a;
+  color: #faf7ff;
+  border-color: rgba(233, 213, 255, 0.3);
+  box-shadow:
+    0 24px 60px -18px rgba(76, 29, 149, 0.65),
+    0 8px 24px -12px rgba(8, 4, 30, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(8, 4, 30, 0.5);
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
 
-.voucher-grid {
-  background-image:
-    linear-gradient(rgba(148, 197, 255, 0.1) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148, 197, 255, 0.1) 1px, transparent 1px),
-    repeating-linear-gradient(
-      115deg,
-      rgba(212, 175, 55, 0.09) 0,
-      rgba(212, 175, 55, 0.09) 1px,
-      transparent 1px,
-      transparent 9px
-    );
-  background-size:
-    14px 14px,
-    14px 14px,
-    100% 100%;
-  opacity: 0.9;
+.voucher-bg {
+  background:
+    radial-gradient(80% 110% at 4% 0%, rgba(192, 132, 252, 0.75) 0%, transparent 58%),
+    radial-gradient(70% 95% at 98% 2%, rgba(96, 165, 250, 0.62) 0%, transparent 60%),
+    radial-gradient(80% 80% at 92% 100%, rgba(34, 211, 238, 0.38) 0%, transparent 58%),
+    radial-gradient(70% 70% at 30% 100%, rgba(124, 58, 237, 0.55) 0%, transparent 65%),
+    linear-gradient(145deg, #190936 0%, #32106b 38%, #4c1d95 64%, #10143f 100%);
+}
+
+.voucher-halo {
+  position: absolute;
+  top: -42cqw;
+  right: -30cqw;
+  width: 94cqw;
+  height: 94cqw;
+  border-radius: 999px;
+  border: 1px solid rgba(233, 213, 255, 0.18);
+  background: radial-gradient(circle at 50% 50%, rgba(216, 180, 254, 0.22), transparent 62%);
+  box-shadow: inset 0 0 8cqw rgba(167, 139, 250, 0.18);
+  transform: rotate(-12deg);
+  pointer-events: none;
+}
+
+.voucher-watermark {
+  position: absolute;
+  top: 17cqw;
+  right: -17cqw;
+  width: 58cqw;
+  height: 58cqw;
+  opacity: 0.09;
+  transform: rotate(-12deg);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.voucher-watermark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .voucher-sheen {
-  background: linear-gradient(
-    104deg,
-    transparent 26%,
-    rgba(255, 255, 255, 0.11) 45%,
-    rgba(255, 255, 255, 0.02) 54%,
-    transparent 63%
-  );
+  background:
+    linear-gradient(
+      112deg,
+      transparent 20%,
+      rgba(255, 255, 255, 0.15) 43%,
+      rgba(255, 255, 255, 0.03) 52%,
+      transparent 66%
+    ),
+    linear-gradient(0deg, rgba(8, 4, 30, 0.35) 0%, transparent 34%);
+  mix-blend-mode: screen;
+  pointer-events: none;
 }
 
 .voucher-logo {
-  width: 8.4cqw;
-  height: 8.4cqw;
-  color: #7dd3fc;
-  filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.5));
+  display: block;
+  width: 10.8cqw;
+  height: 10.8cqw;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 2.8cqw;
+  background: #0b1030;
+  box-shadow:
+    0 1.4cqw 3cqw rgba(10, 4, 35, 0.45),
+    0 0 3cqw rgba(168, 85, 247, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.voucher-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .voucher-kicker {
-  font-size: 2.05cqw;
+  color: rgba(237, 233, 254, 0.74);
+  font-size: 1.95cqw;
   font-weight: 600;
   line-height: 1.2;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(226, 232, 240, 0.72);
 }
 
 .voucher-wordmark {
+  color: #ffffff;
   font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  font-size: 3.9cqw;
+  font-size: 4cqw;
   font-weight: 800;
   line-height: 1.1;
-  letter-spacing: 0.04em;
-  color: #ffffff;
+  letter-spacing: 0.035em;
+  text-shadow: 0 1px 18px rgba(168, 85, 247, 0.45);
 }
 
 .voucher-badge {
-  border: 1px solid rgba(212, 175, 55, 0.5);
+  display: inline-flex;
+  max-width: 37%;
+  align-items: center;
+  gap: 1cqw;
+  border: 1px solid rgba(233, 213, 255, 0.3);
   border-radius: 999px;
-  background: rgba(212, 175, 55, 0.12);
-  padding: 1cqw 1.6cqw;
-  max-width: 36%;
-  color: #fde68a;
-  font-size: 1.9cqw;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.17), rgba(255, 255, 255, 0.06));
+  padding: 1.15cqw 1.65cqw;
+  color: #f3e8ff;
+  font-size: 1.85cqw;
   font-weight: 700;
   line-height: 1.25;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  text-align: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+}
+
+.voucher-badge-dot {
+  width: 1.3cqw;
+  height: 1.3cqw;
+  flex: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f5f3ff, #c084fc 55%, #67e8f9);
+  box-shadow: 0 0 1.4cqw rgba(192, 132, 252, 0.9);
 }
 
 .voucher-chip {
   display: flex;
-  width: 8.6cqw;
-  height: 6.2cqw;
+  width: 8.8cqw;
+  height: 6.3cqw;
   flex-direction: column;
   justify-content: center;
   gap: 0.7cqw;
-  border-radius: 1.3cqw;
+  border-radius: 1.35cqw;
   padding: 0 1.2cqw;
-  background: linear-gradient(135deg, #fdf0b0 0%, #e7c14d 34%, #b8860b 68%, #f7e08a 100%);
+  background: linear-gradient(
+    135deg,
+    #f8fafc 0%,
+    #ddd6fe 28%,
+    #a78bfa 58%,
+    #7dd3fc 82%,
+    #f0f9ff 100%
+  );
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.4),
-    0 1px 3px rgba(0, 0, 0, 0.5);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.55),
+    0 1px 3px rgba(20, 8, 45, 0.55);
 }
 
 .voucher-chip span {
   display: block;
   height: 1px;
   border-radius: 1px;
-  background: rgba(74, 50, 0, 0.55);
+  background: rgba(59, 7, 100, 0.48);
 }
 
 .voucher-contactless {
-  width: 3.4cqw;
-  height: 3.4cqw;
-  margin-left: 0.8cqw;
-  color: rgba(253, 230, 138, 0.8);
+  width: 3.5cqw;
+  height: 3.5cqw;
+  margin-left: 0.6cqw;
+  color: rgba(233, 213, 255, 0.82);
 }
 
 .voucher-chip-label {
-  margin-left: 0.6cqw;
-  color: rgba(226, 232, 240, 0.6);
-  font-size: 1.65cqw;
+  margin-left: 0.4cqw;
+  color: rgba(237, 233, 254, 0.62);
+  font-size: 1.6cqw;
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
 .voucher-tier {
-  margin-top: 1.1cqw;
+  margin-top: 1.2cqw;
   color: #ffffff;
   font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  font-size: 6.2cqw;
+  font-size: 5.9cqw;
   font-weight: 800;
-  line-height: 1.04;
+  line-height: 1.03;
   letter-spacing: -0.015em;
+  text-shadow: 0 2px 24px rgba(88, 28, 135, 0.55);
 }
 
 .voucher-unlocks {
-  margin-top: 0.4cqw;
-  color: rgba(186, 230, 253, 0.92);
-  font-size: 2.1cqw;
+  margin-top: 0.45cqw;
+  color: rgba(207, 250, 254, 0.92);
+  font-size: 2.05cqw;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
 
+.voucher-price-panel {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 1.9cqw;
+  background: linear-gradient(140deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.05));
+  padding: 1.15cqw 1.7cqw;
+  text-align: right;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 1cqw 2.4cqw rgba(10, 4, 35, 0.25);
+  backdrop-filter: blur(8px);
+}
+
 .voucher-price-label {
-  color: rgba(253, 230, 138, 0.82);
-  font-size: 1.65cqw;
-  font-weight: 600;
+  color: rgba(237, 233, 254, 0.76);
+  font-size: 1.55cqw;
+  font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
 .voucher-price {
-  color: #fde68a;
+  margin-top: 0.3cqw;
+  color: #ffffff;
   font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  font-size: 4.4cqw;
+  font-size: 4.25cqw;
   font-weight: 800;
   line-height: 1.05;
+  text-shadow: 0 0 2.4cqw rgba(103, 232, 249, 0.35);
 }
 
 .voucher-pin-row {
   display: flex;
   align-items: center;
   gap: 2cqw;
-  margin-top: 1.6cqw;
-  border: 1px dashed rgba(125, 211, 252, 0.48);
-  border-radius: 1.6cqw;
-  background: rgba(2, 10, 25, 0.6);
-  padding: 1.4cqw 2.2cqw;
+  margin-top: 1.4cqw;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1.9cqw;
+  background: linear-gradient(120deg, rgba(12, 7, 35, 0.58), rgba(76, 29, 149, 0.3));
+  padding: 1.35cqw 1.9cqw;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(8, 4, 30, 0.35);
+  backdrop-filter: blur(10px);
 }
 
 .voucher-pin-label {
-  color: rgba(125, 211, 252, 0.78);
-  font-size: 1.55cqw;
+  border: 1px solid rgba(196, 181, 253, 0.32);
+  border-radius: 999px;
+  background: rgba(196, 181, 253, 0.16);
+  padding: 0.55cqw 1.15cqw;
+  color: #ddd6fe;
+  font-size: 1.5cqw;
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
 .voucher-pin {
-  color: #e0f7ff;
+  color: #f8faff;
   font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
-  font-size: 4.3cqw;
+  font-size: 4.25cqw;
   font-weight: 700;
-  letter-spacing: 0.14em;
-  text-shadow: 0 0 8px rgba(56, 189, 248, 0.35);
+  letter-spacing: 0.13em;
+  text-shadow: 0 0 2.4cqw rgba(167, 139, 250, 0.6);
   white-space: nowrap;
 }
 
@@ -1735,8 +1822,8 @@ h4 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1.4cqw;
   margin-top: 1.4cqw;
-  color: rgba(226, 232, 240, 0.66);
-  font-size: 1.7cqw;
+  color: rgba(237, 233, 254, 0.64);
+  font-size: 1.65cqw;
   font-weight: 600;
   line-height: 1.35;
 }
