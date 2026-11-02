@@ -5,8 +5,8 @@
  * - Privacy-enhanced youtube-nocookie embed with ALL native controls removed
  *   (controls=0, disablekb=1, fs=0, rel=0) so there is no "Watch on YouTube",
  *   no share button and no clickable title/logo.
- * - The iframe is slightly over-scaled inside an overflow-hidden stage so
- *   YouTube's top title/channel bar and bottom-right logo sit outside the crop.
+ * - The iframe fills the natural 16:9 stage at 100% width and height: every
+ *   slide, diagram, code block and subtitle stays fully visible, uncropped.
  * - A transparent shield sits over the iframe: clicks only play/pause, and
  *   right-click (copy video URL) is blocked.
  * - A full dark pause cover (lesson title + play button) hides YouTube's
@@ -101,6 +101,7 @@ export function GatedVideoPlayer({
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [current, setCurrent] = useState(0); // seconds within window
   const [duration, setDuration] = useState(end !== null ? end - start : 0);
   const [blockedHint, setBlockedHint] = useState(false);
@@ -247,6 +248,23 @@ export function GatedVideoPlayer({
     return () => document.removeEventListener("fullscreenchange", handler);
   }, []);
 
+  // Custom expanded mode (used on phones): lock the page behind the player and
+  // let Escape close it. The player stays the same component, so progress and
+  // the no-skipping watchdog keep running without reloading the iframe.
+  useEffect(() => {
+    if (!expanded) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setExpanded(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [expanded]);
+
   const togglePlay = () => {
     const player = playerRef.current;
     if (!player || !readyRef.current) return;
@@ -281,9 +299,26 @@ export function GatedVideoPlayer({
   };
 
   const toggleFullscreen = () => {
-    if (document.fullscreenElement) void document.exitFullscreen();
-    else void frameRef.current?.requestFullscreen();
+    if (expanded) {
+      setExpanded(false);
+      return;
+    }
+    if (document.fullscreenElement) {
+      void document.exitFullscreen();
+      return;
+    }
+    // Phones use the app's own centred player instead of browser fullscreen,
+    // which is unreliable on iOS and sometimes leaves the controls off-screen.
+    if (window.matchMedia("(max-width: 640px)").matches) {
+      setExpanded(true);
+      return;
+    }
+    const request = frameRef.current?.requestFullscreen?.();
+    if (request) void request.catch(() => setExpanded(true));
+    else setExpanded(true);
   };
+
+  const playerExpanded = fullscreen || expanded;
 
   const progressPct = duration > 0 ? Math.min(100, (current / duration) * 100) : 0;
   const watchedPct = duration > 0 ? Math.min(100, (maxWatchedRef.current / duration) * 100) : 0;
@@ -291,16 +326,14 @@ export function GatedVideoPlayer({
   return (
     <div
       ref={frameRef}
-      className="player-frame border-border bg-background/80 group/player relative flex flex-col overflow-hidden rounded-2xl border select-none"
+      className={`player-frame border-border bg-background/80 group/player relative flex flex-col overflow-hidden rounded-none border-0 select-none sm:rounded-2xl sm:border ${
+        expanded ? "player-expanded" : ""
+      }`}
       onContextMenu={(e) => e.preventDefault()}
     >
-      <div className="player-shell w-full">
+      <div className={`player-shell w-full ${expanded ? "player-expanded-shell" : ""}`}>
         <div className="player-stage relative aspect-video w-full overflow-hidden bg-black">
-          <div
-            ref={hostRef}
-            className="player-crop pointer-events-none h-full w-full"
-            aria-hidden="true"
-          />
+          <div ref={hostRef} className="pointer-events-none h-full w-full" aria-hidden="true" />
 
           {/* Interaction shield — blocks every direct touch on the YouTube iframe. */}
           <button
@@ -425,10 +458,10 @@ export function GatedVideoPlayer({
               <button
                 type="button"
                 onClick={toggleFullscreen}
-                aria-label={fullscreen ? "Exit fullscreen" : "Fullscreen"}
+                aria-label={playerExpanded ? "Exit fullscreen" : "Fullscreen"}
                 className="text-muted-foreground hover:text-foreground hover:bg-accent/60 flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
               >
-                {fullscreen ? (
+                {playerExpanded ? (
                   <Minimize className="h-4 w-4" aria-hidden="true" />
                 ) : (
                   <Maximize className="h-4 w-4" aria-hidden="true" />
