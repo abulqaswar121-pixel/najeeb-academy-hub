@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Copy, Download, Loader2, MessageCircle, Printer, Store } from "lucide-react";
+import { Check, Copy, Download, Loader2, MessageCircle, Printer, Store } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -14,15 +14,14 @@ import { renderVoucherCard, voucherFileName } from "../lib/voucher-image";
 import { confirmCheckoutFn, myVouchersFn, startVoucherCheckoutFn } from "../lib/server-fns";
 
 export const Route = createFileRoute("/agent")({
-  head: () => {
-    const base = seo({
-      title: "Become an NDH Academy agent",
+  head: () =>
+    seo({
+      title: "Become an NDH Academy Agent — Earn up to ₦10,000 per PIN",
       description:
-        "Buy NDH Academy course PINs at agent price, resell at the official price and keep the profit.",
+        "Buy official NDH Academy course PINs at wholesale prices and resell at official retail. Anyone can join, even without buying a course.",
       path: "/agent",
-    });
-    return { ...base, meta: [...base.meta, { name: "robots", content: "noindex" }] };
-  },
+      exactTitle: true,
+    }),
   component: AgentPage,
 });
 
@@ -185,6 +184,44 @@ function AgentPage() {
         </p>
       </header>
 
+      {!me && (
+        <section
+          aria-labelledby="agent-intro-title"
+          className="border-primary/30 bg-brand-subtle/60 relative overflow-hidden rounded-2xl border p-4 sm:p-5"
+        >
+          <div className="flex items-start gap-3">
+            <span className="bg-gradient-cta text-primary-foreground shadow-glow-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
+              <Store className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <h2 id="agent-intro-title" className="font-display text-base font-bold sm:text-lg">
+                Anyone can be an agent — no course pass required
+              </h2>
+              <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+                Buy PINs at wholesale, share the PIN or the official branded card on WhatsApp, and
+                your buyer redeems it on the website instantly. You keep the difference between the
+                wholesale price and the price printed on the card.
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            {[
+              "Buy at wholesale with Paystack",
+              "Share the PIN or branded card",
+              "Keep the profit on every sale",
+            ].map((step) => (
+              <span
+                key={step}
+                className="text-foreground flex items-center gap-1.5 text-xs font-semibold"
+              >
+                <Check className="text-success h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                {step}
+              </span>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {PASS_TIERS.map((t) => (
           <button
@@ -234,7 +271,9 @@ function AgentPage() {
           </Button>
         ) : (
           <Button asChild>
-            <Link to="/signup">Create account to buy</Link>
+            <Link to="/signup" search={{ redirect: "/agent" }}>
+              Create account to buy
+            </Link>
           </Button>
         )}
       </section>

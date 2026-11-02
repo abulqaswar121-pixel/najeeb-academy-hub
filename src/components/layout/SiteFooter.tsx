@@ -32,6 +32,7 @@ const academyLinks = [
   { to: "/about", label: "About" },
   { to: "/faq", label: "FAQ" },
   { to: "/contact", label: "Contact" },
+  { to: "/agent", label: "Agent corner (Earn)" },
   { to: "/verify", label: "Verify a certificate" },
 ] as const;
 
@@ -55,7 +56,7 @@ export function SiteFooter({ variant = "compact" }: { variant?: "full" | "compac
         <div className="text-muted-foreground mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 sm:flex-row sm:px-6 lg:px-8">
           <p>© {year} NDH Academy</p>
           <nav className="flex flex-wrap justify-center gap-x-5 gap-y-2" aria-label="Footer">
-            {academyLinks.slice(0, 6).map((l) => (
+            {academyLinks.slice(0, 7).map((l) => (
               <Link key={l.to} to={l.to} className="hover:text-foreground transition-colors">
                 {l.label}
               </Link>
@@ -77,13 +78,31 @@ export function SiteFooter({ variant = "compact" }: { variant?: "full" | "compac
               and a signed, verifiable certificate.
             </p>
             <div className="flex items-center gap-4">
-              <a href={NDH_WHATSAPP_URL} target="_blank" rel="noreferrer" aria-label="WhatsApp" className="text-brand-soft hover:text-foreground transition-colors">
+              <a
+                href={NDH_WHATSAPP_URL}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="WhatsApp"
+                className="text-brand-soft hover:text-foreground transition-colors"
+              >
                 <MessageSquare className="h-4 w-4" aria-hidden="true" />
               </a>
-              <a href={NDH_FACEBOOK_URL} target="_blank" rel="noreferrer" aria-label="Facebook" className="text-brand-soft hover:text-foreground transition-colors">
+              <a
+                href={NDH_FACEBOOK_URL}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Facebook"
+                className="text-brand-soft hover:text-foreground transition-colors"
+              >
                 <Facebook className="h-4 w-4" aria-hidden="true" />
               </a>
-              <a href={NDH_INSTAGRAM_URL} target="_blank" rel="noreferrer" aria-label="Instagram" className="text-brand-soft hover:text-foreground transition-colors">
+              <a
+                href={NDH_INSTAGRAM_URL}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Instagram"
+                className="text-brand-soft hover:text-foreground transition-colors"
+              >
                 <Instagram className="h-4 w-4" aria-hidden="true" />
               </a>
             </div>
@@ -94,7 +113,10 @@ export function SiteFooter({ variant = "compact" }: { variant?: "full" | "compac
             <ul className="space-y-2.5">
               {academyLinks.map((l) => (
                 <li key={l.to}>
-                  <Link to={l.to} className="text-muted-foreground hover:text-foreground transition-colors">
+                  <Link
+                    to={l.to}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
                     {l.label}
                   </Link>
                 </li>
@@ -105,15 +127,29 @@ export function SiteFooter({ variant = "compact" }: { variant?: "full" | "compac
           <div>
             <h3 className="text-foreground mb-4 font-bold tracking-wider uppercase">Contact</h3>
             <div className="text-muted-foreground space-y-2.5">
-              <a href={NDH_MAPS_URL} target="_blank" rel="noreferrer" className="hover:text-foreground flex items-start gap-2 transition-colors">
-                <MapPin className="text-brand-soft mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <a
+                href={NDH_MAPS_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="hover:text-foreground flex items-start gap-2 transition-colors"
+              >
+                <MapPin
+                  className="text-brand-soft mt-0.5 h-3.5 w-3.5 shrink-0"
+                  aria-hidden="true"
+                />
                 <span>{NDH_ADDRESS}</span>
               </a>
-              <a href={NDH_PHONE_TEL} className="hover:text-foreground flex items-center gap-2 transition-colors">
+              <a
+                href={NDH_PHONE_TEL}
+                className="hover:text-foreground flex items-center gap-2 transition-colors"
+              >
                 <Phone className="text-brand-soft h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 {NDH_PHONE_DISPLAY}
               </a>
-              <a href={`mailto:${NDH_EMAIL_HELLO}`} className="hover:text-foreground flex items-center gap-2 transition-colors">
+              <a
+                href={`mailto:${NDH_EMAIL_HELLO}`}
+                className="hover:text-foreground flex items-center gap-2 transition-colors"
+              >
                 <Mail className="text-brand-soft h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 {NDH_EMAIL_HELLO}
               </a>
@@ -122,11 +158,18 @@ export function SiteFooter({ variant = "compact" }: { variant?: "full" | "compac
 
           <div className="space-y-6">
             <div>
-              <h3 className="text-foreground mb-4 font-bold tracking-wider uppercase">Part of NDH</h3>
+              <h3 className="text-foreground mb-4 font-bold tracking-wider uppercase">
+                Part of NDH
+              </h3>
               <ul className="space-y-2.5">
                 {familyLinks.map((l) => (
                   <li key={l.href}>
-                    <a href={l.href} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 transition-colors">
+                    <a
+                      href={l.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 transition-colors"
+                    >
                       {l.label} <ExternalLink className="h-3 w-3" aria-hidden="true" />
                     </a>
                   </li>
@@ -135,13 +178,16 @@ export function SiteFooter({ variant = "compact" }: { variant?: "full" | "compac
             </div>
             <div className="text-muted-foreground space-y-2">
               <div className="flex items-center gap-2">
-                <Award className="text-gold h-3.5 w-3.5" aria-hidden="true" /> Verifiable certificates
+                <Award className="text-gold h-3.5 w-3.5" aria-hidden="true" /> Verifiable
+                certificates
               </div>
               <div className="flex items-center gap-2">
-                <BadgeCheck className="text-success h-3.5 w-3.5" aria-hidden="true" /> Project-based learning
+                <BadgeCheck className="text-success h-3.5 w-3.5" aria-hidden="true" /> Project-based
+                learning
               </div>
               <div className="flex items-center gap-2">
-                <ShieldCheck className="text-brand-soft h-3.5 w-3.5" aria-hidden="true" /> Secure ₦ payments
+                <ShieldCheck className="text-brand-soft h-3.5 w-3.5" aria-hidden="true" /> Secure ₦
+                payments
               </div>
             </div>
           </div>
