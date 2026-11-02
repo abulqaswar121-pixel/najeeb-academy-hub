@@ -1400,26 +1400,23 @@ h4 {
     color 0.15s ease;
 }
 
-/* Crop YouTube's iframe chrome: the over-scaled iframe pushes the top
-   title/channel bar and the bottom-right logo outside the rounded stage. */
-.player-crop {
-  transform: scale(1.15);
-  transform-origin: center center;
-  will-change: transform;
-}
-
-/* Fullscreen / expanded player — centre the 16:9 stage plus its control bar as
-   one group, so portrait phones never pin the video to the top with a huge
-   empty gap underneath. Rewind, mute and exit controls stay within reach. */
+/* Fullscreen / custom-expanded player — centre the natural 16:9 stage plus its
+   control bar as one group, so portrait phones never pin the video to the top
+   with a huge empty gap underneath. Rewind, mute and exit controls stay within
+   reach, and the iframe is never scaled or cropped. */
 .player-frame:fullscreen,
-.player-frame:-webkit-full-screen {
+.player-frame:-webkit-full-screen,
+.player-frame.player-expanded {
   display: flex !important;
+  position: fixed;
+  inset: 0;
   width: 100vw;
   height: 100vh;
   height: 100dvh;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   border: 0;
   border-radius: 0;
   background: #000;
@@ -1427,8 +1424,13 @@ h4 {
     env(safe-area-inset-left);
 }
 
+.player-frame.player-expanded {
+  z-index: 100;
+}
+
 .player-frame:fullscreen .player-shell,
-.player-frame:-webkit-full-screen .player-shell {
+.player-frame:-webkit-full-screen .player-shell,
+.player-frame.player-expanded .player-expanded-shell {
   display: flex;
   width: min(100%, calc((100vh - 7rem) * 16 / 9));
   width: min(100%, calc((100dvh - 7rem) * 16 / 9));
@@ -1439,13 +1441,16 @@ h4 {
 
 .player-frame:fullscreen .player-stage,
 .player-frame:-webkit-full-screen .player-stage,
+.player-frame.player-expanded .player-stage,
 .player-frame:fullscreen .player-controls,
-.player-frame:-webkit-full-screen .player-controls {
+.player-frame:-webkit-full-screen .player-controls,
+.player-frame.player-expanded .player-controls {
   width: 100%;
 }
 
 .player-frame:fullscreen .player-stage,
-.player-frame:-webkit-full-screen .player-stage {
+.player-frame:-webkit-full-screen .player-stage,
+.player-frame.player-expanded .player-stage {
   border-radius: 0;
 }
 
@@ -1453,13 +1458,16 @@ h4 {
    group vertically — balanced space above and below the controls. */
 @media (max-width: 640px) and (orientation: portrait) {
   .player-frame:fullscreen .player-shell,
-  .player-frame:-webkit-full-screen .player-shell {
+  .player-frame:-webkit-full-screen .player-shell,
+  .player-frame.player-expanded .player-expanded-shell {
     width: 100vw;
+    max-width: 100vw;
     justify-content: center;
   }
 
   .player-frame:fullscreen .player-controls,
-  .player-frame:-webkit-full-screen .player-controls {
+  .player-frame:-webkit-full-screen .player-controls,
+  .player-frame.player-expanded .player-controls {
     border-radius: 0;
   }
 }

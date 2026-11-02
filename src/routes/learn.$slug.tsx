@@ -380,7 +380,7 @@ function LearnPage() {
           <div className="min-w-0 space-y-5">
             <article
               id="master-video"
-              className="border-border bg-card overflow-hidden rounded-2xl border shadow-xl"
+              className="border-border bg-card -mx-4 overflow-hidden border-x-0 border-y shadow-xl sm:mx-0 sm:rounded-2xl sm:border"
             >
               <div className="flex flex-wrap items-start justify-between gap-3 p-5 pb-4 sm:p-6 sm:pb-4">
                 <div className="min-w-0">
@@ -412,7 +412,11 @@ function LearnPage() {
                 </span>
               </div>
 
-              <div className="px-3 pb-3 sm:px-4 sm:pb-4">
+              <div
+                className={
+                  masterVideoId ? "px-0 pb-0 sm:px-4 sm:pb-4" : "px-3 pb-3 sm:px-4 sm:pb-4"
+                }
+              >
                 {masterVideoId ? (
                   <GatedVideoPlayer
                     key={`master-${slug}`}
