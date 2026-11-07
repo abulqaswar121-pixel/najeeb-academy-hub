@@ -1940,18 +1940,17 @@ h4 {
 .seal-outer { fill: var(--c-gold); }
 .seal-ring { fill: none; stroke: var(--c-gold2); stroke-width: 1.2; stroke-dasharray: 2 2; }
 .seal-inner { fill: var(--c-navy); stroke: var(--c-gold2); stroke-width: 1.5; }
-.seal-text { fill: #fff8e1; font: 700 8.4px ui-monospace, monospace; letter-spacing: 1.2px; }
-.cert-seal-icon { position: absolute; inset: 0; margin: auto; width: 4cqw; height: 4cqw; color: var(--c-gold2); }
+.seal-text { fill: #fff8e1; font: 700 7px ui-monospace, monospace; letter-spacing: 1.2px; }
+.cert-seal-icon { position: absolute; inset: 0; margin: auto; width: 3cqw; height: 3cqw; color: var(--c-gold2); }
 .cert-sign { text-align: center; justify-self: end; min-width: 15cqw; }
 .cert-sign svg { width: 13cqw; height: 4cqw; margin: 0 auto; color: var(--c-teal); }
 .cert-sign-name { border-top: .12cqw solid var(--c-navy); padding-top: .5cqw; font: 700 1.3cqw/1.2 "Space Grotesk", sans-serif; }
 
-@page cert { size: A4 landscape; margin: 0; }
 @media print {
-  .print-certificate { page: cert; border: 0 !important; width: 297mm !important; height: 210mm; margin: 0 !important; }
-  body:has(.print-certificate) main * { visibility: hidden; }
-  body:has(.print-certificate) .print-certificate,
-  body:has(.print-certificate) .print-certificate * { visibility: visible; }
-  body:has(.print-certificate) .print-certificate { position: fixed; inset: 0; z-index: 9999; }
-  .cert { border-radius: 0; box-shadow: none; }
+  html.printing-cert body > *:not(.cert-print-root) { display: none !important; }
+  html.printing-cert, html.printing-cert body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+  .cert-print-root { width: 297mm; height: 210mm; overflow: hidden; }
+  .cert-print-root .cert { border-radius: 0; box-shadow: none; width: 297mm; height: 210mm; }
 }
+.cert-print-root { display: none; }
+@media print { .cert-print-root { display: block; } }

@@ -76,7 +76,7 @@ export function CertificateView({ studentName, courseTitle, issuedAt, code }: Ce
                 </defs>
                 <circle cx="60" cy="60" r="57" className="seal-outer" />
                 <circle cx="60" cy="60" r="50" className="seal-ring" />
-                <circle cx="60" cy="60" r="36" className="seal-inner" />
+                <circle cx="60" cy="60" r="34" className="seal-inner" />
                 <text className="seal-text">
                   <textPath href="#cert-seal-arc">
                     NDH ACADEMY • CERTIFIED • NDH ACADEMY • CERTIFIED •

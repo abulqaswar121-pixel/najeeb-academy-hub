@@ -24,6 +24,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { printCertificate } from "../lib/print-certificate";
 import { CertificateView } from "../components/academy/CertificateView";
 import { EmptyState } from "../components/academy/EmptyState";
 import { GatedVideoPlayer } from "../components/academy/GatedVideoPlayer";
@@ -698,7 +699,7 @@ function LearnPage() {
                       <div className="flex flex-wrap gap-3">
                         <Button
                           className="bg-gradient-cta shadow-glow-primary rounded-xl font-bold"
-                          onClick={() => window.print()}
+                          onClick={printCertificate}
                         >
                           <Download className="h-4 w-4" aria-hidden="true" /> Download certificate
                         </Button>
