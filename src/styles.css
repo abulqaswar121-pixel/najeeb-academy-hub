@@ -1907,8 +1907,7 @@ h4 {
   border-right: .5cqw solid var(--c-gold); }
 .cert-band-glow { position: absolute; inset: -30% -60% auto auto; width: 120%; aspect-ratio: 1;
   background: radial-gradient(circle, rgba(34,211,238,.35), transparent 60%); }
-.cert-mark { position: relative; transform: scale(calc(1cqw * 0)); }
-.cert-mark { transform: none; zoom: 1; }
+.cert-mark { position: relative; }
 .cert-mark .ndh-family-symbol { width: 9cqw !important; height: 9cqw !important; }
 .cert-mark .ndh-family-tile { width: 9cqw !important; height: 9cqw !important; border-radius: 2cqw !important; }
 .cert-band-hub { position: relative; margin-top: 1cqw; font: 600 1cqw/1 ui-monospace, monospace; letter-spacing: .3em; color: rgba(255,255,255,.7); }
