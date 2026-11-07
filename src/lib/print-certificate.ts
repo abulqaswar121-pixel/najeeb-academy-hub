@@ -23,5 +23,5 @@ export function printCertificate() {
   };
   window.addEventListener("afterprint", cleanup);
   window.print();
-  setTimeout(cleanup, 1000);
+  setTimeout(cleanup, 60000);
 }
