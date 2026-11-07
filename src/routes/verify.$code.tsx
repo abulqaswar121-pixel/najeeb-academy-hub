@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { BadgeCheck, Download, SearchX, ShieldCheck } from "lucide-react";
 
+import { printCertificate } from "../lib/print-certificate";
 import { CertificateView } from "../components/academy/CertificateView";
 import { EmptyState } from "../components/academy/EmptyState";
 import { Button } from "../components/ui/button";
@@ -62,7 +63,7 @@ function VerifyResultPage() {
             <div className="no-print flex flex-wrap justify-center gap-3">
               <Button
                 className="bg-gradient-cta shadow-glow-primary rounded-xl font-extrabold"
-                onClick={() => window.print()}
+                onClick={printCertificate}
               >
                 <Download className="h-4 w-4" aria-hidden="true" /> Download certificate
               </Button>
