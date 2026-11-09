@@ -508,6 +508,9 @@ export const localBackend: DataBackend = {
         state.certificates.find((c) => c.userId === userId && c.courseId === course.id) ?? null,
       projectSubmission:
         state.projects.find((p) => p.userId === userId && p.courseId === course.id) ?? null,
+      assessmentPassed: state.certificates.some(
+        (c) => c.userId === userId && c.courseId === course.id,
+      ),
       myReview: state.reviews.find((r) => r.userId === userId && r.courseId === course.id) ?? null,
     };
   },
@@ -673,6 +676,10 @@ export const localBackend: DataBackend = {
     else state.submittedTestimonials.push(record);
     persist();
     return record;
+  },
+
+  async recordAssessmentPass() {
+    // legacy local backend: passing is implied by the stored certificate flow
   },
 
   async issueCertificate(userId, courseId) {

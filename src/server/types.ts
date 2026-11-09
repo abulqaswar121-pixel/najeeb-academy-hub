@@ -99,6 +99,8 @@ export interface ProjectSubmissionWithCourse extends ProjectSubmissionRecord {
 }
 
 export interface AdminProjectSubmission extends ProjectSubmissionWithCourse {
+  courseCategory?: string;
+  courseTools?: string[];
   studentName: string;
   studentEmail: string;
 }
@@ -226,6 +228,7 @@ export interface LearnState {
   lessonStates: LessonState[];
   certificate: CertificateRecord | null;
   projectSubmission: ProjectSubmissionRecord | null;
+  assessmentPassed: boolean;
   myReview: CourseReviewRecord | null;
 }
 
@@ -281,6 +284,7 @@ export interface DataBackend {
     input: { name: string; role: string; quote: string; courseId: string | null },
   ): Promise<TestimonialRecord>;
   issueCertificate(userId: string, courseId: string): Promise<CertificateRecord>;
+  recordAssessmentPass(userId: string, courseId: string, score: number): Promise<void>;
   getCertificate(userId: string, courseId: string): Promise<CertificateRecord | null>;
   listCertificates(userId: string): Promise<CertificateWithDetails[]>;
 

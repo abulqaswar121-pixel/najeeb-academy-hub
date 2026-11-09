@@ -268,7 +268,10 @@ export async function submitProject(input: { courseSlug: string; link: string; n
   const state = await backend().getLearnState(user.id, input.courseSlug);
   if (!state) throw new Error("You are not enrolled in this course.");
   if (state.completedLessonIds.length < state.lessons.length) {
-    throw new Error("Complete all lessons before submitting your capstone project.");
+    throw new Error("Complete all lessons before submitting your NDH assignment.");
+  }
+  if (!state.assessmentPassed) {
+    throw new Error("Pass the final quiz first to unlock your NDH assignment.");
   }
   return backend().submitProject(user.id, state.course.id, {
     link: input.link,
@@ -283,9 +286,6 @@ export async function submitAssessment(input: { courseSlug: string; answers: num
   if (state.completedLessonIds.length < state.lessons.length) {
     throw new Error("Complete all lessons before taking the final assessment.");
   }
-  if (!state.projectSubmission) {
-    throw new Error("Submit your capstone project before taking the final assessment.");
-  }
   const bank = assessments[state.course.category] ?? [];
   if (bank.length === 0) throw new Error("No assessment is available for this course yet.");
   if (input.answers.length !== bank.length) throw new Error("Please answer every question.");
@@ -297,8 +297,8 @@ export async function submitAssessment(input: { courseSlug: string; answers: num
   if (!passed) {
     return { passed: false as const, correct, total: bank.length };
   }
-  const certificate = await backend().issueCertificate(user.id, state.course.id);
-  return { passed: true as const, correct, total: bank.length, certificate };
+  await backend().recordAssessmentPass(user.id, state.course.id, Math.round(score * 100));
+  return { passed: true as const, correct, total: bank.length };
 }
 
 export async function submitReview(input: {

@@ -43,6 +43,13 @@
       "when": 1793537371923,
       "tag": "0005_voucher_pins",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794197422791,
+      "tag": "0006_assessment_first_admin_approval",
+      "breakpoints": true
     }
   ]
 }

@@ -537,8 +537,14 @@ export const supabaseBackend: DataBackend & {
     if (!enrollmentRow) return null;
     const lessons = await fetchCourseLessons(client, courseRow.id);
     const lessonIds = lessons.map((l) => l.id);
-    const [{ data: done }, videoProgress, { data: certRow }, { data: projectRow }, reviewRow] =
-      await Promise.all([
+    const [
+      { data: done },
+      videoProgress,
+      { data: certRow },
+      { data: projectRow },
+      reviewRow,
+      { data: passRow },
+    ] = await Promise.all([
         client
           .from("lesson_progress")
           .select("lesson_id")
@@ -560,6 +566,12 @@ export const supabaseBackend: DataBackend & {
         client
           .from("course_reviews")
           .select("*")
+          .eq("user_id", userId)
+          .eq("course_id", courseRow.id)
+          .maybeSingle(),
+        client
+          .from("assessment_passes")
+          .select("user_id")
           .eq("user_id", userId)
           .eq("course_id", courseRow.id)
           .maybeSingle(),
@@ -591,6 +603,8 @@ export const supabaseBackend: DataBackend & {
       lessonStates,
       certificate: certRow ? mapCertificate(certRow) : null,
       projectSubmission: projectRow ? mapProject(projectRow) : null,
+      // Older students who earned a certificate before the quiz-first flow count as passed.
+      assessmentPassed: Boolean(passRow) || Boolean(certRow),
       myReview: reviewRow.data ? mapReview(reviewRow.data) : null,
     };
   },
@@ -790,6 +804,13 @@ export const supabaseBackend: DataBackend & {
       .single();
     if (error) throw new Error(error.message);
     return mapCertificate(data);
+  },
+
+  async recordAssessmentPass(userId, courseId, score) {
+    const { error } = await clientForUser()
+      .from("assessment_passes")
+      .upsert({ user_id: userId, course_id: courseId, score }, { onConflict: "user_id,course_id", ignoreDuplicates: true });
+    if (error) throw new Error(error.message);
   },
 
   async getCertificate(userId, courseId) {
@@ -1048,7 +1069,7 @@ export const supabaseBackend: DataBackend & {
   async adminListProjects(): Promise<AdminProjectSubmission[]> {
     const { data, error } = await clientForUser()
       .from("project_submissions")
-      .select("*, courses(title, slug), profiles(full_name, email)")
+      .select("*, courses(title, slug, category, tools), profiles(full_name, email)")
       .order("submitted_at", { ascending: false });
     if (error) throw new Error(error.message);
     return (data ?? [])
@@ -1056,6 +1077,8 @@ export const supabaseBackend: DataBackend & {
         ...mapProject(row),
         courseTitle: row.courses?.title ?? "Course",
         courseSlug: row.courses?.slug ?? row.course_id,
+        courseCategory: row.courses?.category ?? "",
+        courseTools: row.courses?.tools ?? [],
         studentName: row.profiles?.full_name ?? "Student",
         studentEmail: row.profiles?.email ?? "",
       }))
@@ -1067,14 +1090,12 @@ export const supabaseBackend: DataBackend & {
   },
 
   async adminReviewProject(submissionId, status, feedback) {
-    const { error } = await clientForUser()
-      .from("project_submissions")
-      .update({
-        status,
-        feedback: feedback.trim() || null,
-        reviewed_at: new Date().toISOString(),
-      })
-      .eq("id", submissionId);
+    // Locked database function: checks admin, updates status, and issues the certificate on approval.
+    const { error } = await clientForUser().rpc("admin_review_project", {
+      submission: submissionId,
+      new_status: status,
+      note: feedback,
+    });
     if (error) throw new Error(error.message);
   },
 
