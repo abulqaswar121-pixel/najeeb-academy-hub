@@ -675,6 +675,10 @@ export const localBackend: DataBackend = {
     return record;
   },
 
+  async recordAssessmentPass() {
+    // legacy local backend: passing is implied by the stored certificate flow
+  },
+
   async issueCertificate(userId, courseId) {
     const existing = state.certificates.find((c) => c.userId === userId && c.courseId === courseId);
     if (existing) return existing;
