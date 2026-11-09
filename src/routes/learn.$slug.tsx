@@ -1145,6 +1145,7 @@ function ProjectPanel({
             )}
           </div>
           <div className="flex flex-wrap gap-3">
+            {submission.status !== "approved" && (
             <Button
               variant="outline"
               className="rounded-xl font-bold"
@@ -1152,6 +1153,7 @@ function ProjectPanel({
             >
               Update submission
             </Button>
+            )}
             {hasCertificate && (
               <Button className="rounded-xl font-bold" onClick={onOpenCertificate}>
                 See my certificate <ArrowRight className="h-4 w-4" aria-hidden="true" />
