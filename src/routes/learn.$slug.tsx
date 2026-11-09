@@ -1030,12 +1030,15 @@ function LearnPage() {
 
 function ProjectPanel({
   slug,
-  projectBrief,
+  brief,
   submission,
-  onSubmitted,
+  hasCertificate,
+  onOpenCertificate,
 }: {
   slug: string;
-  projectBrief: string;
+  brief: NdhBrief;
+  hasCertificate: boolean;
+  onOpenCertificate: () => void;
   submission: {
     link: string;
     notes: string;
@@ -1043,7 +1046,6 @@ function ProjectPanel({
     feedback: string | null;
     submittedAt: string;
   } | null;
-  onSubmitted: () => void;
 }) {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(submission === null);
@@ -1053,11 +1055,10 @@ function ProjectPanel({
   const submit = useMutation({
     mutationFn: () => submitProjectFn({ data: { courseSlug: slug, link, notes } }),
     onSuccess: async () => {
-      toast.success("Project submitted — the final assessment is now unlocked!");
+      toast.success("Sent to NDH for review — you'll see the result here.");
       await queryClient.invalidateQueries({ queryKey: ["learn", slug] });
       await queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       setEditing(false);
-      onSubmitted();
     },
     onError: (err) =>
       toast.error(err instanceof Error ? err.message : "Could not submit the project."),
@@ -1065,29 +1066,47 @@ function ProjectPanel({
 
   const statusBadge =
     submission?.status === "approved"
-      ? { label: "Approved by mentor", cls: "border-success/40 text-success" }
+      ? { label: "Approved by NDH", cls: "border-success/40 text-success" }
       : submission?.status === "changes_requested"
         ? { label: "Changes requested", cls: "border-destructive/40 text-destructive" }
-        : { label: "Awaiting mentor review", cls: "border-primary/40 text-brand-soft" };
+        : { label: "Waiting for NDH review", cls: "border-primary/40 text-brand-soft" };
 
   return (
     <article className="border-border bg-card rounded-2xl border p-5 shadow-xl sm:p-7">
       <p className="text-brand-soft font-mono text-[10px] tracking-wider uppercase">
-        Capstone project
+        NDH Agency assignment
       </p>
-      <h2 className="text-foreground mt-1 text-2xl font-black tracking-tight">
-        Build it, ship it, submit it
-      </h2>
+      <h2 className="text-foreground mt-1 text-2xl font-black tracking-tight">{brief.title}</h2>
 
       <div className="border-highlight/30 bg-highlight/5 mt-4 rounded-2xl border p-4">
-        <p className="text-brand-soft font-mono text-[10px] tracking-wider uppercase">Your brief</p>
-        <p className="text-foreground mt-1.5 text-sm leading-relaxed font-medium">{projectBrief}</p>
+        <p className="text-brand-soft font-mono text-[10px] tracking-wider uppercase">
+          Client brief from NDH
+        </p>
+        <p className="text-foreground mt-1.5 text-sm leading-relaxed font-medium">{brief.brief}</p>
       </div>
 
-      <p className="text-muted-foreground mt-3 text-xs leading-relaxed">
-        Upload your work anywhere public or shareable — Google Drive, GitHub, Figma, a live URL —
-        and paste the link below. Submitting unlocks the final assessment; a mentor reviews every
-        submission and leaves feedback in your dashboard.
+      <div className="mt-4">
+        <p className="text-muted-foreground font-mono text-[10px] tracking-wider uppercase">
+          What NDH needs from you
+        </p>
+        <ol className="text-foreground mt-2 list-decimal space-y-1.5 pl-5 text-sm leading-relaxed">
+          {brief.tasks.map((t) => (
+            <li key={t}>{t}</li>
+          ))}
+        </ol>
+      </div>
+
+      <div className="border-primary/30 bg-brand-subtle mt-4 rounded-2xl border p-4">
+        <p className="text-brand-soft font-mono text-[10px] tracking-wider uppercase">
+          How to send it · {brief.format.label}
+        </p>
+        <p className="text-foreground mt-1.5 text-sm font-semibold">{brief.format.accepts}</p>
+        <p className="text-muted-foreground mt-1 text-xs leading-relaxed">{brief.format.howTo}</p>
+      </div>
+
+      <p className="text-muted-foreground mt-3 text-xs leading-relaxed">{NDH_PROMO_OPTION}</p>
+      <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
+        NDH reviews every assignment. When it is approved, your signed certificate is issued.
       </p>
 
       {submission && !editing ? (
@@ -1117,7 +1136,7 @@ function ProjectPanel({
             {submission.feedback && (
               <div className="border-primary/30 bg-brand-subtle mt-4 rounded-xl border p-4">
                 <p className="text-brand-soft font-mono text-[10px] tracking-wider uppercase">
-                  Mentor feedback
+                  Feedback from NDH
                 </p>
                 <p className="text-foreground mt-1 text-sm leading-relaxed">
                   {submission.feedback}
@@ -1133,9 +1152,11 @@ function ProjectPanel({
             >
               Update submission
             </Button>
-            <Button className="rounded-xl font-bold" onClick={onSubmitted}>
-              Go to final assessment <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Button>
+            {hasCertificate && (
+              <Button className="rounded-xl font-bold" onClick={onOpenCertificate}>
+                See my certificate <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Button>
+            )}
           </div>
         </div>
       ) : (
@@ -1147,18 +1168,18 @@ function ProjectPanel({
           }}
         >
           <div className="space-y-2">
-            <Label htmlFor="project-link">Project link</Label>
+            <Label htmlFor="project-link">Link to your work ({brief.format.label})</Label>
             <Input
               id="project-link"
               type="url"
               required
-              placeholder="https://drive.google.com/… or https://github.com/…"
+              placeholder={brief.format.placeholder}
               value={link}
               onChange={(e) => setLink(e.target.value)}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="project-notes">Notes for your reviewer (optional)</Label>
+            <Label htmlFor="project-notes">Notes for NDH (optional)</Label>
             <Textarea
               id="project-notes"
               rows={4}
@@ -1177,8 +1198,8 @@ function ProjectPanel({
               {submit.isPending
                 ? "Submitting…"
                 : submission
-                  ? "Resubmit project"
-                  : "Submit project"}
+                  ? "Send again to NDH"
+                  : "Send to NDH"}
             </Button>
             {submission && (
               <Button
