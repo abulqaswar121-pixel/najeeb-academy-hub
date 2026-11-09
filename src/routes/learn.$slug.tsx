@@ -240,14 +240,16 @@ function LearnPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [masterComplete, allLessonsDone, lessons.length]);
 
+  const openPanelRef = useRef<((p: "project" | "assessment") => void) | null>(null);
   const submitAssessment = useMutation({
     mutationFn: (payload: number[]) =>
       submitAssessmentFn({ data: { courseSlug: slug, answers: payload } }),
     onSuccess: async (res) => {
       setResult({ passed: res.passed, correct: res.correct, total: res.total });
       if (res.passed) {
-        toast.success("Assessment passed — certificate issued!");
+        toast.success("Quiz passed — your NDH Agency assignment is now open!");
         await queryClient.invalidateQueries({ queryKey: ["learn", slug] });
+        openPanelRef.current?.("project");
         await queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       }
     },
@@ -303,8 +305,15 @@ function LearnPage() {
 
   const { course, enrollment, assessment } = data;
   const category = categoryBySlug(course.category);
-  const projectUnlocked = allLessonsDone;
-  const assessmentUnlocked = allLessonsDone && projectSubmission !== null;
+  const assessmentPassed = data.assessmentPassed;
+  const assessmentUnlocked = allLessonsDone;
+  const projectUnlocked = allLessonsDone && assessmentPassed;
+  const ndhBrief = ndhBriefFor({
+    slug,
+    title: course.title,
+    category: course.category,
+    tools: course.tools,
+  });
   const chapter = activeChapter !== null && masterComplete ? lessons[activeChapter] : null;
   const chapterState = chapter ? stateByLesson.get(chapter.id) : undefined;
 
@@ -317,6 +326,7 @@ function LearnPage() {
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   };
+  openPanelRef.current = openPanel;
 
   const openChapter = (index: number) => {
     setPanel(null);
@@ -581,10 +591,37 @@ function LearnPage() {
                       assessmentUnlocked ? "text-foreground" : "text-muted-foreground/70"
                     }`}
                   >
-                    Final assessment quiz
+                    1. Final quiz
                   </span>
                   <span className="text-muted-foreground shrink-0 font-mono text-[10px]">
-                    70% pass mark
+                    {assessmentPassed ? "Passed" : "70% pass mark"}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  disabled={!projectUnlocked}
+                  onClick={() => openPanel("project")}
+                  className={`border-border flex w-full items-center gap-3 border-t px-4 py-3.5 text-left transition-colors sm:px-6 ${
+                    projectUnlocked ? "hover:bg-accent/60" : "cursor-not-allowed"
+                  }`}
+                >
+                  <span className="text-muted-foreground/70 w-6 shrink-0 text-center font-mono text-[11px]">
+                    <FolderGit2 className="mx-auto h-4 w-4" aria-hidden="true" />
+                  </span>
+                  {projectUnlocked ? (
+                    <Unlock className="text-brand-soft h-4 w-4 shrink-0" aria-hidden="true" />
+                  ) : (
+                    <Lock className="text-muted-foreground/60 h-4 w-4 shrink-0" aria-hidden="true" />
+                  )}
+                  <span
+                    className={`min-w-0 flex-1 text-sm font-semibold ${
+                      projectUnlocked ? "text-foreground" : "text-muted-foreground/70"
+                    }`}
+                  >
+                    2. NDH Agency assignment
+                  </span>
+                  <span className="text-muted-foreground shrink-0 font-mono text-[10px]">
+                    {certificate ? "Approved" : projectSubmission ? "Sent" : "NDH reviews"}
                   </span>
                 </button>
               </div>
@@ -668,9 +705,10 @@ function LearnPage() {
               {panel === "project" && (
                 <ProjectPanel
                   slug={slug}
-                  projectBrief={course.project}
+                  brief={ndhBrief}
                   submission={projectSubmission}
-                  onSubmitted={() => openPanel("assessment")}
+                  hasCertificate={certificate !== null}
+                  onOpenCertificate={() => openPanel("assessment")}
                 />
               )}
 
@@ -714,6 +752,22 @@ function LearnPage() {
                       </div>
                       <ReviewPanel slug={slug} existing={data.myReview} />
                     </div>
+                  ) : assessmentPassed ? (
+                    <div className="border-success/30 bg-success/10 rounded-2xl border p-5">
+                      <p className="text-foreground text-sm font-bold">
+                        Quiz passed — well done!
+                      </p>
+                      <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+                        Your last step is the NDH Agency assignment. When NDH approves your work,
+                        your signed certificate appears here.
+                      </p>
+                      <Button
+                        className="mt-4 rounded-xl font-bold"
+                        onClick={() => openPanel("project")}
+                      >
+                        <FolderGit2 className="h-4 w-4" aria-hidden="true" /> Open NDH assignment
+                      </Button>
+                    </div>
                   ) : (
                     <article className="border-border bg-card rounded-2xl border p-5 shadow-xl sm:p-7">
                       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -730,8 +784,8 @@ function LearnPage() {
                         </span>
                       </div>
                       <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-                        {assessment.length} questions · unlimited retakes. Passing issues your
-                        signed certificate instantly.
+                        {assessment.length} questions · unlimited retakes. Passing opens your NDH
+                        Agency assignment — the last step before your certificate.
                       </p>
 
                       <div className="mt-5 space-y-1.5">
@@ -900,30 +954,6 @@ function LearnPage() {
                 </button>
                 <button
                   type="button"
-                  disabled={!projectUnlocked}
-                  onClick={() => openPanel("project")}
-                  className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-xs font-bold transition-colors ${
-                    projectUnlocked
-                      ? panel === "project"
-                        ? "bg-brand-subtle text-foreground"
-                        : "text-foreground hover:bg-accent/60"
-                      : "text-muted-foreground/50 cursor-not-allowed"
-                  }`}
-                >
-                  {projectSubmission ? (
-                    <CheckCircle2 className="text-success h-4 w-4 shrink-0" aria-hidden="true" />
-                  ) : projectUnlocked ? (
-                    <FolderGit2 className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  ) : (
-                    <Lock
-                      className="text-muted-foreground/50 h-4 w-4 shrink-0"
-                      aria-hidden="true"
-                    />
-                  )}
-                  Capstone project
-                </button>
-                <button
-                  type="button"
                   disabled={!assessmentUnlocked}
                   onClick={() => openPanel("assessment")}
                   className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-xs font-bold transition-colors ${
@@ -944,7 +974,31 @@ function LearnPage() {
                       aria-hidden="true"
                     />
                   )}
-                  Final assessment
+                  Final quiz
+                </button>
+                <button
+                  type="button"
+                  disabled={!projectUnlocked}
+                  onClick={() => openPanel("project")}
+                  className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-xs font-bold transition-colors ${
+                    projectUnlocked
+                      ? panel === "project"
+                        ? "bg-brand-subtle text-foreground"
+                        : "text-foreground hover:bg-accent/60"
+                      : "text-muted-foreground/50 cursor-not-allowed"
+                  }`}
+                >
+                  {projectSubmission ? (
+                    <CheckCircle2 className="text-success h-4 w-4 shrink-0" aria-hidden="true" />
+                  ) : projectUnlocked ? (
+                    <FolderGit2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  ) : (
+                    <Lock
+                      className="text-muted-foreground/50 h-4 w-4 shrink-0"
+                      aria-hidden="true"
+                    />
+                  )}
+                  NDH assignment
                 </button>
               </div>
             </nav>
