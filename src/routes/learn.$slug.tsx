@@ -36,6 +36,7 @@ import { Label } from "../components/ui/label";
 import { Progress } from "../components/ui/progress";
 import { Textarea } from "../components/ui/textarea";
 import { categoryBySlug } from "../data/categories";
+import { NDH_PROMO_OPTION, ndhBriefFor, type NdhBrief } from "../data/ndh-briefs";
 import { saveOfflineCourse, type OfflineLesson } from "../lib/offline-courses";
 import { warmOfflinePage } from "../lib/pwa";
 import { meQueryOptions, seo } from "../lib/academy";
