@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { ndhBriefFor } from "../data/ndh-briefs";
 import {
   ArrowUpRight,
   Award,
@@ -418,7 +419,11 @@ function ProjectsTab() {
         data: { submissionId: reviewing!.id, status: reviewing!.status, feedback },
       }),
     onSuccess: async () => {
-      toast.success(reviewing?.status === "approved" ? "Project approved." : "Changes requested.");
+      toast.success(
+        reviewing?.status === "approved"
+          ? "Approved — certificate issued."
+          : "Changes requested.",
+      );
       setReviewing(null);
       setFeedback("");
       await queryClient.invalidateQueries({ queryKey: ["admin"] });
@@ -514,6 +519,17 @@ function ProjectsTab() {
                     <p className="text-muted-foreground mt-0.5 truncate text-[11px]">
                       {p.courseTitle} · {formatDate(p.submittedAt)}
                     </p>
+                    <p className="text-brand-soft mt-0.5 truncate font-mono text-[10px] uppercase">
+                      NDH assignment ·{" "}
+                      {
+                        ndhBriefFor({
+                          slug: p.courseSlug,
+                          title: p.courseTitle,
+                          category: p.courseCategory ?? "",
+                          tools: p.courseTools ?? [],
+                        }).format.label
+                      }
+                    </p>
                   </div>
                   <span
                     className={`shrink-0 rounded-full border px-2.5 py-0.5 font-mono text-[9px] font-bold tracking-wider uppercase ${badge.cls}`}
@@ -592,11 +608,13 @@ function ProjectsTab() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {reviewing?.status === "approved" ? "Approve project" : "Request changes"}
+              {reviewing?.status === "approved" ? "Approve & issue certificate" : "Request changes"}
             </DialogTitle>
             <DialogDescription>
-              {reviewing?.student} · {reviewing?.course}. Your feedback appears in the
-              student&apos;s dashboard and learning room.
+              {reviewing?.student} · {reviewing?.course}.{" "}
+              {reviewing?.status === "approved"
+                ? "Approving issues the student's signed certificate straight away."
+                : "Your note appears in the student's learning room so they can fix and resend."}
             </DialogDescription>
           </DialogHeader>
           <Textarea
@@ -623,7 +641,7 @@ function ProjectsTab() {
               {review.isPending
                 ? "Saving…"
                 : reviewing?.status === "approved"
-                  ? "Approve & send feedback"
+                  ? "Approve & issue certificate"
                   : "Send change request"}
             </Button>
           </DialogFooter>

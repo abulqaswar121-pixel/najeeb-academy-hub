@@ -99,6 +99,8 @@ export interface ProjectSubmissionWithCourse extends ProjectSubmissionRecord {
 }
 
 export interface AdminProjectSubmission extends ProjectSubmissionWithCourse {
+  courseCategory?: string;
+  courseTools?: string[];
   studentName: string;
   studentEmail: string;
 }

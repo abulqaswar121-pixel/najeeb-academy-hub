@@ -1069,7 +1069,7 @@ export const supabaseBackend: DataBackend & {
   async adminListProjects(): Promise<AdminProjectSubmission[]> {
     const { data, error } = await clientForUser()
       .from("project_submissions")
-      .select("*, courses(title, slug), profiles(full_name, email)")
+      .select("*, courses(title, slug, category, tools), profiles(full_name, email)")
       .order("submitted_at", { ascending: false });
     if (error) throw new Error(error.message);
     return (data ?? [])
@@ -1077,6 +1077,8 @@ export const supabaseBackend: DataBackend & {
         ...mapProject(row),
         courseTitle: row.courses?.title ?? "Course",
         courseSlug: row.courses?.slug ?? row.course_id,
+        courseCategory: row.courses?.category ?? "",
+        courseTools: row.courses?.tools ?? [],
         studentName: row.profiles?.full_name ?? "Student",
         studentEmail: row.profiles?.email ?? "",
       }))
